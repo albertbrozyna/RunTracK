@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'home_page.dart';
 import 'permission_utils.dart';
-
+import 'package:inzynierka/common/widgets/navigation_bar.dart';
 class TrackScreen extends StatefulWidget {
   @override
   _TrackScreenState createState() => _TrackScreenState();
@@ -293,15 +293,7 @@ class _TrackScreenState extends State<TrackScreen> {
       appBar: AppBar(title: Text('RunTracK')),
       body: _pages[_selectedIndex],
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: BottomNavBar(currentIndex: _selectedIndex,onTap: _onItemTapped,),
     );
   }
 }
