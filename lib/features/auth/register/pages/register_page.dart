@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:inzynierka/features/auth/login/pages/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -15,12 +17,39 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
 
+  void handleLoginButton(BuildContext context){
+    Navigator.push(context,MaterialPageRoute(builder: (context) =>LoginPage()));
+  }
+
+  // Method to check password complexity
+  bool checkPasswordComplexity(){
+    // TODO check password complexity
+
+    return true;
+  }
+
+
   void handleRegister() {
     final firstName = _firstNameController.text;
     final lastName = _lastNameController.text;
     final email = _emailController.text;
     final password = _passwordController.text;
     final repeatedPassword = _repeatPasswordController.text;
+
+    createUserWithEmailAndPassword();
+  }
+
+  Future<void> createUserWithEmailAndPassword() async{
+    try{
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim().toLowerCase(),
+          password: _passwordController.text.trim()
+      );
+      // TODO IN FINAL TO DELETE
+      print(userCredential);
+    }on FirebaseAuthException catch(e){
+      print("Auth error ${e.message}");
+    }
   }
 
   @override
@@ -101,6 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             // Login
             ElevatedButton(onPressed: handleRegister, child: Text("Register")),
+            TextButton(onPressed: () => handleLoginButton(context), child: Text("Log in"))
           ],
         ),
       ),

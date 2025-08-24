@@ -1,5 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:inzynierka/features/auth/register/pages/register_page.dart';
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -16,6 +18,20 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> loginUser() async{
+    try{
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim().toLowerCase(),
+          password: _passwordController.text.trim()
+      );
+      // TODO IN FINAL TO DELETE
+      print(userCredential);
+    }on FirebaseAuthException catch(e){
+      print("Auth error ${e.message}");
+    }
+  }
+
+
   void handleLogin(){
     final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
@@ -23,6 +39,9 @@ class _LoginPageState extends State<LoginPage> {
     // TODO Api call
   }
 
+  void handleSignup(BuildContext context){
+    Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
+  }
 
 
   @override
@@ -63,9 +82,12 @@ class _LoginPageState extends State<LoginPage> {
             ),
             // Login
             ElevatedButton(
-              onPressed: handleLogin,
+              onPressed: () => handleLogin(),
               child: Text("Login"),
-            )
+            ),
+            // Create account text
+            TextButton(onPressed: () => handleSignup(context), child: Text("Create account"))
+
           ],
         ),
       ),

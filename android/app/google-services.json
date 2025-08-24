@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959724000751",
+    "project_id": "runtrack-80427",
+    "storage_bucket": "runtrack-80427.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959724000751:android:e1aeb574237654250e921a",
+        "android_client_info": {
+          "package_name": "com.example.inzynierka"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEpJs-OECYeiVA6dfONjYKqwQB6TDnOE4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
