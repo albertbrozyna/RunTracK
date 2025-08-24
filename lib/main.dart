@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:inzynierka/features/auth/login/pages/login_page.dart';
-import 'package:inzynierka/screens/track_screen.dart';
+import 'package:inzynierka/features/auth/start/pages/start_page.dart';
+import 'package:inzynierka/features/home/track_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-
+import 'config/firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 void main() async {
   // It is needed for flutter to use a async in main
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   runApp(const MyApp());
 }
 
@@ -40,9 +40,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: LoginPage(),
-
-
+      home: FirebaseAuth.instance.currentUser == null ? StartPage() : TrackScreen(),
     );
   }
 }
