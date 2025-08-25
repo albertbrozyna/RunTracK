@@ -1,12 +1,16 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'home_page.dart';
-import 'permission_utils.dart';
-import 'package:inzynierka/common/widgets/navigation_bar.dart';
+import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/side_menu.dart';
+import 'package:run_track/common/widgets/top_bar.dart';
+import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/theme/colors.dart';
+import '../../home/permission_utils.dart';
+import 'package:run_track/common/widgets/navigation_bar.dart';
+
 class TrackScreen extends StatefulWidget {
   @override
   _TrackScreenState createState() => _TrackScreenState();
@@ -21,12 +25,13 @@ class _TrackScreenState extends State<TrackScreen> {
   StreamSubscription<Position>? _positionStreamSubscription;
   bool _followUser = true;
   final Distance _distanceCalculator = Distance();
-  double _totalDistance = 0.0; // w metrach
+  double _totalDistance = 0.0; // In meters
   DateTime? _startTime;
   Duration _elapsedTime = Duration.zero;
   Timer? _timer;
   TrackingState _trackingState = TrackingState.stopped;
   final LatLng defaultLocation = LatLng(52.2297, 21.0122);
+
   // Current position
   LatLng? _currentPosition;
 
@@ -34,6 +39,11 @@ class _TrackScreenState extends State<TrackScreen> {
   void dispose() {
     _positionStreamSubscription?.cancel();
     super.dispose();
+  }
+
+  // Function on leading pressed menu button
+  void onLeadingPressed(BuildContext context){
+    Scaffold.of(context).openDrawer();
   }
 
   // Function to get location permission
@@ -74,7 +84,7 @@ class _TrackScreenState extends State<TrackScreen> {
     });
   }
 
-  void _cancelTracking() {
+  void _stopTracking() {
     _positionStreamSubscription?.cancel();
     // Pause timer
     _timer?.cancel();
@@ -151,6 +161,7 @@ class _TrackScreenState extends State<TrackScreen> {
     });
   }
 
+  // Controls with pace time and start/stop buttons
   Widget _buildControls() {
     // Stats of the run, pace and distance
     Widget stats = Row(
@@ -163,11 +174,12 @@ class _TrackScreenState extends State<TrackScreen> {
       ],
     );
 
+    // Different button depends on tracking state
     switch (_trackingState) {
       case TrackingState.stopped:
-        return ElevatedButton(
+        return CustomButton(
+          text: AppLocalizations.of(context)!.trackScreenStartTraining,
           onPressed: _startTracking,
-          child: Text("Start Run"),
         );
 
       case TrackingState.running:
@@ -177,12 +189,7 @@ class _TrackScreenState extends State<TrackScreen> {
             stats,
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _cancelTracking,
-                  child: Text("Cancel"),
-                ),
-              ],
+              children: [CustomButton(text: "Stop", onPressed: _pauseTracking)],
             ),
           ],
         );
@@ -191,8 +198,8 @@ class _TrackScreenState extends State<TrackScreen> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            ElevatedButton(onPressed: _resumeTracking, child: Text("Resume")),
-            ElevatedButton(onPressed: _pauseTracking, child: Text("Finish")),
+            CustomButton(text: "Resume", onPressed: _resumeTracking),
+            CustomButton(text: "Finish", onPressed: _stopTracking),
           ],
         );
     }
@@ -230,6 +237,7 @@ class _TrackScreenState extends State<TrackScreen> {
                     urlTemplate:
                         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     // Different domains used to speed up downloading a maps, just different servers
+                    // TODO to change
                     userAgentPackageName: 'com.example.runtrack',
                   ),
                   if (_trackedPath.isNotEmpty)
@@ -262,10 +270,12 @@ class _TrackScreenState extends State<TrackScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
+              // Bottom buttons
               child: _buildControls(),
             ),
           ],
         ),
+        // Track button on the right
         Positioned(
           bottom: 90,
           right: 16,
@@ -273,8 +283,17 @@ class _TrackScreenState extends State<TrackScreen> {
             onPressed: () {
               setState(() {
                 _followUser = !_followUser;
+                // If we change state on follow user is true we center map on user
+                if (_followUser && _currentPosition != null) {
+                  _mapController.move(
+                    _currentPosition!,
+                    _mapController.camera.zoom,
+                    // TODO add smooth move
+                  );
+                }
               });
             },
+            // Changing icon depends on following user
             child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed),
           ),
         ),
@@ -290,10 +309,14 @@ class _TrackScreenState extends State<TrackScreen> {
       Center(child: Text('Profile Page')),
     ];
     return Scaffold(
-      appBar: AppBar(title: Text('RunTracK')),
+      drawer: SideMenu(),
+      appBar: TopBar(backgroundColor: AppColors.secondary),
       body: _pages[_selectedIndex],
 
-      bottomNavigationBar: BottomNavBar(currentIndex: _selectedIndex,onTap: _onItemTapped,),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

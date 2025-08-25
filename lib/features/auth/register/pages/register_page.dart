@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:inzynierka/features/auth/login/pages/login_page.dart';
+import 'package:run_track/features/auth/login/pages/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override

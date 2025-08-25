@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:inzynierka/features/auth/login/pages/login_page.dart';
-import 'package:inzynierka/features/auth/register/pages/register_page.dart';
+import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/features/auth/login/pages/login_page.dart';
+import 'package:run_track/features/auth/register/pages/register_page.dart';
 
 class StartPage extends StatefulWidget {
   @override
@@ -38,14 +39,8 @@ class StartPageState extends State<StartPage> {
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              ElevatedButton(
-                onPressed: () => handleLoginButton(context),
-                child: Text("Login"),
-              ),
-              ElevatedButton(
-                onPressed: () => handleRegisterButton(context),
-                child: Text("Register"),
-              ),
+             CustomButton(text: "Login", onPressed: () => handleLoginButton(context)),
+              CustomButton(text: "No account? Join our community", onPressed: () => handleRegisterButton(context)),
             ],
           ),
         ),
