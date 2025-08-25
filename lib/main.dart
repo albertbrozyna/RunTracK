@@ -38,7 +38,20 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('pl'), // Polish (example)
       ],
-      home: FirebaseAuth.instance.currentUser == null ? StartPage() : TrackScreen(),
+      home: StreamBuilder(stream: FirebaseAuth.instance.authStateChanges(), builder: (context,snapshot) {
+        // If we wait we showing a progress indicator
+        if(snapshot.connectionState == ConnectionState.waiting){
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+        }
+        // If we are logged in
+        if(snapshot.data != null){  // Data is user?
+            return TrackScreen();
+        }
+
+        return StartPage();
+      })
     );
   }
 }

@@ -40,6 +40,7 @@ dependencies:
   geolocator: ^12.0.0
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.1
+  cloud_firestore: ^6.0.0
 
 ##### MY INFO #####
 # Firebase auth is for sign it to app using firebase
@@ -84,6 +85,9 @@ flutter:
   generate: true
   assets:
     - lib/l10n/
+    - assets/backgrounds/background-start.jpg
+    - assets/runtrack-app-icon-round.png
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

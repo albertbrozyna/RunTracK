@@ -8,11 +8,13 @@ class CustomButton extends StatelessWidget {
   final List<Color> gradientColors;
   final Color textColor;
   final double borderRadius;
+  final double textSize;
 
   const CustomButton({
     Key? key,
     required this.text,
     required this.onPressed,
+    this.textSize = 16.0,
     this.borderRadius = 8.0,
     this.backgroundColor = AppColors.primary,
     this.gradientColors = const [Colors.white30, Colors.transparent],
@@ -25,8 +27,9 @@ class CustomButton extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
@@ -35,10 +38,10 @@ class CustomButton extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(color: textColor),
+          style: TextStyle(color: textColor,fontSize: textSize),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
+          backgroundColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
