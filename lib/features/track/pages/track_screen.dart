@@ -7,10 +7,10 @@ import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/side_menu.dart';
 import 'package:run_track/common/widgets/top_bar.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
-import 'package:run_track/features/track/widgets/activity_summary.dart';
+import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/theme/colors.dart';
-import '../../home/permission_utils.dart';
+import '../../../common/utils/permission_utils.dart';
 import 'package:run_track/common/widgets/navigation_bar.dart';
 
 class TrackScreen extends StatefulWidget {
@@ -89,7 +89,7 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   void _stopTracking() {
-    Navigator.push(context,   MaterialPageRoute(builder: (context) => ActivitySummary()));
+    Navigator.push(context,   MaterialPageRoute(builder: (context) => ActivitySummary(elapsedTime: _elapsedTime,totalDistance: _totalDistance,trackedPath: _trackedPath,)));
     _positionStreamSubscription?.cancel();
     // Pause timer
     _timer?.cancel();

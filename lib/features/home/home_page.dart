@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/common/utils/firestore_utils.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 
 import '../../common/widgets/navigation_bar.dart';
@@ -20,6 +21,11 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+  @override
+  void initState() {
+    super.initState();
+    fetchCurrentUserAndSave();
   }
 
   @override
