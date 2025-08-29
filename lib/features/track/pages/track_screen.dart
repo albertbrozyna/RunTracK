@@ -6,6 +6,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/side_menu.dart';
 import 'package:run_track/common/widgets/top_bar.dart';
+import 'package:run_track/features/track/widgets/activity_stats.dart';
+import 'package:run_track/features/track/widgets/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/theme/colors.dart';
 import '../../home/permission_utils.dart';
@@ -19,7 +21,6 @@ class TrackScreen extends StatefulWidget {
 enum TrackingState { stopped, running, paused }
 
 class _TrackScreenState extends State<TrackScreen> {
-  int _selectedIndex = 0;
   final MapController _mapController = MapController();
   List<LatLng> _trackedPath = [];
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -35,6 +36,9 @@ class _TrackScreenState extends State<TrackScreen> {
   // Current position
   LatLng? _currentPosition;
 
+  double _finishProgress = 0.0; // Progress for long press on Finish
+  Timer? _finishTimer;
+
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
@@ -42,7 +46,7 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   // Function on leading pressed menu button
-  void onLeadingPressed(BuildContext context){
+  void onLeadingPressed(BuildContext context) {
     Scaffold.of(context).openDrawer();
   }
 
@@ -85,6 +89,7 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   void _stopTracking() {
+    Navigator.push(context,   MaterialPageRoute(builder: (context) => ActivitySummary()));
     _positionStreamSubscription?.cancel();
     // Pause timer
     _timer?.cancel();
@@ -93,6 +98,7 @@ class _TrackScreenState extends State<TrackScreen> {
       _trackingState = TrackingState.stopped;
       _trackedPath.clear();
     });
+
   }
 
   void _startTracking() {
@@ -146,62 +152,144 @@ class _TrackScreenState extends State<TrackScreen> {
         );
   }
 
-  // TODO To learn
-  late List<Widget> _pages;
-
   @override
   void initState() {
     super.initState();
     _getLocation();
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   // Controls with pace time and start/stop buttons
   Widget _buildControls() {
     // Stats of the run, pace and distance
-    Widget stats = Row(
-      children: [
-        Text(
-          "Distance: ${(_totalDistance / 1000).toStringAsFixed(2)} km",
-          style: TextStyle(fontSize: 18),
-        ),
-        Text("Pace: $_formattedPace", style: TextStyle(fontSize: 18)),
-      ],
-    );
+
 
     // Different button depends on tracking state
     switch (_trackingState) {
       case TrackingState.stopped:
-        return CustomButton(
-          text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: _startTracking,
+        return SizedBox(
+          height: 50.0,
+          width: double.infinity,
+          child: CustomButton(
+            text: AppLocalizations.of(context)!.trackScreenStartTraining,
+            onPressed: _startTracking,
+            gradientColors: [
+              Color(0xFFFFA726), // Light Orange
+              Color(0xFFFF5722),
+            ],
+          ),
         );
 
       case TrackingState.running:
         return Column(
           children: [
             // Show stats and cancel button while running
-            stats,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [CustomButton(text: "Stop", onPressed: _pauseTracking)],
+            RunStats(totalDistance: _totalDistance,pace: _formattedPace),
+            //
+            SizedBox(
+              height: 50.0,
+              width: double.infinity,
+              child: CustomButton(
+                text: "Stop",
+                onPressed: _pauseTracking,
+                gradientColors: [
+                  Color(0xFFFFB74D), // Lighter Orange
+                  Color(0xFFFF9800), // Bright Orange
+                  Color(0xFFF57C00), // Darker Orange
+                ],
+              ),
             ),
           ],
         );
 
       case TrackingState.paused:
         return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            CustomButton(text: "Resume", onPressed: _resumeTracking),
-            CustomButton(text: "Finish", onPressed: _stopTracking),
+            // Resume Button
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: CustomButton(
+                  text: "Resume",
+                  onPressed: _resumeTracking,
+                  gradientColors: [
+                    Color(0xFFFFB74D), // Lighter Orange
+                    Color(0xFFFF9800), // Bright Orange
+                    Color(0xFFF57C00), // Darker Orange
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10), // Space between buttons
+
+            // Finish Button with long-press progress
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Background gradient button
+                    CustomButton(
+                      text: "", // We'll show the text in overlay
+                      onPressed: () {}, // Disable normal tap
+                      gradientColors: [
+                        Color(0xFFFFB74D),
+                        Color(0xFFFF9800),
+                        Color(0xFFF57C00),
+                      ],
+                    ),
+
+                    // Progress bar overlay with full width
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: LinearProgressIndicator(
+                        value: _finishProgress,
+                        minHeight: 50,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.red.withOpacity(0.6), // bright enough to see
+                        ),
+                      ),
+                    ),
+
+                    // Gesture detector for long press
+                    GestureDetector(
+                      onLongPressStart: (_) {
+                        _finishProgress = 0.0;
+                        _finishTimer = Timer.periodic(Duration(milliseconds: 50), (timer) {
+                          setState(() {
+                            _finishProgress += 0.02; // slower for smoother fill
+                            if (_finishProgress >= 1.0) {
+                              _finishTimer?.cancel();
+                              _stopTracking(); // Finish run
+                            }
+                          });
+                        });
+                      },
+                      onLongPressEnd: (_) {
+                        _finishTimer?.cancel();
+                        setState(() {
+                          _finishProgress = 0.0; // Reset if released early
+                        });
+                      },
+                      child: Center(
+                        child: Text(
+                          "Finish",
+                          style: TextStyle(
+                            color: Colors.white,
+                            //fontWeight: FontWeight.bold,
+                            //fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         );
+
     }
   }
 
@@ -303,20 +391,6 @@ class _TrackScreenState extends State<TrackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _pages = [
-      _buildMapWithButton(),
-      Center(child: Text('Search Page')),
-      Center(child: Text('Profile Page')),
-    ];
-    return Scaffold(
-      drawer: SideMenu(),
-      appBar: TopBar(backgroundColor: AppColors.secondary),
-      body: _pages[_selectedIndex],
-
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
-    );
+    return _buildMapWithButton();
   }
 }

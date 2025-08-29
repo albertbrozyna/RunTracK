@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'config/firebase_options.dart';
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
         }
         // If we are logged in
         if(snapshot.data != null){  // Data is user?
-            return TrackScreen();
+            return HomePage();
         }
 
         return StartPage();

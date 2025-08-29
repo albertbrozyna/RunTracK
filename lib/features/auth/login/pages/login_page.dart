@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/common/utils/validators.dart';
+import 'package:run_track/features/home/home_page.dart';
 import '../../../track/pages/track_screen.dart';
 
 class LoginPage extends StatefulWidget {
@@ -51,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
       Future.delayed(Duration(seconds: 1), (){
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TrackScreen()),
+          MaterialPageRoute(builder: (context) => HomePage()),
         );
       });
     } on FirebaseAuthException catch (e) {

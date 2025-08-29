@@ -5,7 +5,6 @@ import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 
 import '../../../../common/utils/validators.dart';
-import '../../../track/pages/track_screen.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
