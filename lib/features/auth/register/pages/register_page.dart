@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
+
+import '../../../../common/utils/validators.dart';
+import '../../../track/pages/track_screen.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -20,13 +24,8 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _selectedGender;
   final List<String> _genders = ['Male', 'Female', 'Other'];
 
-
-  void handleLoginButton(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-  }
+  bool _isPasswordHidden = true;
+  bool _isPasswordRepeatHidden = true;
 
   // Method to check password complexity
   bool checkPasswordComplexity(String password) {
@@ -69,9 +68,21 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    createUserWithEmailAndPassword();
-  }
+    if(!isEmailValid(_emailController.text.trim())){
+      // TODO make a good communicates
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
+      return;
+    }
 
+    createUserWithEmailAndPassword();
+
+    // Successfully register
+    if(FirebaseAuth.instance.currentUser != null){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Registered successfully!"))
+      );
+    }
+  }
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
@@ -88,6 +99,14 @@ class _RegisterPageState extends State<RegisterPage> {
         "dateOfBirth": _dateController.text.trim(),
         "gender":_selectedGender
       });
+
+      // Navigate to login screen after registration
+      Future.delayed(Duration(seconds: 1), (){
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      });
     } on FirebaseAuthException catch (e) {
       print("Auth error ${e.message}");
     }
@@ -96,7 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Log in")),
+      appBar: AppBar(title: Text("Sign up")),
       backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
@@ -107,137 +126,195 @@ class _RegisterPageState extends State<RegisterPage> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // First Name
-              TextField(
-                // Bounding with controller
-                controller: _firstNameController,
-                // What keyboard to show
-                keyboardType: TextInputType.text,
-                // Decoration of the input
-                decoration: InputDecoration(
-                  labelText: "First Name",
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(16), // Add padding inside the box
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6), // Background color with opacity
+                    borderRadius: BorderRadius.circular(16), // Rounded corners
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26, // Shadow color
+                        blurRadius: 10, // How blurry the shadow is
+                        offset: Offset(0, 4), // Position of the shadow
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              // Last name
-              TextField(
-                // Bounding with controller
-                controller: _lastNameController,
-                // What keyboard to show
-                keyboardType: TextInputType.text,
-                // Decoration of the input
-                decoration: InputDecoration(
-                  labelText: "last name",
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                ),
-              ),
-              // Date of birth
-              TextField(
-                controller: _dateController,
-                readOnly: true, // Makes the field non-editable
-                decoration: InputDecoration(
-                  labelText: "Date of Birth",
-                  prefixIcon: Icon(Icons.calendar_today),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                ),
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900), // Earliest selectable date
-                    lastDate: DateTime.now(), // Latest selectable date
-                  );
-                  if (pickedDate != null) {
-                    String formattedDate = "${pickedDate.day}/${pickedDate
-                        .month}/${pickedDate.year}";
-                    _dateController.text = formattedDate;
-                  }
-                },
-              ),
-              // Gender
+                  child: Column(
+                    children: [
+                      // First Name
+                      TextField(
+                        controller: _firstNameController,
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                          labelText: "First Name",
+                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
 
-              DropdownButtonFormField<String>(
-                initialValue: _selectedGender,
-                decoration: InputDecoration(
-                  labelText: "Gender",
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      // Last name
+                      TextField(
+                        controller: _lastNameController,
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                          labelText: "Last name",
+                          prefixIcon: Icon(Icons.person),
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      // Date of birth
+                      TextField(
+                        controller: _dateController,
+                        readOnly: true, // Makes the field non-editable
+                        decoration: InputDecoration(
+                          labelText: "Date of Birth",
+                          prefixIcon: Icon(Icons.calendar_today),
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                        onTap: () async {
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          );
+                          if (pickedDate != null) {
+                            String formattedDate = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+                            _dateController.text = formattedDate;
+                          }
+                        },
+                      ),
+                      SizedBox(height: 8),
+                      // Gender
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedGender,
+                        decoration: InputDecoration(
+                          labelText: "Gender",
+                          prefixIcon: Icon(Icons.person_outline),
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                        items: _genders.map((String gender) {
+                          return DropdownMenuItem<String>(
+                            value: gender,
+                            child: Text(gender),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedGender = newValue;
+                          });
+                        },
+                      ),
+                      SizedBox(height: 8),
+                      // Email field
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: "Email",
+                          prefixIcon: Icon(Icons.email),
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: _passwordController,
+                        keyboardType: TextInputType.visiblePassword,
+                        obscureText: _isPasswordHidden,
+                        decoration: InputDecoration(
+                          labelText: "Password",
+                          prefixIcon: Icon(Icons.password),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordHidden = !_isPasswordHidden;
+                              });
+                            },
+                            icon: Icon(
+                              _isPasswordHidden
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: _repeatPasswordController,
+                        keyboardType: TextInputType.visiblePassword,
+                        obscureText: _isPasswordRepeatHidden,
+                        decoration: InputDecoration(
+                          labelText: "Repeat password",
+                          prefixIcon: Icon(Icons.password),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordRepeatHidden = !_isPasswordRepeatHidden;
+                              });
+                            },
+                            icon: Icon(
+                              _isPasswordRepeatHidden
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        ),
+                      ),
+                      // Register button
+                      SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: CustomButton(
+                          text: "Register",
+                          onPressed: handleRegister,
+                          textSize: 20,
+                          gradientColors: [
+                            Color(0xFFFF8C00), // Vivid Orange
+                            Color(0xFFFFD180), // Soft Amber
+                            Color(0xFF64B5F6), // Light Sky Blue
+                          ],
+                        ),
+                      ),
+                    ],
+                  ), // closes Column
                 ),
-                items: _genders.map((String gender) {
-                  return DropdownMenuItem<String>(
-                    value: gender,
-                    child: Text(gender),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedGender = newValue;
-                  });
-                },
-              ),
-              // Email field
-              TextField(
-                // Bounding with controller
-                controller: _emailController,
-                // What keyboard to show
-                keyboardType: TextInputType.emailAddress,
-                // Decoration of the input
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                ),
-              ),
-              // Break between inputs
-              SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                keyboardType: TextInputType.visiblePassword,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  prefixIcon: Icon(Icons.password),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                ),
-              ),
-              TextField(
-                controller: _repeatPasswordController,
-                keyboardType: TextInputType.visiblePassword,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  prefixIcon: Icon(Icons.password),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                  ),
-                ),
-              ),
-              // Login
-              ElevatedButton(
-                onPressed: handleRegister,
-                child: Text("Register"),
-              ),
-              TextButton(
-                onPressed: () => handleLoginButton(context),
-                child: Text("Log in"),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
