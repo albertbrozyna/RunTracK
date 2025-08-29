@@ -1,0 +1,8 @@
+{
+  "appName":"RunTracK",
+
+  "startPageWelcomeMessage": "Track your runs, improve your fitness!",
+  "startPageLogin": "Login",
+  "startPageRegister": "No account? Join our community",
+  "trackScreenStartTraining": "Start Training"
+}
