@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -42,16 +43,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           .toList(),
       'createdAt': FieldValue.serverTimestamp(),
     };
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null){
+      // TODO Add communicate here that user needs to log in again
+      return;
+    }
 
     try {
-      // If currentUser id is null fetch it and save to appData
-      if (AppData.currentUserId == null) {
-        await fetchCurrentUserAndSave();
-      }
       // Save activity to database
       await FirebaseFirestore.instance
           .collection("users")
-          .doc(AppData.currentUserId)
+          .doc()
           .collection("activities")
           .add(activityData);
     } catch (e) {
@@ -78,7 +80,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             Row(
               children: [
                 Text(
-                  'Time: ${formatDuration(widget.elapsedTime)}',
+                  'Time: ${AppUtils.formatDuration(widget.elapsedTime)}',
                   style: AppTextStyles.heading.copyWith(),
                 ),
                 SizedBox(width: 15),

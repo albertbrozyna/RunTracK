@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 
@@ -16,7 +17,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _repeatPasswordController = TextEditingController();
+  final TextEditingController _repeatPasswordController =
+      TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
@@ -49,37 +51,43 @@ class _RegisterPageState extends State<RegisterPage> {
   void handleRegister() {
     if (_passwordController.text.trim() !=
         _repeatPasswordController.text.trim()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Passwords do not match!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Passwords do not match!")));
     }
     if (!checkPasswordComplexity(_passwordController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Password must be at least 8 chars, include uppercase, lowercase, number, and special char.")),
+        SnackBar(
+          content: Text(
+            "Password must be at least 8 chars, include uppercase, lowercase, number, and special char.",
+          ),
+        ),
       );
       return;
     }
 
     if (_selectedGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please select your gender.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Please select your gender.")));
       return;
     }
 
-    if(!isEmailValid(_emailController.text.trim())){
+    if (!isEmailValid(_emailController.text.trim())) {
       // TODO make a good communicates
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
       return;
     }
 
     createUserWithEmailAndPassword();
 
     // Successfully register
-    if(FirebaseAuth.instance.currentUser != null){
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Registered successfully!"))
-      );
+    if (FirebaseAuth.instance.currentUser != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
     }
   }
 
@@ -87,26 +95,40 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-        email: _emailController.text.trim().toLowerCase(),
-        password: _passwordController.text.trim(),
-      );
-      // Create a new user
-      final data = await FirebaseFirestore.instance.collection("users").add({
-        "firstName": _firstNameController.text.trim(),
-        "lastName": _lastNameController.text.trim(),
-        "email": _emailController.text.trim(),
-        "dateOfBirth": _dateController.text.trim(),
-        "gender":_selectedGender
-      });
+            email: _emailController.text.trim().toLowerCase(),
+            password: _passwordController.text.trim(),
+          );
 
+      final uid = userCredential.user!.uid;
+
+      // Create a new user
+      try {
+        final data = await FirebaseFirestore.instance
+            .collection("users")
+            .doc(uid)
+            .set({
+              "firstName": _firstNameController.text.trim(),
+              "lastName": _lastNameController.text.trim(),
+              "email": _emailController.text.trim(),
+              "dateOfBirth": _dateController.text.trim(),
+              "gender": _selectedGender,
+              "activities":AppUtils.getDefaultActivities()
+            });
+      } catch (firestoreError) {
+        await userCredential.user!.delete();
+      }
+
+      // Sign out user after registration, user needs to log in
+      FirebaseAuth.instance.signOut();
       // Navigate to login screen after registration
-      Future.delayed(Duration(seconds: 1), (){
+      Future.delayed(Duration(seconds: 1), () {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginPage()),
         );
       });
     } on FirebaseAuthException catch (e) {
+      // TODO Better communicates
       print("Auth error ${e.message}");
     }
   }
@@ -133,8 +155,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 Container(
                   padding: EdgeInsets.all(16), // Add padding inside the box
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6), // Background color with opacity
-                    borderRadius: BorderRadius.circular(16), // Rounded corners
+                    color: Colors.white.withValues(alpha: 0.6),
+                    // Background color with opacity
+                    borderRadius: BorderRadius.circular(16),
+                    // Rounded corners
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26, // Shadow color
@@ -154,9 +178,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           prefixIcon: Icon(Icons.person),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
-
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                       ),
                       SizedBox(height: 8),
@@ -170,9 +196,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
-
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                       ),
                       SizedBox(height: 8),
@@ -187,7 +215,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                         onTap: () async {
                           DateTime? pickedDate = await showDatePicker(
@@ -197,7 +228,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             lastDate: DateTime.now(),
                           );
                           if (pickedDate != null) {
-                            String formattedDate = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+                            String formattedDate =
+                                "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
                             _dateController.text = formattedDate;
                           }
                         },
@@ -213,7 +245,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                         items: _genders.map((String gender) {
                           return DropdownMenuItem<String>(
@@ -264,7 +299,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                       ),
                       SizedBox(height: 8),
@@ -278,7 +316,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
-                                _isPasswordRepeatHidden = !_isPasswordRepeatHidden;
+                                _isPasswordRepeatHidden =
+                                    !_isPasswordRepeatHidden;
                               });
                             },
                             icon: Icon(
@@ -290,7 +329,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
                         ),
                       ),
                       // Register button

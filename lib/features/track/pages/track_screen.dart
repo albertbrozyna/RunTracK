@@ -1,15 +1,20 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/side_menu.dart';
 import 'package:run_track/common/widgets/top_bar.dart';
+import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/utils/permission_utils.dart';
 import 'package:run_track/common/widgets/navigation_bar.dart';
 
@@ -33,6 +38,11 @@ class _TrackScreenState extends State<TrackScreen> {
   TrackingState _trackingState = TrackingState.stopped;
   final LatLng defaultLocation = LatLng(52.2297, 21.0122);
 
+  // Activity name loaded from
+  String? activityName = null;
+  // Activity controller
+  TextEditingController activityController = new TextEditingController();
+
   // Current position
   LatLng? _currentPosition;
 
@@ -43,6 +53,49 @@ class _TrackScreenState extends State<TrackScreen> {
   void dispose() {
     _positionStreamSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchLastActivity();
+  }
+
+  Future<void> fetchLastActivity() async {
+    activityName = await AppUtils.loadString("keyLastUserActivity");
+
+    if (activityName == null) {
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          return; // No logged-in user
+        }
+        final uid = user.uid;
+
+        // Fetch user document
+        final docSnapshot = await FirebaseFirestore.instance
+            .collection("users")
+            .doc(uid)
+            .get();
+
+        if (docSnapshot.exists) {
+          final data = docSnapshot.data();
+          if (data != null && data.containsKey("activities")) {
+            final activities = List<String>.from(data["activities"]);
+            if (activities.isNotEmpty) {
+              activityName = activities.first; // Get first activity
+            }
+          }
+        }
+
+        // Save the activityName locally
+        if (activityName != null) {
+          await AppUtils.saveString("keyLastUserActivity", activityName!);
+        }
+      } catch (e) {
+        print("Error fetching activity: $e");
+      }
+    }
   }
 
   // Function on leading pressed menu button
@@ -89,7 +142,17 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   void _stopTracking() {
-    Navigator.push(context,   MaterialPageRoute(builder: (context) => ActivitySummary(elapsedTime: _elapsedTime,totalDistance: _totalDistance,trackedPath: _trackedPath,)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivitySummary(
+          elapsedTime: _elapsedTime,
+          totalDistance: _totalDistance,
+          trackedPath: _trackedPath,
+          activityType: activityName!,
+        ),
+      ),
+    );
     _positionStreamSubscription?.cancel();
     // Pause timer
     _timer?.cancel();
@@ -98,7 +161,6 @@ class _TrackScreenState extends State<TrackScreen> {
       _trackingState = TrackingState.stopped;
       _trackedPath.clear();
     });
-
   }
 
   void _startTracking() {
@@ -152,16 +214,9 @@ class _TrackScreenState extends State<TrackScreen> {
         );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _getLocation();
-  }
-
   // Controls with pace time and start/stop buttons
   Widget _buildControls() {
     // Stats of the run, pace and distance
-
 
     // Different button depends on tracking state
     switch (_trackingState) {
@@ -183,7 +238,7 @@ class _TrackScreenState extends State<TrackScreen> {
         return Column(
           children: [
             // Show stats and cancel button while running
-            RunStats(totalDistance: _totalDistance,pace: _formattedPace),
+            RunStats(totalDistance: _totalDistance, pace: _formattedPace),
             //
             SizedBox(
               height: 50.0,
@@ -220,7 +275,6 @@ class _TrackScreenState extends State<TrackScreen> {
               ),
             ),
             const SizedBox(width: 10), // Space between buttons
-
             // Finish Button with long-press progress
             Expanded(
               child: SizedBox(
@@ -256,15 +310,19 @@ class _TrackScreenState extends State<TrackScreen> {
                     GestureDetector(
                       onLongPressStart: (_) {
                         _finishProgress = 0.0;
-                        _finishTimer = Timer.periodic(Duration(milliseconds: 50), (timer) {
-                          setState(() {
-                            _finishProgress += 0.02; // slower for smoother fill
-                            if (_finishProgress >= 1.0) {
-                              _finishTimer?.cancel();
-                              _stopTracking(); // Finish run
-                            }
-                          });
-                        });
+                        _finishTimer = Timer.periodic(
+                          Duration(milliseconds: 50),
+                          (timer) {
+                            setState(() {
+                              _finishProgress +=
+                                  0.02; // slower for smoother fill
+                              if (_finishProgress >= 1.0) {
+                                _finishTimer?.cancel();
+                                _stopTracking(); // Finish run
+                              }
+                            });
+                          },
+                        );
                       },
                       onLongPressEnd: (_) {
                         _finishTimer?.cancel();
@@ -289,7 +347,6 @@ class _TrackScreenState extends State<TrackScreen> {
             ),
           ],
         );
-
     }
   }
 
@@ -302,11 +359,27 @@ class _TrackScreenState extends State<TrackScreen> {
     return "$paceMin:${paceSec.toString().padLeft(2, '0')} min/km";
   }
 
+  void onTapActivity(){
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityChoose()));
+  }
+
   Widget _buildMapWithButton() {
     return Stack(
       children: [
         Column(
           children: [
+            TextField(
+              controller: activityController,
+              onTap: () => onTapActivity(),
+              decoration: InputDecoration(
+                hint: Text("Select activity"),
+                border: OutlineInputBorder(
+                  borderRadius: AppUiConstants.borderRadiusTextFields,
+                )
+
+              ),
+            )
+            ,
             Expanded(
               child: FlutterMap(
                 mapController: _mapController,
