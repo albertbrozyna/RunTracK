@@ -1,17 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/utils/firestore_utils.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../common/utils/app_data.dart';
+import 'activity_choose.dart';
 
 class ActivitySummary extends StatefulWidget {
   final List<LatLng> trackedPath;
@@ -24,7 +22,7 @@ class ActivitySummary extends StatefulWidget {
     required this.trackedPath,
     required this.totalDistance,
     required this.elapsedTime,
-    required this.activityType
+    required this.activityType,
   }) : super(key: key);
 
   @override
@@ -32,6 +30,21 @@ class ActivitySummary extends StatefulWidget {
 }
 
 class _ActivitySummaryState extends State<ActivitySummary> {
+  // This var tells us if activity is saved
+  bool activitySaved = false;
+  TextEditingController titleController = new TextEditingController();
+  TextEditingController descriptionController = new TextEditingController();
+  TextEditingController notesController = new TextEditingController();
+  TextEditingController activityController = new TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      activityController.text = widget.activityType;
+    });
+  }
+
   Future<void> handleSaveActivity() async {
     // Activity data
     // TODO add date when user runs it
@@ -44,8 +57,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       'createdAt': FieldValue.serverTimestamp(),
     };
     String? uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null){
-      // TODO Add communicate here that user needs to log in again
+    if (uid == null) {
+      // TODO
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please log in to save your activity')),
+      );
       return;
     }
 
@@ -53,14 +69,35 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       // Save activity to database
       await FirebaseFirestore.instance
           .collection("users")
-          .doc()
+          .doc(uid)
           .collection("activities")
           .add(activityData);
+      // TODO ADD comback to a track screen
+
+      setState(() {
+        activitySaved = true;
+      });
     } catch (e) {
       print('Error saving activity: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to save activity')));
+    }
+  }
+
+  /// Method invoked when user wants to select change activity
+  void onTapActivity() async {
+    final selectedActivity = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ActivityChoose(currentActivity: activityController.text.trim()),
+      ),
+    );
+
+    // If the user selected something, update the TextField
+    if (selectedActivity != null && selectedActivity.isNotEmpty) {
+      activityController.text = selectedActivity;
     }
   }
 
@@ -91,8 +128,30 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ),
               ],
             ),
-
+            // Activity type
+            TextField(
+              controller: activityController,
+              readOnly: true,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: AppUiConstants.borderRadiusTextFields,
+                ),
+                label: Text("Activity type"),
+                suffixIcon: Padding(
+                  padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
+                  child: IconButton(
+                    onPressed: () => onTapActivity(),
+                    icon: Icon(Icons.list),
+                  ),
+                ),
+              ),
+            ),
+            if(widget.trackedPath.isNotEmpty)
+              SizedBox(
+                height: AppUiConstants.kTextFieldSpacing,
+              ),
             if (widget.trackedPath.isNotEmpty)
+
               Expanded(
                 child: FlutterMap(
                   options: MapOptions(
@@ -136,15 +195,24 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ],
                 ),
               ),
-
             SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: CustomButton(
-                text: "Save activity",
-                onPressed: () => handleSaveActivity(),
-              ),
+              height: AppUiConstants.kTextFieldSpacing,
             ),
+            // TODO Change color after saving activity
+            if (!activitySaved)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: CustomButton(
+                  text: activitySaved ? "Activity saved" : "Save activity",
+                  onPressed: activitySaved ? null : () => handleSaveActivity(),
+                  gradientColors: [
+                    Color(0xFFFFB74D),
+                    Color(0xFFFF9800),
+                    Color(0xFFF57C00),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

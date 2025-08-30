@@ -15,6 +15,7 @@ import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import '../../../common/utils/app_data.dart';
 import '../../../common/utils/permission_utils.dart';
 import 'package:run_track/common/widgets/navigation_bar.dart';
 
@@ -62,6 +63,7 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> fetchLastActivity() async {
+    // TODO DO this when internet is not available
     activityName = await AppUtils.loadString("keyLastUserActivity");
 
     if (activityName == null) {
@@ -81,9 +83,11 @@ class _TrackScreenState extends State<TrackScreen> {
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
           if (data != null && data.containsKey("activities")) {
-            final activities = List<String>.from(data["activities"]);
-            if (activities.isNotEmpty) {
-              activityName = activities.first; // Get first activity
+            AppData.activities = List<String>.from(data["activities"]);
+            if (AppData.activities != null && AppData.activities!.isNotEmpty) {
+              setState(() {
+                activityName = AppData.activities?.first; // Get first activity
+              });
             }
           }
         }
@@ -292,7 +296,6 @@ class _TrackScreenState extends State<TrackScreen> {
                         Color(0xFFF57C00),
                       ],
                     ),
-
                     // Progress bar overlay with full width
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -359,8 +362,14 @@ class _TrackScreenState extends State<TrackScreen> {
     return "$paceMin:${paceSec.toString().padLeft(2, '0')} min/km";
   }
 
-  void onTapActivity(){
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityChoose()));
+  /// Method invoked when user wants to select change activity
+  void onTapActivity() async {
+    final selectedActivity = await Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim(),)));
+
+    // If the user selected something, update the TextField
+    if (selectedActivity != null && selectedActivity.isNotEmpty) {
+      activityController.text = selectedActivity;
+    }
   }
 
   Widget _buildMapWithButton() {
@@ -370,13 +379,14 @@ class _TrackScreenState extends State<TrackScreen> {
           children: [
             TextField(
               controller: activityController,
-              onTap: () => onTapActivity(),
+              readOnly: true,
+
               decoration: InputDecoration(
                 hint: Text("Select activity"),
                 border: OutlineInputBorder(
                   borderRadius: AppUiConstants.borderRadiusTextFields,
-                )
-
+                ),
+                suffixIcon: IconButton(onPressed:() => onTapActivity(), icon: Icon(Icons.list))
               ),
             )
             ,

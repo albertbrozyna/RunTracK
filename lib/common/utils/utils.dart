@@ -33,6 +33,12 @@ class AppUtils {
     await prefs.remove(key);
   }
 
+  /// Method do save list of strings
+  Future<void> saveListString(key,List<String>list) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(key, list);
+  }
+
   /// Returns a predefined list of fitness activities
   static List<String> getDefaultActivities() {
     return [
