@@ -2,12 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/utils.dart';
+import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import 'package:intl/intl.dart';
 
 import 'activity_choose.dart';
 
@@ -16,6 +19,7 @@ class ActivitySummary extends StatefulWidget {
   final double totalDistance;
   final Duration elapsedTime;
   final String activityType;
+  final DateTime? startTime;
 
   const ActivitySummary({
     Key? key,
@@ -23,6 +27,7 @@ class ActivitySummary extends StatefulWidget {
     required this.totalDistance,
     required this.elapsedTime,
     required this.activityType,
+    required this.startTime,
   }) : super(key: key);
 
   @override
@@ -36,12 +41,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController descriptionController = new TextEditingController();
   TextEditingController notesController = new TextEditingController();
   TextEditingController activityController = new TextEditingController();
-
+  List<XFile> _pickedImages = [];
   @override
   void initState() {
     super.initState();
+    // Formatted startTime of the activity
+    final formattedDate = widget.startTime != null
+        ? DateFormat('yyyy-MM-dd HH:mm').format(widget.startTime!)
+        : '';
     setState(() {
       activityController.text = widget.activityType;
+      titleController.text = '${widget.activityType} $formattedDate';
     });
   }
 
@@ -55,6 +65,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           .map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
           .toList(),
       'createdAt': FieldValue.serverTimestamp(),
+      'startTime' :widget.startTime
     };
     String? uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
@@ -72,8 +83,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           .doc(uid)
           .collection("activities")
           .add(activityData);
-      // TODO ADD comback to a track screen
-
+      // TODO ADD comeback to a track screen
       setState(() {
         activitySaved = true;
       });
@@ -94,7 +104,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             ActivityChoose(currentActivity: activityController.text.trim()),
       ),
     );
-
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
       activityController.text = selectedActivity;
@@ -121,13 +130,38 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   style: AppTextStyles.heading.copyWith(),
                 ),
                 SizedBox(width: 15),
-
                 Text(
                   'Distance: ${widget.totalDistance}',
                   style: AppTextStyles.heading.copyWith(),
                 ),
               ],
             ),
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
+            // Title
+            TextField(
+              controller: titleController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: AppUiConstants.borderRadiusTextFields,
+                ),
+                label: Text("Title"),
+              ),
+            ),
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
+            TextField(
+              maxLines: 3,
+              controller: descriptionController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: AppUiConstants.borderRadiusTextFields,
+                ),
+                label: Text("Description"),
+              ),
+              style:TextStyle(
+              ),
+            ),  SizedBox(height: AppUiConstants.kTextFieldSpacing),
+
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
             // Activity type
             TextField(
               controller: activityController,
@@ -146,12 +180,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ),
               ),
             ),
-            if(widget.trackedPath.isNotEmpty)
-              SizedBox(
-                height: AppUiConstants.kTextFieldSpacing,
-              ),
             if (widget.trackedPath.isNotEmpty)
-
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+            if (widget.trackedPath.isNotEmpty)
               Expanded(
                 child: FlutterMap(
                   options: MapOptions(
@@ -195,9 +226,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ],
                 ),
               ),
-            SizedBox(
-              height: AppUiConstants.kTextFieldSpacing,
-            ),
+
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
+            // Photos section
+            AddPhotos(showSelectedPhots: true,onImagesSelected: (images) {
+              _pickedImages = images;
+            },),
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
+
             // TODO Change color after saving activity
             if (!activitySaved)
               SizedBox(

@@ -38,9 +38,12 @@ class _TrackScreenState extends State<TrackScreen> {
   Timer? _timer;
   TrackingState _trackingState = TrackingState.stopped;
   final LatLng defaultLocation = LatLng(52.2297, 21.0122);
+  // Var that checks if gps is enabled
+  bool _gpsEnabled = true;
 
   // Activity name loaded from
   String? activityName = null;
+
   // Activity controller
   TextEditingController activityController = new TextEditingController();
 
@@ -49,6 +52,8 @@ class _TrackScreenState extends State<TrackScreen> {
 
   double _finishProgress = 0.0; // Progress for long press on Finish
   Timer? _finishTimer;
+
+  Position? _latestPosition;
 
   @override
   void dispose() {
@@ -61,10 +66,25 @@ class _TrackScreenState extends State<TrackScreen> {
     super.initState();
     fetchLastActivity();
   }
+  // Update gps status
+  Future<void> _updateGpsStatus() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    setState(() {
+      _gpsEnabled = serviceEnabled;
+    });
+  }
 
   Future<void> fetchLastActivity() async {
     // TODO DO this when internet is not available
     activityName = await AppUtils.loadString("keyLastUserActivity");
+
+    // Set activity and return
+    if (activityName != null) {
+      setState(() {
+        activityController.text = activityName!;
+      });
+      return;
+    }
 
     if (activityName == null) {
       try {
@@ -87,6 +107,7 @@ class _TrackScreenState extends State<TrackScreen> {
             if (AppData.activities != null && AppData.activities!.isNotEmpty) {
               setState(() {
                 activityName = AppData.activities?.first; // Get first activity
+                activityController.text = activityName!;
               });
             }
           }
@@ -154,6 +175,7 @@ class _TrackScreenState extends State<TrackScreen> {
           totalDistance: _totalDistance,
           trackedPath: _trackedPath,
           activityType: activityName!,
+          startTime: _startTime,
         ),
       ),
     );
@@ -196,9 +218,11 @@ class _TrackScreenState extends State<TrackScreen> {
 
     _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-          (Position position) {
+          (Position position) async {
+            await _updateGpsStatus();
             final latLng = LatLng(position.latitude, position.longitude);
             setState(() {
+              _latestPosition = position;
               if (_currentPosition != null) {
                 // Calculate distance from last postion
                 _totalDistance += _distanceCalculator.as(
@@ -304,7 +328,7 @@ class _TrackScreenState extends State<TrackScreen> {
                         minHeight: 50,
                         backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.red.withOpacity(0.6), // bright enough to see
+                          Colors.red.withValues(alpha: 0.6), // bright enough to see
                         ),
                       ),
                     ),
@@ -364,11 +388,55 @@ class _TrackScreenState extends State<TrackScreen> {
 
   /// Method invoked when user wants to select change activity
   void onTapActivity() async {
-    final selectedActivity = await Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim(),)));
+    final selectedActivity = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ActivityChoose(currentActivity: activityController.text.trim()),
+      ),
+    );
 
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
       activityController.text = selectedActivity;
+    }
+  }
+
+  /// Method that returns a gps icon depends on signal
+  Icon getGpsIcon(double accuracy) {
+    // If gps is disabled
+    if (!_gpsEnabled) {
+      // GPS is turned off
+      return Icon(
+        Icons.signal_cellular_off,
+        color: Colors.grey,
+        size: 24,
+      );
+    }
+    if (accuracy <= 5) {
+      return Icon(
+          Icons.signal_cellular_alt,
+        size: 24,
+        color: Colors.green
+      );
+    } else if (accuracy <= 15) {
+      return Icon(
+          Icons.signal_cellular_alt_2_bar_sharp,
+        size: 24,
+        color: Colors.orange
+      );
+    } else if (accuracy <= 25){
+      return Icon(
+          Icons.signal_cellular_alt_1_bar_sharp,
+          size: 24,
+          color: Colors.red
+      );
+    } else {
+      return Icon(
+        Icons.signal_cellular_0_bar,
+        color: Colors.redAccent,
+        size: 24,
+      );
     }
   }
 
@@ -377,19 +445,49 @@ class _TrackScreenState extends State<TrackScreen> {
       children: [
         Column(
           children: [
-            TextField(
-              controller: activityController,
-              readOnly: true,
-
-              decoration: InputDecoration(
-                hint: Text("Select activity"),
-                border: OutlineInputBorder(
-                  borderRadius: AppUiConstants.borderRadiusTextFields,
+            // TODO show here a info that tells our gps i disabled
+            // Activity type
+            Row(
+              children: [
+                SizedBox(width: 10.0,),
+                // Column with icon and gps text
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Gps icon
+                    _latestPosition != null
+                        ? getGpsIcon(_latestPosition!.accuracy)
+                        : Icon(
+                      Icons.signal_cellular_0_bar_outlined,
+                      color: Colors.grey,
+                      size: 24,
+                    ),
+                    Text("GPS")
+                  ],
                 ),
-                suffixIcon: IconButton(onPressed:() => onTapActivity(), icon: Icon(Icons.list))
-              ),
-            )
-            ,
+                // TODO gps signal here do it better maybe something with signal indicator
+                Expanded(
+                  child: TextField(
+                    controller: activityController,
+                    readOnly: true,
+                    style: TextStyle(backgroundColor: AppColors.primary),
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      filled: true,
+                      fillColor: Color(0xFFFFF3E0),
+                      suffixIcon: IconButton(
+                        onPressed: () => onTapActivity(),
+                        icon: Icon(Icons.settings, size: 26),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             Expanded(
               child: FlutterMap(
                 mapController: _mapController,
