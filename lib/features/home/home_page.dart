@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/firestore_utils.dart';
+import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 
 import '../../common/widgets/navigation_bar.dart';
@@ -33,7 +34,7 @@ class _HomePageState extends State<HomePage> {
     _pages = [
       TrackScreen(),
       Center(child: Text('Search Page')),
-      Center(child: Text('Profile Page')),
+      Competitions()
     ];
     return Scaffold(
       drawer: SideMenu(),

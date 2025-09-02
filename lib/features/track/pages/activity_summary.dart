@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
@@ -56,7 +59,26 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   Future<void> handleSaveActivity() async {
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid == null) {
+      // TODO
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please log in to save your activity')),
+      );
+      return;
+    }
     // Activity data
+    List<String>uploadedUrls = [];
+
+    for(var image in _pickedImages){
+      final ref = FirebaseStorage.instance.ref()
+      .child('users/$uid/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}');
+      await ref.putFile(File(image.path));
+      final url = await ref.getDownloadURL();
+      uploadedUrls.add(url);
+    }
+
     // TODO add date when user runs it
     final activityData = {
       'totalDistance': widget.totalDistance,
@@ -65,16 +87,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           .map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
           .toList(),
       'createdAt': FieldValue.serverTimestamp(),
-      'startTime' :widget.startTime
+      'startTime' :widget.startTime,
+      'title' : titleController.text.trim(),
+      'description' : descriptionController.text.trim(),
+      'images':uploadedUrls
     };
-    String? uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      // TODO
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please log in to save your activity')),
-      );
-      return;
-    }
 
     try {
       // Save activity to database

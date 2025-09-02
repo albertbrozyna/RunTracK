@@ -12,6 +12,7 @@ import 'package:run_track/common/widgets/top_bar.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
+import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
@@ -38,6 +39,7 @@ class _TrackScreenState extends State<TrackScreen> {
   Timer? _timer;
   TrackingState _trackingState = TrackingState.stopped;
   final LatLng defaultLocation = LatLng(52.2297, 21.0122);
+
   // Var that checks if gps is enabled
   bool _gpsEnabled = true;
 
@@ -66,6 +68,7 @@ class _TrackScreenState extends State<TrackScreen> {
     super.initState();
     fetchLastActivity();
   }
+
   // Update gps status
   Future<void> _updateGpsStatus() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -265,9 +268,6 @@ class _TrackScreenState extends State<TrackScreen> {
       case TrackingState.running:
         return Column(
           children: [
-            // Show stats and cancel button while running
-            RunStats(totalDistance: _totalDistance, pace: _formattedPace),
-            //
             SizedBox(
               height: 50.0,
               width: double.infinity,
@@ -283,7 +283,6 @@ class _TrackScreenState extends State<TrackScreen> {
             ),
           ],
         );
-
       case TrackingState.paused:
         return Row(
           children: [
@@ -328,7 +327,9 @@ class _TrackScreenState extends State<TrackScreen> {
                         minHeight: 50,
                         backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.red.withValues(alpha: 0.6), // bright enough to see
+                          Colors.red.withValues(
+                            alpha: 0.6,
+                          ), // bright enough to see
                         ),
                       ),
                     ),
@@ -407,29 +408,21 @@ class _TrackScreenState extends State<TrackScreen> {
     // If gps is disabled
     if (!_gpsEnabled) {
       // GPS is turned off
-      return Icon(
-        Icons.signal_cellular_off,
-        color: Colors.grey,
-        size: 24,
-      );
+      return Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
     }
     if (accuracy <= 5) {
-      return Icon(
-          Icons.signal_cellular_alt,
-        size: 24,
-        color: Colors.green
-      );
+      return Icon(Icons.signal_cellular_alt, size: 24, color: Colors.green);
     } else if (accuracy <= 15) {
       return Icon(
-          Icons.signal_cellular_alt_2_bar_sharp,
+        Icons.signal_cellular_alt_2_bar_sharp,
         size: 24,
-        color: Colors.orange
+        color: Colors.orange,
       );
-    } else if (accuracy <= 25){
+    } else if (accuracy <= 25) {
       return Icon(
-          Icons.signal_cellular_alt_1_bar_sharp,
-          size: 24,
-          color: Colors.red
+        Icons.signal_cellular_alt_1_bar_sharp,
+        size: 24,
+        color: Colors.red,
       );
     } else {
       return Icon(
@@ -440,138 +433,154 @@ class _TrackScreenState extends State<TrackScreen> {
     }
   }
 
-  Widget _buildMapWithButton() {
-    return Stack(
-      children: [
-        Column(
-          children: [
-            // TODO show here a info that tells our gps i disabled
-            // Activity type
-            Row(
-              children: [
-                SizedBox(width: 10.0,),
-                // Column with icon and gps text
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Gps icon
-                    _latestPosition != null
-                        ? getGpsIcon(_latestPosition!.accuracy)
-                        : Icon(
-                      Icons.signal_cellular_0_bar_outlined,
-                      color: Colors.grey,
-                      size: 24,
-                    ),
-                    Text("GPS")
-                  ],
-                ),
-                // TODO gps signal here do it better maybe something with signal indicator
-                Expanded(
-                  child: TextField(
-                    controller: activityController,
-                    readOnly: true,
-                    style: TextStyle(backgroundColor: AppColors.primary),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      filled: true,
-                      fillColor: Color(0xFFFFF3E0),
-                      suffixIcon: IconButton(
-                        onPressed: () => onTapActivity(),
-                        icon: Icon(Icons.settings, size: 26),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            Expanded(
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  // Current location or default position
-                  // TODO Add here a variable with default location
-                  initialCenter: _currentPosition ?? defaultLocation,
-                  initialZoom: 15.0,
-                  interactionOptions: InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  ),
-                ),
-                children: [
-                  TileLayer(
-                    // z is zoom x,y are longitude and latitude
-                    urlTemplate:
-                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    // Different domains used to speed up downloading a maps, just different servers
-                    // TODO to change
-                    userAgentPackageName: 'com.example.runtrack',
-                  ),
-                  if (_trackedPath.isNotEmpty)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _trackedPath,
-                          strokeWidth: 4.0,
-                          color: Colors.blue,
-                        ),
-                      ],
-                    ),
-                  if (_currentPosition != null)
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: _currentPosition!,
-                          width: 40,
-                          height: 40,
-                          child: Icon(
-                            Icons.location_pin,
-                            color: Colors.red,
-                            size: 40,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              // Bottom buttons
-              child: _buildControls(),
-            ),
-          ],
-        ),
-        // Track button on the right
-        Positioned(
-          bottom: 90,
-          right: 16,
-          child: FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                _followUser = !_followUser;
-                // If we change state on follow user is true we center map on user
-                if (_followUser && _currentPosition != null) {
-                  _mapController.move(
-                    _currentPosition!,
-                    _mapController.camera.zoom,
-                    // TODO add smooth move
-                  );
-                }
-              });
-            },
-            // Changing icon depends on following user
-            child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return _buildMapWithButton();
+    return Scaffold(
+      // Custom fab location to set a fab
+      floatingActionButtonLocation: CustomFabLocation(
+          xOffset: 20,yOffset: 70
+      ),
+      body: Stack(
+        children: [
+          /// Main column content
+          Column(
+            children: [
+              // Activity type + GPS row
+              Row(
+                children: [
+                  SizedBox(width: 10.0),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _latestPosition != null
+                          ? getGpsIcon(_latestPosition!.accuracy)
+                          : Icon(
+                              Icons.signal_cellular_0_bar_outlined,
+                              color: Colors.grey,
+                              size: 24,
+                            ),
+                      Text("GPS"),
+                    ],
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: activityController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.zero,
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFFFFF3E0),
+                        suffixIcon: IconButton(
+                          onPressed: () => onTapActivity(),
+                          icon: Icon(Icons.settings, size: 26),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Expanded map
+              Expanded(
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _currentPosition ?? defaultLocation,
+                    initialZoom: 15.0,
+                    interactionOptions: InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.runtrack',
+                    ),
+                    if (_trackedPath.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _trackedPath,
+                            strokeWidth: 4.0,
+                            color: Colors.blue,
+                          ),
+                        ],
+                      ),
+                    if (_currentPosition != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _currentPosition!,
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                              size: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          /// RunStats positioned as draggable sheet
+          if (_trackingState == TrackingState.running)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: RunStats(
+                  totalDistance: _totalDistance,
+                  pace: _formattedPace,
+                  elapsedTime: _elapsedTime,
+                ),
+              ),
+            ),
+
+          /// Controls above everything else
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              width: double.infinity,
+              height: 60,
+              decoration: BoxDecoration(color: Colors.white),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: AppUiConstants.paddingTextFields,
+                  right: AppUiConstants.paddingTextFields,
+                  top: AppUiConstants.paddingTextFields,
+                ),
+                child: _buildControls(),
+              ),
+            ),
+          ),
+        ],
+      ),
+
+      floatingActionButton: FloatingActionButton(
+
+        onPressed: () {
+          setState(() {
+            _followUser = !_followUser;
+            if (_followUser && _currentPosition != null) {
+              _mapController.move(
+                _currentPosition!,
+                _mapController.camera.zoom,
+              );
+            }
+          });
+        },
+        child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed),
+      ),
+    );
   }
 }
