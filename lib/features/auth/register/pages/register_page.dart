@@ -112,7 +112,8 @@ class _RegisterPageState extends State<RegisterPage> {
               "email": _emailController.text.trim(),
               "dateOfBirth": _dateController.text.trim(),
               "gender": _selectedGender,
-              "activities":AppUtils.getDefaultActivities()
+              "activities": AppUtils.getDefaultActivities(),
+              "friends": List<String>.empty,
             });
       } catch (firestoreError) {
         await userCredential.user!.delete();
@@ -122,9 +123,12 @@ class _RegisterPageState extends State<RegisterPage> {
       FirebaseAuth.instance.signOut();
       // Navigate to login screen after registration
       Future.delayed(Duration(seconds: 1), () {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => LoginPage()),
+          // TODO I think that it is to check and fix
+          // Remove all routes
+          (Route<dynamic> route) => false,
         );
       });
     } on FirebaseAuthException catch (e) {

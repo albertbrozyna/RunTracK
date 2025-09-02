@@ -1,6 +1,131 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/features/activities/pages/user_activities.dart';
+import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/models/activity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/user.dart' as model;
+import 'package:run_track/common/enums/visibility.dart';
 class AppUtils {
+  /// Method to fetch user by his uid
+  static Future<model.User?> fetchUser(
+    String uid,
+    BuildContext context,
+    bool currentUserData,
+  ) async {
+    // To get a other users names and activities user needs to be logged
+    String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserUid == null) {
+      // User is not logged in
+      AppData.currentUser = null;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => StartPage()),
+            (Route<dynamic> route) => false,
+      );
+      return null;
+    }
+
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .get();
+
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+
+      // We are fetching current user so we get a full data
+      if (FirebaseAuth.instance.currentUser?.uid != null &&
+          FirebaseAuth.instance.currentUser?.uid == uid) {
+        AppData.currentUser = new model.User(
+          firstName: userData['firstName'],
+          lastName: userData['lastName'],
+          activities: [],
+          friendsUids: userData['friends'],
+          email: userData['email'],
+        );
+
+        // Fetch all activities
+        final userActivities = await FirebaseFirestore.instance
+            .collection(
+            "users")
+            .doc(uid)
+            .collection("activities")
+            .orderBy('createdAt')
+            .get();
+
+        List<Activity> activities = userActivities.docs.map((doc) {
+          final actData = doc.data();
+
+          return Activity(
+              actData['totalDistance']?.toDouble(),
+              Duration(seconds: actData['elapsedTime'] ?? 0),
+              (actData['trackedPath'] as List<dynamic>?)
+                  ?.map((e) => LatLng(e['lat'], e['lng']))
+                  .toList(),
+              actData['activityType'],
+              (actData['startTime'] as Timestamp?)?.toDate(),
+              actData['title'],
+              actData['description'],
+              actData['visibility']
+          );
+        }).toList();
+        AppData.currentUser?.activities = activities.cast<Activities>();
+
+        return AppData.currentUser;
+      };
+
+      // Fetching not current user but different
+      if (FirebaseAuth.instance.currentUser?.uid != null &&
+          FirebaseAuth.instance.currentUser?.uid != uid) {
+        User? user = new model.User(
+          firstName: userData['firstName'],
+          lastName: userData['lastName'],
+          activities: [],
+          friendsUids: userData['friends'],
+          email: userData['email'],
+        );
+
+        // Fetch all activities
+        final userActivities = await FirebaseFirestore.instance
+            .collection(
+            "users")
+            .doc(uid)
+            .collection("activities")
+            .orderBy('createdAt')
+            .get();
+
+        List<Activity> activities = userActivities.docs.map((doc) {
+          final actData = doc.data();
+
+          return Activity(
+              actData['totalDistance']?.toDouble(),
+              Duration(seconds: actData['elapsedTime'] ?? 0),
+              (actData['trackedPath'] as List<dynamic>?)
+                  ?.map((e) => LatLng(e['lat'], e['lng']))
+                  .toList(),
+              actData['activityType'],
+              (actData['startTime'] as Timestamp?)?.toDate(),
+              actData['title'],
+              actData['description'],
+              actData['visibility']
+          );
+        }).toList();
+        AppData.currentUser?.activities = activities.cast<Activities>();
+
+
+    } else {
+      // User with this uid don't exists
+      return null;
+    }
+  }
+
+
   /// Method that formats date to show it in user friendly way
   static String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -34,7 +159,7 @@ class AppUtils {
   }
 
   /// Method do save list of strings
-  Future<void> saveListString(key,List<String>list) async {
+  Future<void> saveListString(key, List<String> list) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(key, list);
   }

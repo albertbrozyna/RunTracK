@@ -16,6 +16,7 @@ import 'package:run_track/theme/ui_constants.dart';
 import 'package:intl/intl.dart';
 
 import 'activity_choose.dart';
+import 'package:run_track/common/enums/visibility.dart';
 
 class ActivitySummary extends StatefulWidget {
   final List<LatLng> trackedPath;
@@ -44,7 +45,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController descriptionController = new TextEditingController();
   TextEditingController notesController = new TextEditingController();
   TextEditingController activityController = new TextEditingController();
+
+  // TODO idea save last visibility as preferences
+  Visibility _visibility = Visibility.ME;
+
+  final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
+
   List<XFile> _pickedImages = [];
+
   @override
   void initState() {
     super.initState();
@@ -69,11 +77,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       return;
     }
     // Activity data
-    List<String>uploadedUrls = [];
+    List<String> uploadedUrls = [];
 
-    for(var image in _pickedImages){
-      final ref = FirebaseStorage.instance.ref()
-      .child('users/$uid/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}');
+    for (var image in _pickedImages) {
+      final ref = FirebaseStorage.instance.ref().child(
+        'users/$uid/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
+      );
       await ref.putFile(File(image.path));
       final url = await ref.getDownloadURL();
       uploadedUrls.add(url);
@@ -87,10 +96,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           .map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
           .toList(),
       'createdAt': FieldValue.serverTimestamp(),
-      'startTime' :widget.startTime,
-      'title' : titleController.text.trim(),
-      'description' : descriptionController.text.trim(),
-      'images':uploadedUrls
+      'startTime': widget.startTime,
+      'title': titleController.text.trim(),
+      'description': descriptionController.text.trim(),
+      'visibility': _visibility,
+      'images': uploadedUrls,
     };
 
     try {
@@ -174,9 +184,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ),
                 label: Text("Description"),
               ),
-              style:TextStyle(
-              ),
-            ),  SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              style: TextStyle(),
+            ),
+            SizedBox(height: AppUiConstants.kTextFieldSpacing),
 
             SizedBox(height: AppUiConstants.kTextFieldSpacing),
             // Activity type
@@ -246,10 +256,32 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
             SizedBox(height: AppUiConstants.kTextFieldSpacing),
             // Photos section
-            AddPhotos(showSelectedPhots: true,onImagesSelected: (images) {
-              _pickedImages = images;
-            },),
+            AddPhotos(
+              showSelectedPhots: true,
+              onImagesSelected: (images) {
+                _pickedImages = images;
+              },
+            ),
             SizedBox(height: AppUiConstants.kTextFieldSpacing),
+
+            DropdownMenu(
+              initialSelection: _visibility,
+              onSelected: (Visibility? visibility) {
+                setState(() {
+                  if (visibility != null) {
+                    _visibility = visibility;
+                  }
+                });
+              },
+              dropdownMenuEntries: <DropdownMenuEntry<Visibility>>[
+                DropdownMenuEntry(value: Visibility.ME, label: "Only Me"),
+                DropdownMenuEntry(value: Visibility.FRIENDS, label: "Friends"),
+                DropdownMenuEntry(
+                  value: Visibility.EVERYONE,
+                  label: "Everyone",
+                ),
+              ],
+            ),
 
             // TODO Change color after saving activity
             if (!activitySaved)

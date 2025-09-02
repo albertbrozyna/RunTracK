@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/firestore_utils.dart';
+import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 
@@ -33,7 +34,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     _pages = [
       TrackScreen(),
-      Center(child: Text('Search Page')),
+      Activities(),
       Competitions()
     ];
     return Scaffold(
