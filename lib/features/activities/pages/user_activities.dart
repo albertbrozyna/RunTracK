@@ -1,5 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/utils/utils.dart';
+
+import '../../../common/utils/app_data.dart';
+import '../../../models/activity.dart';
+import '../../../models/user.dart';
 
 class Activities extends StatefulWidget {
   _ActivitiesState createState() => _ActivitiesState();
@@ -8,8 +13,7 @@ class Activities extends StatefulWidget {
 class _ActivitiesState extends State<Activities>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<> myActivities = [];
-  List<Activities> myActivities = [];
+  List<User>?friendsActivities;
 
   void fetchMyTrainings(){
 
@@ -35,6 +39,7 @@ class _ActivitiesState extends State<Activities>
       appBar: AppBar(
         title: Text("Activities"),
         bottom: TabBar(
+          controller: _tabController,
           tabs: [
             Tab(text: "My"),
             Tab(text: "Friends"),
@@ -42,8 +47,20 @@ class _ActivitiesState extends State<Activities>
           ],
         ),
       ),
-      body:TabBarView(children: [
-        Container(),
+      body:TabBarView(
+          controller: _tabController,
+          children: [
+        Container(
+          child:
+          FutureBuilder<List<Activity>?>(
+          future: AppUtils.fetchUserActivities(, 10),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+          }
+      )
+
+
+        ),
         Container(),
         Container(),
       ]),

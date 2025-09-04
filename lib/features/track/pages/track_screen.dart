@@ -106,10 +106,10 @@ class _TrackScreenState extends State<TrackScreen> {
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
           if (data != null && data.containsKey("activities")) {
-            AppData.activities = List<String>.from(data["activities"]);
-            if (AppData.activities != null && AppData.activities!.isNotEmpty) {
+            AppData.currentUser?.activityNames = List<String>.from(data["activities"]);
+            if (AppData.currentUser != null && AppData.currentUser?.activityNames != null && AppData.currentUser!.activityNames!.isNotEmpty) {
               setState(() {
-                activityName = AppData.activities?.first; // Get first activity
+                activityName = AppData.currentUser?.activities.first as String?; // Get first activity
                 activityController.text = activityName!;
               });
             }

@@ -14,9 +14,8 @@ import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:intl/intl.dart';
-
 import 'activity_choose.dart';
-import 'package:run_track/common/enums/visibility.dart';
+import 'package:run_track/common/enums/visibility.dart' as vb;
 
 class ActivitySummary extends StatefulWidget {
   final List<LatLng> trackedPath;
@@ -47,7 +46,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController activityController = new TextEditingController();
 
   // TODO idea save last visibility as preferences
-  Visibility _visibility = Visibility.ME;
+  vb.Visibility _visibility = vb.Visibility.ME;
 
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
 
@@ -266,18 +265,18 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
             DropdownMenu(
               initialSelection: _visibility,
-              onSelected: (Visibility? visibility) {
+              onSelected: (vb.Visibility? visibility) {
                 setState(() {
                   if (visibility != null) {
                     _visibility = visibility;
                   }
                 });
               },
-              dropdownMenuEntries: <DropdownMenuEntry<Visibility>>[
-                DropdownMenuEntry(value: Visibility.ME, label: "Only Me"),
-                DropdownMenuEntry(value: Visibility.FRIENDS, label: "Friends"),
+              dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
+                DropdownMenuEntry(value: vb.Visibility.ME, label: "Only Me"),
+                DropdownMenuEntry(value: vb.Visibility.FRIENDS, label: "Friends"),
                 DropdownMenuEntry(
-                  value: Visibility.EVERYONE,
+                  value: vb.Visibility.EVERYONE,
                   label: "Everyone",
                 ),
               ],

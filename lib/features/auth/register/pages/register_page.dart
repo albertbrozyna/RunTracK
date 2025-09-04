@@ -241,7 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       SizedBox(height: 8),
                       // Gender
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
+                        value: _selectedGender,
                         decoration: InputDecoration(
                           labelText: "Gender",
                           prefixIcon: Icon(Icons.person_outline),

@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,12 +11,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/user.dart' as model;
 import 'package:run_track/common/enums/visibility.dart';
+
 class AppUtils {
   /// Method to fetch user by his uid
   static Future<model.User?> fetchUser(
     String uid,
     BuildContext context,
     bool currentUserData,
+    bool allActivities,
   ) async {
     // To get a other users names and activities user needs to be logged
     String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
@@ -26,7 +28,7 @@ class AppUtils {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => StartPage()),
-            (Route<dynamic> route) => false,
+        (Route<dynamic> route) => false,
       );
       return null;
     }
@@ -43,26 +45,28 @@ class AppUtils {
       if (FirebaseAuth.instance.currentUser?.uid != null &&
           FirebaseAuth.instance.currentUser?.uid == uid) {
         AppData.currentUser = new model.User(
+          uid: FirebaseAuth.instance.currentUser!.uid,
           firstName: userData['firstName'],
           lastName: userData['lastName'],
           activities: [],
+          activityNames: userData['activities'],
           friendsUids: userData['friends'],
           email: userData['email'],
         );
 
         // Fetch all activities
         final userActivities = await FirebaseFirestore.instance
-            .collection(
-            "users")
+            .collection("users")
             .doc(uid)
             .collection("activities")
             .orderBy('createdAt')
             .get();
 
-        List<Activity> activities = userActivities.docs.map((doc) {
-          final actData = doc.data();
+        if (allActivities) {
+          List<Activity> activities = userActivities.docs.map((doc) {
+            final actData = doc.data();
 
-          return Activity(
+            return Activity(
               actData['totalDistance']?.toDouble(),
               Duration(seconds: actData['elapsedTime'] ?? 0),
               (actData['trackedPath'] as List<dynamic>?)
@@ -72,18 +76,20 @@ class AppUtils {
               (actData['startTime'] as Timestamp?)?.toDate(),
               actData['title'],
               actData['description'],
-              actData['visibility']
-          );
-        }).toList();
-        AppData.currentUser?.activities = activities.cast<Activities>();
+              actData['visibility'],
+            );
+          }).toList();
+          AppData.currentUser?.activities = activities.cast<Activity>();
+        }
 
         return AppData.currentUser;
-      };
+      }
 
       // Fetching not current user but different
       if (FirebaseAuth.instance.currentUser?.uid != null &&
           FirebaseAuth.instance.currentUser?.uid != uid) {
-        User? user = new model.User(
+        model.User user = new model.User(
+          uid: ,
           firstName: userData['firstName'],
           lastName: userData['lastName'],
           activities: [],
@@ -92,18 +98,17 @@ class AppUtils {
         );
 
         // Fetch all activities
-        final userActivities = await FirebaseFirestore.instance
-            .collection(
-            "users")
-            .doc(uid)
-            .collection("activities")
-            .orderBy('createdAt')
-            .get();
+        if (allActivities) {
+          final userActivities = await FirebaseFirestore.instance
+              .collection("users")
+              .doc(uid)
+              .collection("activities")
+              .orderBy('createdAt')
+              .get();
 
-        List<Activity> activities = userActivities.docs.map((doc) {
-          final actData = doc.data();
-
-          return Activity(
+          List<Activity> activities = userActivities.docs.map((doc) {
+            final actData = doc.data();
+            return Activity(
               actData['totalDistance']?.toDouble(),
               Duration(seconds: actData['elapsedTime'] ?? 0),
               (actData['trackedPath'] as List<dynamic>?)
@@ -113,18 +118,59 @@ class AppUtils {
               (actData['startTime'] as Timestamp?)?.toDate(),
               actData['title'],
               actData['description'],
-              actData['visibility']
-          );
-        }).toList();
-        AppData.currentUser?.activities = activities.cast<Activities>();
+              actData['visibility'],
+            );
+          }).toList();
+          user.activities = activities.cast<Activity>();
+        }
 
-
+        return user;
+      }
     } else {
       // User with this uid don't exists
       return null;
     }
+    return null;
   }
 
+  void fetchLastActivities() async {}
+
+  static Future<List<Activity>?> fetchUserActivities(String uid, int limit) async {
+    // Check if user exists
+    DocumentSnapshot user = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .get();
+
+    if (!user.exists) {
+      return null;
+    }
+    // Fetch user activities
+    final userActivities = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("activities")
+        .orderBy('createdAt')
+        .limit(limit)
+        .get();
+
+    // Cast to activity class
+    return userActivities.docs.map((doc) {
+      final actData = doc.data();
+      return Activity(
+        actData['totalDistance']?.toDouble(),
+        Duration(seconds: actData['elapsedTime'] ?? 0),
+        (actData['trackedPath'] as List<dynamic>?)
+            ?.map((e) => LatLng(e['lat'], e['lng']))
+            .toList(),
+        actData['activityType'],
+        (actData['startTime'] as Timestamp?)?.toDate(),
+        actData['title'],
+        actData['description'],
+        actData['visibility'],
+      );
+    }).toList();
+  }
 
   /// Method that formats date to show it in user friendly way
   static String formatDuration(Duration duration) {

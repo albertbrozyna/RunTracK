@@ -34,7 +34,7 @@ class ActivityChooseState extends State<ActivityChoose> {
   // Todo export function to fetch user activities
   Future<void> fetchUserActivities() async {
     // If list is read, do not fetch it
-    if (AppData.activities != null) {
+    if (AppData.currentUser != null && AppData.currentUser?.activityNames != null) {
       return;
     }
     try {
@@ -65,7 +65,7 @@ class ActivityChooseState extends State<ActivityChoose> {
         final data = docSnapshot.data();
         if (data != null && data.containsKey("activities")) {
           setState(() {
-            AppData.activities = List<String>.from(data["activities"]);
+            AppData.currentUser?.activityNames = List<String>.from(data["activities"]);
           });
         }
       }
@@ -75,7 +75,7 @@ class ActivityChooseState extends State<ActivityChoose> {
   }
 
   void addNewActivity() {
-    if (AppData.activities == null) {
+    if (AppData.currentUser == null || AppData.currentUser?.activityNames == null) {
       return;
     }
     // Check if this text controller is not empty
@@ -87,7 +87,7 @@ class ActivityChooseState extends State<ActivityChoose> {
       return;
     }
 
-    if (AppData.activities!.contains(_newActivityController.text.trim())) {
+    if (AppData.currentUser?.activityNames?.contains(_newActivityController.text.trim()) ?? false) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Activity is already on the list")),
       );
@@ -95,7 +95,7 @@ class ActivityChooseState extends State<ActivityChoose> {
     }
 
     setState(() {
-      AppData.activities?.add(_newActivityController.text.trim());
+      AppData.currentUser?.activityNames?.add(_newActivityController.text.trim());
       _newActivityController.text = "";
     });
 
@@ -106,13 +106,13 @@ class ActivityChooseState extends State<ActivityChoose> {
 
   void deleteActivity(int index) {
     setState(() {
-      AppData.activities?.removeAt(index);
+      AppData.currentUser?.activityNames?.removeAt(index);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (AppData.activities == null) {
+    if (AppData.currentUser?.activityNames == null) {
       return Scaffold(
         appBar: AppBar(title: Text("Choose your activity type:")),
         body: Center(child: CircularProgressIndicator()), // Loading state
@@ -122,8 +122,8 @@ class ActivityChooseState extends State<ActivityChoose> {
     return WillPopScope(
       // TODO FIND A good approach with popScope
       onWillPop: () async {
-        if (AppData.activities != null && AppData.activities!.isNotEmpty) {
-          final selected = AppData.activities![_selectedActivity];
+        if (AppData.currentUser?.activityNames != null && (AppData.currentUser?.activityNames?.isNotEmpty ?? false)) {
+          final selected = AppData.currentUser!.activityNames![_selectedActivity];
           Navigator.pop(context, selected);
         } else {
           Navigator.pop(context, null); // fallback
@@ -136,13 +136,13 @@ class ActivityChooseState extends State<ActivityChoose> {
           children: [
             Expanded(
               child: ListView.builder(
-                itemCount: AppData.activities?.length,
+                itemCount: AppData.currentUser?.activityNames?.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(AppData.activities![index]),
+                    title: Text(AppData.currentUser!.activityNames![index]),
                     onTap: () => onActivityTap(index),
                     selected:
-                        AppData.activities?[index] ==
+                        AppData.currentUser!.activityNames![index] ==
                         widget.currentActivity,
                     trailing: IconButton(
                       onPressed: () => deleteActivity(index),
