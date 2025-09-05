@@ -77,6 +77,7 @@ class AppUtils {
               actData['title'],
               actData['description'],
               actData['visibility'],
+              actData['photos']
             );
           }).toList();
           AppData.currentUser?.activities = activities.cast<Activity>();
@@ -89,7 +90,7 @@ class AppUtils {
       if (FirebaseAuth.instance.currentUser?.uid != null &&
           FirebaseAuth.instance.currentUser?.uid != uid) {
         model.User user = new model.User(
-          uid: ,
+          uid: uid,
           firstName: userData['firstName'],
           lastName: userData['lastName'],
           activities: [],
@@ -119,6 +120,7 @@ class AppUtils {
               actData['title'],
               actData['description'],
               actData['visibility'],
+              actData['photos'],
             );
           }).toList();
           user.activities = activities.cast<Activity>();
@@ -126,9 +128,6 @@ class AppUtils {
 
         return user;
       }
-    } else {
-      // User with this uid don't exists
-      return null;
     }
     return null;
   }
@@ -168,6 +167,7 @@ class AppUtils {
         actData['title'],
         actData['description'],
         actData['visibility'],
+        actData['photos']
       );
     }).toList();
   }

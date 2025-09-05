@@ -99,7 +99,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       'title': titleController.text.trim(),
       'description': descriptionController.text.trim(),
       'visibility': _visibility,
-      'images': uploadedUrls,
+      'photos': uploadedUrls,
     };
 
     try {
@@ -274,7 +274,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
               },
               dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
                 DropdownMenuEntry(value: vb.Visibility.ME, label: "Only Me"),
-                DropdownMenuEntry(value: vb.Visibility.FRIENDS, label: "Friends"),
+                DropdownMenuEntry(
+                  value: vb.Visibility.FRIENDS,
+                  label: "Friends",
+                ),
                 DropdownMenuEntry(
                   value: vb.Visibility.EVERYONE,
                   label: "Everyone",

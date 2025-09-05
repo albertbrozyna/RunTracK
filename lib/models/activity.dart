@@ -10,6 +10,7 @@ class Activity {
   String? title;
   String? description;
   Visibility? visibility;
+  List<String> photos;
 
   Activity(
     this.totalDistance,
@@ -20,5 +21,6 @@ class Activity {
     this.title,
     this.description,
     this.visibility,
+    this.photos,
   );
 }

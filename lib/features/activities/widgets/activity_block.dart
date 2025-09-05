@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
 class ActivityBlock extends StatelessWidget {
   final String firstName;
@@ -9,6 +10,9 @@ class ActivityBlock extends StatelessWidget {
   final Duration elapsedTime;
   final DateTime activityDate;
   final List<String> photos;
+  final String activityType;
+  final double totalDistance;
+  final List<LatLng> trackedPath;
 
   const ActivityBlock({
     required this.firstName,
@@ -18,6 +22,9 @@ class ActivityBlock extends StatelessWidget {
     required this.elapsedTime,
     required this.activityDate,
     required this.photos,
+    required this.activityType,
+    this.totalDistance = 0,
+    this.trackedPath = const [],
   });
 
   @override
@@ -63,6 +70,7 @@ class ActivityBlock extends StatelessWidget {
                 },
               ),
             ),
+            // Map with activity map
         ],
       ),
     );

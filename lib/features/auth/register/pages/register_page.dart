@@ -48,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return true;
   }
 
-  void handleRegister() {
+  void handleRegister() async {
     if (_passwordController.text.trim() !=
         _repeatPasswordController.text.trim()) {
       ScaffoldMessenger.of(
@@ -81,14 +81,7 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    createUserWithEmailAndPassword();
-
-    // Successfully register
-    if (FirebaseAuth.instance.currentUser != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
-    }
+    await createUserWithEmailAndPassword();
   }
 
   Future<void> createUserWithEmailAndPassword() async {
@@ -103,18 +96,26 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // Create a new user
       try {
-        final data = await FirebaseFirestore.instance
+        final docRef = await FirebaseFirestore.instance
             .collection("users")
-            .doc(uid)
-            .set({
+            .doc(uid);
+
+            docRef.set({
               "firstName": _firstNameController.text.trim(),
               "lastName": _lastNameController.text.trim(),
               "email": _emailController.text.trim(),
               "dateOfBirth": _dateController.text.trim(),
               "gender": _selectedGender,
-              "activities": AppUtils.getDefaultActivities(),
-              "friends": List<String>.empty,
+              "activityNames": AppUtils.getDefaultActivities(),
+              "friends": <String>[],
             });
+
+        // Successfully register
+        if (FirebaseAuth.instance.currentUser != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
+        }
       } catch (firestoreError) {
         await userCredential.user!.delete();
       }

@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
+import 'package:run_track/features/activities/widgets/activity_block.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart';
+import '../../auth/start/pages/start_page.dart';
 
 class Activities extends StatefulWidget {
   _ActivitiesState createState() => _ActivitiesState();
@@ -13,19 +15,14 @@ class Activities extends StatefulWidget {
 class _ActivitiesState extends State<Activities>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<User>?friendsActivities;
+  List<User>? friendsActivities;
+  User? currentUser = AppData.currentUser;
 
-  void fetchMyTrainings(){
+  void fetchMyTrainings() {}
 
-  }
+  void fetchMyFriendsTraining() {}
 
-  void fetchMyFriendsTraining(){
-
-  }
-
-  void fetchActivitiesFromNeighborhood(){
-
-  }
+  void fetchActivitiesFromNeighborhood() {}
 
   @override
   void initState() {
@@ -35,9 +32,12 @@ class _ActivitiesState extends State<Activities>
 
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Activities"),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -47,23 +47,48 @@ class _ActivitiesState extends State<Activities>
           ],
         ),
       ),
-      body:TabBarView(
-          controller: _tabController,
-          children: [
-        Container(
-          child:
-          FutureBuilder<List<Activity>?>(
-          future: AppUtils.fetchUserActivities(, 10),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-          }
-      )
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          Container(
+            child: FutureBuilder<List<Activity>?>(
+              future: AppUtils.fetchUserActivities(currentUser!.uid, 10),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text("No activities found"));
+                }
 
+                final activities = snapshot.data!;
 
-        ),
-        Container(),
-        Container(),
-      ]),
+                return ListView.builder(
+                  itemCount: activities.length,
+                  itemBuilder: (context, index) {
+                    final activity = activities[index];
+                    return ActivityBlock(
+                      firstName: currentUser!.firstName,
+                      lastName: currentUser!.lastName,
+                      title: activity.title ?? "Untitled",
+                      description: activity.description ?? "",
+                      elapsedTime: activity.elapsedTime ?? Duration.zero,
+                      activityDate: activity.startTime ?? DateTime.now(),
+                      activityType: activity.activityType ?? "",
+                      totalDistance: activity.totalDistance ?? 0,
+                      photos: activity.photos ?? [],
+                      trackedPath: activity.trackedPath ?? [],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Container(),
+          Container(),
+        ],
+      ),
     );
   }
 }
