@@ -54,17 +54,18 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Passwords do not match!")));
-    }
-    if (!checkPasswordComplexity(_passwordController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Password must be at least 8 chars, include uppercase, lowercase, number, and special char.",
-          ),
-        ),
-      );
       return;
     }
+    // if (!checkPasswordComplexity(_passwordController.text.trim())) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text(
+    //         "Password must be at least 8 chars, include uppercase, lowercase, number, and special char.",
+    //       ),
+    //     ),
+    //   );
+    //   return;
+    // }
 
     if (_selectedGender == null) {
       ScaffoldMessenger.of(
@@ -100,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
             .collection("users")
             .doc(uid);
 
-            docRef.set({
+            await docRef.set({
               "firstName": _firstNameController.text.trim(),
               "lastName": _lastNameController.text.trim(),
               "email": _emailController.text.trim(),
@@ -120,18 +121,14 @@ class _RegisterPageState extends State<RegisterPage> {
         await userCredential.user!.delete();
       }
 
-      // Sign out user after registration, user needs to log in
-      FirebaseAuth.instance.signOut();
       // Navigate to login screen after registration
       Future.delayed(Duration(seconds: 1), () {
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginPage()),
-          // TODO I think that it is to check and fix
-          // Remove all routes
-          (Route<dynamic> route) => false,
         );
       });
+      await FirebaseAuth.instance.signOut();
     } on FirebaseAuthException catch (e) {
       // TODO Better communicates
       print("Auth error ${e.message}");

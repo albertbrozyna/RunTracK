@@ -36,9 +36,9 @@ class _ActivitiesState extends State<Activities>
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        bottom: TabBar(
+    return Column(
+      children: [
+        TabBar(
           controller: _tabController,
           tabs: [
             Tab(text: "My"),
@@ -46,49 +46,52 @@ class _ActivitiesState extends State<Activities>
             Tab(text: "All"),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          Container(
-            child: FutureBuilder<List<Activity>?>(
-              future: AppUtils.fetchUserActivities(currentUser!.uid, 10),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text("No activities found"));
-                }
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              Container(
+                child: FutureBuilder<List<Activity>?>(
+                  future: AppUtils.fetchUserActivities(currentUser!.uid, 10),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Center(child: Text("No activities found"));
+                    }
 
-                final activities = snapshot.data!;
+                    final activities = snapshot.data!;
 
-                return ListView.builder(
-                  itemCount: activities.length,
-                  itemBuilder: (context, index) {
-                    final activity = activities[index];
-                    return ActivityBlock(
-                      firstName: currentUser!.firstName,
-                      lastName: currentUser!.lastName,
-                      title: activity.title ?? "Untitled",
-                      description: activity.description ?? "",
-                      elapsedTime: activity.elapsedTime ?? Duration.zero,
-                      activityDate: activity.startTime ?? DateTime.now(),
-                      activityType: activity.activityType ?? "",
-                      totalDistance: activity.totalDistance ?? 0,
-                      photos: activity.photos ?? [],
-                      trackedPath: activity.trackedPath ?? [],
+                    return ListView.builder(
+                      itemCount: activities.length,
+                      itemBuilder: (context, index) {
+                        final activity = activities[index];
+                        return ActivityBlock(
+                          firstName: currentUser!.firstName,
+                          lastName: currentUser!.lastName,
+                          title: activity.title ?? "Untitled",
+                          description: activity.description ?? "",
+                          elapsedTime: activity.elapsedTime ?? Duration.zero,
+                          activityDate: activity.startTime ?? DateTime.now(),
+                          activityType: activity.activityType ?? "",
+                          totalDistance: activity.totalDistance ?? 0,
+                          photos: activity.photos ?? [],
+                          trackedPath: activity.trackedPath ?? [],
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+
+              Container(),
+              Container(),
+            ],
           ),
-          Container(),
-          Container(),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

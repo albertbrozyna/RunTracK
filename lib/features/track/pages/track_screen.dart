@@ -105,11 +105,11 @@ class _TrackScreenState extends State<TrackScreen> {
 
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
-          if (data != null && data.containsKey("activities")) {
-            AppData.currentUser?.activityNames = List<String>.from(data["activities"]);
+          if (data != null && data.containsKey("activityNames")) {
+            AppData.currentUser?.activityNames = List<String>.from(data["activityNames"]);
             if (AppData.currentUser != null && AppData.currentUser?.activityNames != null && AppData.currentUser!.activityNames!.isNotEmpty) {
               setState(() {
-                activityName = AppData.currentUser?.activities.first as String?; // Get first activity
+                activityName = AppData.currentUser!.activityNames!.first; // Get first activity
                 activityController.text = activityName!;
               });
             }
@@ -152,18 +152,39 @@ class _TrackScreenState extends State<TrackScreen> {
 
   // Function to start tracking
   void _pauseTracking() {
-    _positionStreamSubscription?.pause();
+    // Pause stream
+    if (_positionStreamSubscription != null) {
+      _positionStreamSubscription!.pause();
+    }
     // Pause timer
     _timer?.cancel();
-    _positionStreamSubscription = null;
     setState(() {
       _trackingState = TrackingState.paused;
     });
   }
 
+  /// Function to start timer
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if(_startTime != null){
+          _elapsedTime = DateTime.now().difference(_startTime!);
+        }
+      });
+    });
+  }
+
   // Function to resume tracking
   void _resumeTracking() {
-    _positionStreamSubscription?.resume();
+    // Resume tracking
+    if (_positionStreamSubscription != null && _positionStreamSubscription!.isPaused) {
+      _positionStreamSubscription!.resume();
+    } else {
+      // TODO If the subscription was canceled, you need to recreate it
+    }
+    // Restart timer
+    _startTimer();
+
     setState(() {
       _trackingState = TrackingState.running;
     });
@@ -177,7 +198,7 @@ class _TrackScreenState extends State<TrackScreen> {
           elapsedTime: _elapsedTime,
           totalDistance: _totalDistance,
           trackedPath: _trackedPath,
-          activityType: activityName!,
+          activityType: activityName ?? "Unknown",
           startTime: _startTime,
         ),
       ),

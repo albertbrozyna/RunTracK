@@ -63,10 +63,12 @@ class ActivityChooseState extends State<ActivityChoose> {
 
       if (docSnapshot.exists) {
         final data = docSnapshot.data();
-        if (data != null && data.containsKey("activities")) {
-          setState(() {
-            AppData.currentUser?.activityNames = List<String>.from(data["activities"]);
-          });
+        if (data != null && data.containsKey("activityNames")) {
+          if(AppData.currentUser != null && AppData.currentUser!.activityNames != null){
+            setState(() {
+              AppData.currentUser?.activityNames = List<String>.from(data["activityNames"]);
+            });
+          }
         }
       }
     } catch (e) {

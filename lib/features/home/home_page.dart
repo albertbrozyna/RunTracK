@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/firestore_utils.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
@@ -24,19 +27,29 @@ class _HomePageState extends State<HomePage> {
       _selectedIndex = index;
     });
   }
+
+  void _loadCurrentUser() async {
+    if (FirebaseAuth.instance.currentUser != null &&
+        AppData.currentUser == null) {
+      AppData.currentUser = await AppUtils.fetchUser(
+        FirebaseAuth.instance.currentUser!.uid,
+        context,
+        true,
+        true,
+      );
+      setState(() {});
+    }
+  }
+
   @override
-  void initState() {
+  void initState()  {
     super.initState();
-    fetchCurrentUserAndSave();
+    _pages = [TrackScreen(), Activities(), Competitions()];
+    _loadCurrentUser();
   }
 
   @override
   Widget build(BuildContext context) {
-    _pages = [
-      TrackScreen(),
-      Activities(),
-      Competitions()
-    ];
     return Scaffold(
       drawer: SideMenu(),
       appBar: TopBar(backgroundColor: AppColors.secondary),

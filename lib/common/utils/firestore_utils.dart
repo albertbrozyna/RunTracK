@@ -20,17 +20,4 @@ Future<String?> fetchUserIdByEmail(String email) async {
   }
 }
 
-/// Fetch current authenticated user and store globally
-Future<void> fetchCurrentUserAndSave() async {
-  final user = FirebaseAuth.instance.currentUser;
 
-  if (user?.email != null) {
-    final userId = await fetchUserIdByEmail(user!.email!);
-    if (userId != null) {
-      AppData.currentUserId = userId; // store globally
-      print('Current user ID saved globally: ${AppData.currentUserId}');
-    }
-  } else {
-    print('No authenticated user found');
-  }
-}

@@ -44,13 +44,17 @@ class AppUtils {
       // We are fetching current user so we get a full data
       if (FirebaseAuth.instance.currentUser?.uid != null &&
           FirebaseAuth.instance.currentUser?.uid == uid) {
+
+        final friendsRaw = userData['friends'] as List<dynamic>? ?? [];
+        final activityNames = userData['activityNames'] as List<dynamic>? ?? [];
+
         AppData.currentUser = new model.User(
           uid: FirebaseAuth.instance.currentUser!.uid,
           firstName: userData['firstName'],
           lastName: userData['lastName'],
           activities: [],
-          activityNames: userData['activities'],
-          friendsUids: userData['friends'],
+          activityNames: activityNames.map((e) => e.toString()).toList(),
+          friendsUids: friendsRaw.map((e) => e.toString()).toList(),
           email: userData['email'],
         );
 
