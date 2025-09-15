@@ -1,16 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/user.dart' as model;
-import 'package:run_track/common/enums/visibility.dart';
 
 class AppUtils {
   /// Method to fetch user by his uid

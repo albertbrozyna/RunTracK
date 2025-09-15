@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/utils/firestore_utils.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,18 +8,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/side_menu.dart';
-import 'package:run_track/common/widgets/top_bar.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
-import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
+import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/l10n/app_localizations.dart';
-import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
+
 import '../../../common/utils/app_data.dart';
 import '../../../common/utils/permission_utils.dart';
-import 'package:run_track/common/widgets/navigation_bar.dart';
 
 class TrackScreen extends StatefulWidget {
   @override

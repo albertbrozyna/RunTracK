@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 

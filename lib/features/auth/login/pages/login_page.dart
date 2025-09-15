@@ -1,14 +1,13 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/auth/register/pages/register_page.dart';
+import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/validators.dart';
+import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/home/home_page.dart';
-import '../../../../common/utils/app_data.dart';
-import '../../../track/pages/track_screen.dart';
 import 'package:run_track/models/user.dart' as  model;
+
+import '../../../../common/utils/app_data.dart';
 
 class LoginPage extends StatefulWidget {
   @override

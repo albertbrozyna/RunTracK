@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
-import 'package:run_track/theme/colors.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 
 class StartPage extends StatefulWidget {

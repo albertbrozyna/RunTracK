@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/features/auth/start/pages/start_page.dart';
 
-import '../../features/auth/register/pages/register_page.dart';
 
 class SideMenu extends StatelessWidget{
 

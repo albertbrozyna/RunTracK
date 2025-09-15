@@ -1,5 +1,3 @@
-import 'package:run_track/features/activities/pages/user_activities.dart';
-
 import 'activity.dart';
 
 class User {
