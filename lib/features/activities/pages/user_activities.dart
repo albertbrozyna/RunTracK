@@ -69,14 +69,7 @@ class _ActivitiesState extends State<Activities>
                         return ActivityBlock(
                           firstName: currentUser!.firstName,
                           lastName: currentUser!.lastName,
-                          title: activity.title ?? "Untitled",
-                          description: activity.description ?? "",
-                          elapsedTime: activity.elapsedTime ?? Duration.zero,
-                          activityDate: activity.startTime ?? DateTime.now(),
-                          activityType: activity.activityType ?? "",
-                          totalDistance: activity.totalDistance ?? 0,
-                          photos: activity.photos,
-                          trackedPath: activity.trackedPath ?? [],
+                          activity: activity,
                         );
                       },
                     );

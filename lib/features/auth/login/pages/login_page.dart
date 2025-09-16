@@ -1,11 +1,10 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/validators.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/home/home_page.dart';
-import 'package:run_track/models/user.dart' as  model;
+import 'package:run_track/models/user.dart' as model;
 
 import '../../../../common/utils/app_data.dart';
 
@@ -25,10 +24,13 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     super.dispose();
   }
-  void handleLogin(){
-    if(!isEmailValid(_emailController.text.trim())){
+
+  void handleLogin() {
+    if (!isEmailValid(_emailController.text.trim())) {
       // TODO make a good communicates
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
       return;
     }
 
@@ -43,21 +45,27 @@ class _LoginPageState extends State<LoginPage> {
             password: _passwordController.text.trim(),
           );
 
-      if(userCredential.user?.uid == null){
-        // TODO Communicate here with error
+      if (userCredential.user?.uid == null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Incorrect email or password, try again."),
+          backgroundColor: Colors.red,
+        ));
         return;
       }
 
-      DocumentSnapshot userData = await FirebaseFirestore.instance.collection("users").doc(userCredential.user?.uid).get();
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(userCredential.user?.uid)
+          .get();
 
       if (!userData.exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("User data not found.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("User data not found.")));
         return;
       }
 
-      AppData.currentUser =  new model.User(
+      AppData.currentUser = new model.User(
         uid: FirebaseAuth.instance.currentUser!.uid,
         firstName: userData['firstName'],
         lastName: userData['lastName'],
@@ -74,15 +82,19 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      Future.delayed(Duration(seconds: 1), (){
+      Future.delayed(Duration(seconds: 1), () {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
         );
       });
     } on FirebaseAuthException catch (e) {
-      // TODO ADD COMUNICATES WITH ERROR LOGGIN
-      print("Auth error ${e.message}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? "Login failed"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

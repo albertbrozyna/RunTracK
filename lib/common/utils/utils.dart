@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/models/activity.dart';
@@ -65,21 +64,8 @@ class AppUtils {
 
         if (allActivities) {
           List<Activity> activities = userActivities.docs.map((doc) {
-            final actData = doc.data();
-
-            return Activity(
-              actData['totalDistance']?.toDouble(),
-              Duration(seconds: actData['elapsedTime'] ?? 0),
-              (actData['trackedPath'] as List<dynamic>?)
-                  ?.map((e) => LatLng(e['lat'], e['lng']))
-                  .toList(),
-              actData['activityType'],
-              (actData['startTime'] as Timestamp?)?.toDate(),
-              actData['title'],
-              actData['description'],
-              actData['visibility'],
-              actData['photos']
-            );
+            final data = doc.data();
+            return Activity.fromMap(data);
           }).toList();
           AppData.currentUser?.activities = activities.cast<Activity>();
         }
@@ -110,19 +96,7 @@ class AppUtils {
 
           List<Activity> activities = userActivities.docs.map((doc) {
             final actData = doc.data();
-            return Activity(
-              actData['totalDistance']?.toDouble(),
-              Duration(seconds: actData['elapsedTime'] ?? 0),
-              (actData['trackedPath'] as List<dynamic>?)
-                  ?.map((e) => LatLng(e['lat'], e['lng']))
-                  .toList(),
-              actData['activityType'],
-              (actData['startTime'] as Timestamp?)?.toDate(),
-              actData['title'],
-              actData['description'],
-              actData['visibility'],
-              actData['photos'],
-            );
+            return Activity.fromMap(actData);
           }).toList();
           user.activities = activities.cast<Activity>();
         }
@@ -157,19 +131,7 @@ class AppUtils {
     // Cast to activity class
     return userActivities.docs.map((doc) {
       final actData = doc.data();
-      return Activity(
-        actData['totalDistance']?.toDouble(),
-        Duration(seconds: actData['elapsedTime'] ?? 0),
-        (actData['trackedPath'] as List<dynamic>?)
-            ?.map((e) => LatLng(e['lat'], e['lng']))
-            .toList(),
-        actData['activityType'],
-        (actData['startTime'] as Timestamp?)?.toDate(),
-        actData['title'],
-        actData['description'],
-        actData['visibility'],
-        actData['photos']
-      );
+      return Activity.fromMap(actData);
     }).toList();
   }
 
