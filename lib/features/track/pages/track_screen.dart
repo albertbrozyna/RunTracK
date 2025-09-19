@@ -129,25 +129,6 @@ class _TrackScreenState extends State<TrackScreen> {
     Scaffold.of(context).openDrawer();
   }
 
-  // Function to get location permission
-  Future<void> _getLocation() async {
-    try {
-      final position = await LocationService.determinePosition();
-      setState(() {
-        _currentPosition = LatLng(position!.latitude, position.longitude);
-      });
-
-      // Move and zoom map to current location
-      final newPos = LatLng(position!.latitude, position.longitude);
-      _mapController.move(newPos, 15.0);
-    } catch (e) {
-      // Show an error message
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
   // Function to start tracking
   void _pauseTracking() {
     // Pause stream

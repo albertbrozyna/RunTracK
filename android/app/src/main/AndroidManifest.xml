@@ -28,10 +28,10 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name="com.lyokone.location.FlutterLocationService"
-            android:exported="false"
-            android:attributionTag="VCN" />
+<!--        <service-->
+<!--            android:name="com.lyokone.location.FlutterLocationService"-->
+<!--            android:exported="false"-->
+<!--            android:attributionTag="VCN" />-->
 
         <meta-data
             android:name="flutterEmbedding"

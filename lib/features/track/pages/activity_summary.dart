@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -145,162 +146,185 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         centerTitle: true,
         backgroundColor: AppColors.primary,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Time: ${AppUtils.formatDuration(widget.elapsedTime)}',
-                  style: AppTextStyles.heading.copyWith(),
-                ),
-                SizedBox(width: 15),
-                Text(
-                  'Distance: ${widget.totalDistance}',
-                  style: AppTextStyles.heading.copyWith(),
-                ),
-              ],
-            ),
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-            // Title
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: AppUiConstants.borderRadiusTextFields,
-                ),
-                label: Text("Title"),
-              ),
-            ),
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-            TextField(
-              maxLines: 3,
-              controller: descriptionController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: AppUiConstants.borderRadiusTextFields,
-                ),
-                label: Text("Description"),
-              ),
-              style: TextStyle(),
-            ),
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-            // Activity type
-            TextField(
-              controller: activityController,
-              readOnly: true,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: AppUiConstants.borderRadiusTextFields,
-                ),
-                label: Text("Activity type"),
-                suffixIcon: Padding(
-                  padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
-                  child: IconButton(
-                    onPressed: () => onTapActivity(),
-                    icon: Icon(Icons.list),
-                  ),
-                ),
-              ),
-            ),
-            if (widget.trackedPath.isNotEmpty)
-              SizedBox(height: AppUiConstants.kTextFieldSpacing),
-            if (widget.trackedPath.isNotEmpty)
-              Expanded(
-                child: FlutterMap(
-                  options: MapOptions(
-                    // TODO TO CHANGE THIS DEFAULT LOCATION TO LAST USER LOC
-                    initialCenter: widget.trackedPath.first,
-                    initialZoom: 15.0,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.runtrack',
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/background-first.jpg"),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Time: ${AppUtils.formatDuration(widget.elapsedTime)}',
+                    style: AppTextStyles.heading.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    if (widget.trackedPath.isNotEmpty)
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: widget.trackedPath,
-                            color: Colors.blue,
-                            strokeWidth: 4.0,
-                          ),
-                        ],
-                      ),
-                    if (widget.trackedPath.isNotEmpty)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: widget.trackedPath.first,
-                            width: 40,
-                            height: 40,
-                            child: Icon(Icons.flag, color: Colors.green),
-                          ),
-                          Marker(
-                            point: widget.trackedPath.last,
-                            width: 40,
-                            height: 40,
-                            child: Icon(Icons.stop, color: Colors.red),
-                          ),
-                        ],
-                      ),
-                  ],
+                  ),
+                  SizedBox(width: 15),
+                  Text(
+                    'Distance: ${widget.totalDistance}',
+                    style: AppTextStyles.heading.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              // Title
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: AppUiConstants.borderRadiusTextFields,
+                  ),
+                  label: Text("Title"),
+                  labelStyle: TextStyle(fontSize: 18),
                 ),
               ),
-
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-            // Photos section
-            AddPhotos(
-              showSelectedPhots: true,
-              onImagesSelected: (images) {
-                _pickedImages = images;
-              },
-            ),
-            SizedBox(height: AppUiConstants.kTextFieldSpacing),
-
-            DropdownMenu(
-              initialSelection: _visibility,
-              onSelected: (vb.Visibility? visibility) {
-                setState(() {
-                  if (visibility != null) {
-                    _visibility = visibility;
-                  }
-                });
-              },
-              dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
-                DropdownMenuEntry(value: vb.Visibility.ME, label: "Only Me"),
-                DropdownMenuEntry(
-                  value: vb.Visibility.FRIENDS,
-                  label: "Friends",
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              TextField(
+                maxLines: 3,
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: AppUiConstants.borderRadiusTextFields,
+                  ),
+                  label: Text("Description"),
                 ),
-                DropdownMenuEntry(
-                  value: vb.Visibility.EVERYONE,
-                  label: "Everyone",
-                ),
-              ],
-            ),
+                style: TextStyle(),
+              ),
 
-            // TODO Change color after saving activity
-            if (!activitySaved)
-              SizedBox(
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              // Activity type
+              TextField(
+                textAlign: TextAlign.left,
+                controller: activityController,
+                readOnly: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: AppUiConstants.borderRadiusTextFields,
+                  ),
+                  label: Text("Activity type"),
+                  suffixIcon: Padding(
+                    padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
+                    child: IconButton(
+                      onPressed: () => onTapActivity(),
+                      icon: Icon(Icons.list),
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.trackedPath.isNotEmpty)
+                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              if (widget.trackedPath.isNotEmpty)
+                Expanded(
+                  child: FlutterMap(
+                    options: MapOptions(
+                      // TODO TO CHANGE THIS DEFAULT LOCATION TO LAST USER LOC
+                      initialCenter: widget.trackedPath.first,
+                      initialZoom: 15.0,
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.runtrack',
+                      ),
+                      if (widget.trackedPath.isNotEmpty)
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: widget.trackedPath,
+                              color: Colors.blue,
+                              strokeWidth: 4.0,
+                            ),
+                          ],
+                        ),
+                      if (widget.trackedPath.isNotEmpty)
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: widget.trackedPath.first,
+                              width: 40,
+                              height: 40,
+                              child: Icon(Icons.flag, color: Colors.green),
+                            ),
+                            Marker(
+                              point: widget.trackedPath.last,
+                              width: 40,
+                              height: 40,
+                              child: Icon(Icons.stop, color: Colors.red),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+              // Photos section
+              AddPhotos(
+                showSelectedPhots: true,
+                onImagesSelected: (images) {
+                  _pickedImages = images;
+                },
+              ),
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+
+              DropdownMenu(
+                initialSelection: _visibility,
                 width: double.infinity,
-                height: 50,
-                child: CustomButton(
-                  text: activitySaved ? "Activity saved" : "Save activity",
-                  onPressed: activitySaved ? null : () => handleSaveActivity(),
-                  gradientColors: [
-                    Color(0xFFFFB74D),
-                    Color(0xFFFF9800),
-                    Color(0xFFF57C00),
-                  ],
-                ),
+                textAlign: TextAlign.left,
+                onSelected: (vb.Visibility? visibility) {
+                  setState(() {
+                    if (visibility != null) {
+                      _visibility = visibility;
+                    }
+                  });
+                },
+                dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
+                  DropdownMenuEntry(value: vb.Visibility.ME, label: "Only Me"),
+                  DropdownMenuEntry(
+                    value: vb.Visibility.FRIENDS,
+                    label: "Friends",
+                  ),
+                  DropdownMenuEntry(
+                    value: vb.Visibility.EVERYONE,
+                    label: "Everyone",
+                  ),
+                ],
               ),
-          ],
+              SizedBox(height: AppUiConstants.kTextFieldSpacing),
+
+              // TODO Change color after saving activity
+              if (!activitySaved)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: CustomButton(
+                    text: activitySaved ? "Activity saved" : "Save activity",
+                    onPressed: activitySaved
+                        ? null
+                        : () => handleSaveActivity(),
+                    gradientColors: [
+                      Color(0xFFFFB74D),
+                      Color(0xFFFF9800),
+                      Color(0xFFF57C00),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -10,6 +10,7 @@ import '../../common/widgets/navigation_bar.dart';
 import '../../common/widgets/side_menu.dart';
 import '../../common/widgets/top_bar.dart';
 import '../../theme/colors.dart';
+import 'package:run_track/common/utils/permission_utils.dart'; // adjust the path if needed
 
 class HomePage extends StatefulWidget {
   @override
@@ -40,12 +41,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _askForLocation() async {
+    try {
+      final position = await LocationService.determinePosition();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
   @override
   void initState()  {
     super.initState();
     _pages = [TrackScreen(), Activities(), Competitions()];
     _loadCurrentUser();
+    _askForLocation();
   }
+
+
 
   @override
   Widget build(BuildContext context) {

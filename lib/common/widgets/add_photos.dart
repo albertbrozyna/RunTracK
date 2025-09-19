@@ -31,7 +31,6 @@ class _AddPhotosState extends State<AddPhotos> {
       // Notify parent widget
       widget.onImagesSelected?.call(_images);
     }
-
   }
 
   @override
