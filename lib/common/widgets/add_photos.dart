@@ -49,6 +49,8 @@ class _AddPhotosState extends State<AddPhotos> {
                   AppUiConstants.borderRadiusButtons,
                 ),
               ),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
             ),
             child: Ink(
               decoration: BoxDecoration(
