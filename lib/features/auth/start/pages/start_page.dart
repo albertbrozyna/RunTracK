@@ -44,16 +44,23 @@ class StartPageState extends State<StartPage> {
           child: Column(
             children: [
               // Title
-              Text(
-                AppLocalizations.of(context)!.appName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white, // change if needed
-                  shadows: [
-                    Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2)),
-                  ],
+              Padding(
+                padding: EdgeInsetsGeometry.only(top: 14),
+                child: Text(
+                  AppLocalizations.of(context)!.appName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white, // change if needed
+                    shadows: [
+                      Shadow(
+                        blurRadius: 8,
+                        color: Colors.black45,
+                        offset: Offset(2, 2),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -62,7 +69,6 @@ class StartPageState extends State<StartPage> {
               Image.asset(
                 "assets/runtrack-app-icon-round.png", // your logo path
                 width: 300,
-
               ),
 
               // Text under the logo
@@ -74,7 +80,11 @@ class StartPageState extends State<StartPage> {
                   fontWeight: FontWeight.bold,
                   color: Colors.white, // change if needed
                   shadows: [
-                    Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2)),
+                    Shadow(
+                      blurRadius: 8,
+                      color: Colors.black45,
+                      offset: Offset(2, 2),
+                    ),
                   ],
                 ),
               ),
@@ -96,10 +106,7 @@ class StartPageState extends State<StartPage> {
                   textSize: 20,
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                height: 15,
-              ),
+              SizedBox(width: double.infinity, height: 15),
               SizedBox(
                 width: double.infinity,
                 height: 60,
@@ -114,7 +121,7 @@ class StartPageState extends State<StartPage> {
                   ],
                 ),
               ),
-              SizedBox(height: 60,)
+              SizedBox(height: 60),
             ],
           ),
         ),

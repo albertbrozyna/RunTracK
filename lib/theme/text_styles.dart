@@ -26,4 +26,11 @@ class AppTextStyles {
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
+
+
+  static const PageHeaderTextStyle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 1,
+  );
 }

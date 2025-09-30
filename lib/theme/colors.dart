@@ -8,4 +8,5 @@ class AppColors {
   static const Color textPrimary = Color(0xFFF2F2F7);
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
+  static const Color pageHeaderColor = AppColors.primary;
 }

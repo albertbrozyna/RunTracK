@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/models/activity.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
@@ -74,11 +75,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please log in to save your activity')),
       );
+      FirebaseAuth.instance.signOut();
       return;
     }
-    // Activity data
+    // Photos from activity
     List<String> uploadedUrls = [];
-
     for (var image in _pickedImages) {
       final ref = FirebaseStorage.instance.ref().child(
         'users/$uid/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
@@ -87,30 +88,26 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       final url = await ref.getDownloadURL();
       uploadedUrls.add(url);
     }
+    // Activity data
+    Activity userActivity = new Activity(
+      activityType: widget.activityType,
+      description: descriptionController.text.trim(),
+      title: titleController.text.trim(),
+      totalDistance: widget.totalDistance,
+      elapsedTime: widget.elapsedTime.inSeconds.toInt(),
+      visibility: _visibility.toString(),
+      startTime: widget.startTime,
+      trackedPath: widget.trackedPath,
+      photos: uploadedUrls
+    );
 
-    // TODO add date when user runs it
-    final activityData = {
-      'totalDistance': widget.totalDistance,
-      'elapsedTime': widget.elapsedTime.inSeconds,
-      'trackedPath': widget.trackedPath
-          .map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
-          .toList(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'startTime': widget.startTime,
-      'title': titleController.text.trim(),
-      'description': descriptionController.text.trim(),
-      'visibility': _visibility,
-      'photos': uploadedUrls,
-    };
-
+    // Save activity to database
     try {
-      // Save activity to database
       await FirebaseFirestore.instance
           .collection("users")
           .doc(uid)
           .collection("activities")
-          .add(activityData);
-      // TODO ADD comeback to a track screen
+          .add(userActivity.toMap());
       setState(() {
         activitySaved = true;
       });
@@ -274,7 +271,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                 ),
                 SizedBox(height: AppUiConstants.kTextFieldSpacing),
-                // Decription
+                // Description
                 TextField(
                   maxLines: 3,
                   controller: descriptionController,
@@ -332,13 +329,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       ),
                     ),
                     SizedBox(width: 15),
-                    // Visiblity
+                    // Visibility
                     Expanded(
                       child: Theme(
                         data: Theme.of(context).copyWith(
                           iconTheme: IconThemeData(
                             color: Colors.white,
-                          ), // <-- zmienia kolor strzałki
+                          ),
                         ),
                         child: DropdownMenu(
                           textStyle: TextStyle(color: Colors.white),
@@ -361,6 +358,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           ),
                           width: double.infinity,
                           textAlign: TextAlign.left,
+                          // Selecting visibility
                           onSelected: (vb.Visibility? visibility) {
                             setState(() {
                               if (visibility != null) {
@@ -368,6 +366,22 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               }
                             });
                           },
+                          // Icon
+                          trailingIcon: Icon(
+                            color: Colors.white,
+                            Icons.arrow_drop_down
+                          ),
+                          selectedTrailingIcon: Icon(
+                            color: Colors.white,
+                            Icons.arrow_drop_up
+                          ),
+
+                          menuStyle: MenuStyle(
+                            backgroundColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.8)),
+                            alignment: Alignment.center,
+
+
+                          ),
                           dropdownMenuEntries:
                               <DropdownMenuEntry<vb.Visibility>>[
                                 DropdownMenuEntry(

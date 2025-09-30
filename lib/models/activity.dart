@@ -31,10 +31,11 @@ class Activity {
       'totalDistance': totalDistance,
       'elapsedTime': elapsedTime,
       'trackedPath': trackedPath
-          ?.map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
+          ?.map((latLng) => {'lat': latLng.latitude.toDouble(), 'lng': latLng.longitude.toDouble()})
           .toList(),
+      'activityType':activityType,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
-      'startTime': startTime,
+      'startTime': startTime != null ? Timestamp.fromDate(startTime!) : null,
       'title': title,
       'description': description,
       'visibility': visibility,
