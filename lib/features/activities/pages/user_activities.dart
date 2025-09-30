@@ -34,55 +34,67 @@ class _ActivitiesState extends State<Activities>
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Column(
-      children: [
-        TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: "My"),
-            Tab(text: "Friends"),
-            Tab(text: "All"),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              Container(
-                child: FutureBuilder<List<Activity>?>(
-                  future: AppUtils.fetchUserActivities(currentUser!.uid, 10),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text("Error: ${snapshot.error}"));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return Center(child: Text("No activities found"));
-                    }
-
-                    final activities = snapshot.data!;
-
-                    return ListView.builder(
-                      itemCount: activities.length,
-                      itemBuilder: (context, index) {
-                        final activity = activities[index];
-                        return ActivityBlock(
-                          firstName: currentUser!.firstName,
-                          lastName: currentUser!.lastName,
-                          activity: activity,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              Container(),
-              Container(),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage("assets/background-start.jpg"),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withValues(alpha: 0.25),
+            BlendMode.darken,
           ),
         ),
-      ],
+      ),
+      child: Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: "My"),
+              Tab(text: "Friends"),
+              Tab(text: "All"),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                Container(
+                  child: FutureBuilder<List<Activity>?>(
+                    future: AppUtils.fetchUserActivities(currentUser!.uid, 10),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text("Error: ${snapshot.error}"));
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(child: Text("No activities found"));
+                      }
+
+                      final activities = snapshot.data!;
+
+                      return ListView.builder(
+                        itemCount: activities.length,
+                        itemBuilder: (context, index) {
+                          final activity = activities[index];
+                          return ActivityBlock(
+                            firstName: currentUser!.firstName,
+                            lastName: currentUser!.lastName,
+                            activity: activity,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                Container(),
+                Container(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -79,12 +79,12 @@ class _LoginPageState extends State<LoginPage> {
         email: userData['email'],
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login successful!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // TODO UI
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Logged in successfully")),
+        );
+      }
 
       Future.delayed(Duration(seconds: 1), () {
         Navigator.pushReplacement(
