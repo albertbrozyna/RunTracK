@@ -60,5 +60,32 @@ class Activity {
       photos: List<String>.from(map['photos'] ?? []),
     );
   }
+
+
+
+}
+
+// TODO to learn more about this
+extension ActivityClone on Activity {
+  Activity clone() {
+    return Activity(
+      totalDistance: this.totalDistance,
+      elapsedTime: this.elapsedTime,
+      trackedPath: this.trackedPath != null
+          ? this.trackedPath!.map((p) => LatLng(p.latitude, p.longitude)).toList()
+          : null,
+      activityType: this.activityType,
+      createdAt: this.createdAt != null
+          ? DateTime.fromMillisecondsSinceEpoch(this.createdAt!.millisecondsSinceEpoch)
+          : null,
+      startTime: this.startTime != null
+          ? DateTime.fromMillisecondsSinceEpoch(this.startTime!.millisecondsSinceEpoch)
+          : null,
+      title: this.title,
+      description: this.description,
+      visibility: this.visibility,
+      photos: List<String>.from(this.photos),
+    );
+  }
 }
 

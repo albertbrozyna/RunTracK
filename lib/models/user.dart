@@ -12,9 +12,13 @@ class User {
   List<String>?friendsUids;
   String? email;
   String? profilePhotoUrl;   // Profile photo url
+  DateTime? dateOfBirth;
   // Default location for user
   LatLng userDefaultLocation;
-
+  // User stats
+  int kilometers = 0;
+  int burnedCalories = 0;
+  int hoursOfActivity = 0;
 
   User({
     required this.uid,
@@ -24,7 +28,9 @@ class User {
     this.friendsUids,
     this.activityNames,
     this.email,
+    this.profilePhotoUrl,
     LatLng? defaultLocation,
+    DateTime? dateOfBirth,
 }) :  userDefaultLocation = defaultLocation ?? LatLng(0.0, 0.0);
 
   Map<String, dynamic> toMap() {

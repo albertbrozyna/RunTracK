@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/common/utils/app_data.dart';
 
 import '../../features/sideMenu/profile_page.dart';
+import '../../features/sideMenu/pages/settings.dart';
 
 class SideMenu extends StatelessWidget {
   void onLogOutPressed(BuildContext context) async {
@@ -22,14 +23,16 @@ class SideMenu extends StatelessWidget {
   void onTapMyProfile(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ProfilePage()),
+      MaterialPageRoute(
+        builder: (context) => ProfilePage(uid: AppData.currentUser?.uid),
+      ),
     );
   }
 
   void onTapSettings(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ProfilePage()),
+      MaterialPageRoute(builder: (context) => SettingsPage()),
     );
   }
 
@@ -42,20 +45,20 @@ class SideMenu extends StatelessWidget {
             leading: ClipOval(
               child: Image.asset(
                 "assets/DefaultProfilePhoto.png",
-                width: 40,
-                height: 40,
+                width: 50,
+                height: 50,
               ),
             ),
+            onTap: () => onTapMyProfile(context),
             title: Text(
               "${AppData.currentUser?.firstName} ${AppData.currentUser?.lastName}",
             ),
           ),
           ListTile(
-            leading: Icon(Icons.person),
-            onTap: () => onTapMyProfile(context),
-            title: Text("My profile"),
+            leading: Icon(Icons.settings),
+            title: Text("Settings"),
+            onTap: () => onTapSettings(context),
           ),
-          ListTile(leading: Icon(Icons.settings), title: Text("Settings")),
           ListTile(
             leading: Icon(Icons.login_outlined),
             title: Text("Log out"),

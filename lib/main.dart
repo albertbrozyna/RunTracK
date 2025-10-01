@@ -52,7 +52,8 @@ class MyApp extends StatelessWidget {
         }
 
         return StartPage();
-      })
+      }),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
