@@ -49,8 +49,19 @@ class _ActivitiesState extends State<Activities>
         children: [
           TabBar(
             controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white.withAlpha(100),
+            labelStyle: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+
+            ),
+            unselectedLabelStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
             tabs: [
-              Tab(text: "My"),
+              Tab(text: "My",),
               Tab(text: "Friends"),
               Tab(text: "All"),
             ],

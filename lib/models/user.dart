@@ -11,8 +11,10 @@ class User {
   List<String>?activityNames;
   List<String>?friendsUids;
   String? email;
+  String? profilePhotoUrl;   // Profile photo url
   // Default location for user
   LatLng userDefaultLocation;
+
 
   User({
     required this.uid,
@@ -34,6 +36,7 @@ class User {
       'activityNames': activityNames ?? [],
       'friendsUids': friendsUids ?? [],
       'activities': activities?.map((a) => a.toMap()).toList() ?? [],
+      'profilePhotoUrl': profilePhotoUrl,
       'userDefaultLocation': {
         'latitude': userDefaultLocation.latitude,
         'longitude': userDefaultLocation.longitude,

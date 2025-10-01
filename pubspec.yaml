@@ -83,6 +83,7 @@ flutter:
     - assets/background-start.jpg
     - assets/runtrack-app-icon-round.png
     - assets/background-first.jpg
+    - assets/DefaultProfilePhoto.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
