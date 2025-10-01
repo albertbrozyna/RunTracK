@@ -61,7 +61,7 @@ class UserService {
     );
   }
 
-  Future<bool> deleteUserFromFirestore() async {
+  static Future<bool> deleteUserFromFirestore() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {

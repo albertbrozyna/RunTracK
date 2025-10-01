@@ -80,6 +80,10 @@ class _ProfilePageState extends State<ProfilePage> {
     return result;
   }
 
+  void deleteAccountButtonPressed() {
+    // TODO ASK
+  }
+
   /// Function invoked when edit is finished and changes are saved
   void onEditFinished() {}
 
@@ -395,7 +399,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       }
                     },
                   ),
-              SizedBox(height: 10),
+                SizedBox(height: 10),
                 // Friend list
                 Container(
                   child: Column(
@@ -404,7 +408,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Text(
                         "Friends: ${user?.friendsUids?.length ?? 0}",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white,fontSize: 15),
+                        style: TextStyle(color: Colors.white, fontSize: 15),
                       ),
 
                       // TODO To test
@@ -441,10 +445,36 @@ class _ProfilePageState extends State<ProfilePage> {
                 //   child: ,
                 // )
                 // Delete profile button
-                if(edit)
-                  Container(
-                  child: TextButton(onPressed: () => UserService.deleteUserFromFirestore(), child: Text("Delete my account",style: TextStyle(color: Colors.red))),
-                  )
+                if (edit) SizedBox(height: 20),
+                Container(
+                  width: MediaQuery.of(context).size.width / 1.5,
+                  child: TextButton(
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(Colors.red),
+                      side: MaterialStateProperty.all(
+                        BorderSide(
+                          color: Colors.white24,
+                          width: 1,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                    ),
+                    onPressed: () => UserService.deleteUserFromFirestore(),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Delete my account",
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: Icon(Icons.delete, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
