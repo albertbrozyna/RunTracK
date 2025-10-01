@@ -48,25 +48,29 @@ class _ActivitiesState extends State<Activities>
       ),
       child: Column(
         children: [
-          TabBar(
-            controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withAlpha(100),
-            labelStyle: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withAlpha(100),
+              labelStyle: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              unselectedLabelStyle: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               backgroundColor: AppColors.primary,
+              ),
+              tabs: [
+                Tab(text: "My",),
+                Tab(text: "Friends"),
+                Tab(text: "All"),
+              ],
             ),
-            unselectedLabelStyle: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            backgroundColor: AppColors.primary,
-            ),
-            tabs: [
-              Tab(text: "My",),
-              Tab(text: "Friends"),
-              Tab(text: "All"),
-            ],
           ),
           Expanded(
             child: TabBarView(
