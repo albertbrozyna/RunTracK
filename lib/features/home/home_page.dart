@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _pages = [TrackScreen(), Activities(), Competitions()];
     _loadCurrentUser();
-    _askForLocation();
+    LocationService.determinePosition();
   }
 
 

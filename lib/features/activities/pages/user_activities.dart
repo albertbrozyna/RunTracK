@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
+import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
@@ -54,11 +55,12 @@ class _ActivitiesState extends State<Activities>
             labelStyle: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-
+              backgroundColor: AppColors.primary,
             ),
             unselectedLabelStyle: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
+            backgroundColor: AppColors.primary,
             ),
             tabs: [
               Tab(text: "My",),
