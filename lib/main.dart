@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:run_track/features/auth/login/pages/login_page.dart';
-import 'package:run_track/features/auth/start/pages/start_page.dart';
-import 'package:run_track/features/track/pages/track_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'config/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/l10n/app_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/features/home/home_page.dart';
+import 'package:run_track/l10n/app_localizations.dart';
+
+import 'config/firebase_options.dart';
 
 void main() async {
   // It is needed for flutter to use a async in main
@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true
       ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -47,11 +48,12 @@ class MyApp extends StatelessWidget {
         }
         // If we are logged in
         if(snapshot.data != null){  // Data is user?
-            return TrackScreen();
+            return HomePage();
         }
 
         return StartPage();
-      })
+      }),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

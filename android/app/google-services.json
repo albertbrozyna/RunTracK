@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:959724000751:android:e1aeb574237654250e921a",
+        "mobilesdk_app_id": "1:959724000751:android:5ae43f767a2d0ec40e921a",
         "android_client_info": {
-          "package_name": "com.example.inzynierka"
+          "package_name": "com.albertbrozyna.runtrack"
         }
       },
       "oauth_client": [],

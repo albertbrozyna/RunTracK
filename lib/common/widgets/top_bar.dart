@@ -16,10 +16,14 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor,
       centerTitle: true,
-      title: Text(title),
+      title: Text(title,style: TextStyle(
+        color: Colors.white,
+        fontSize: 23,
+        fontWeight: FontWeight.w700
+      ),),
       leading: Builder(
         builder: (context) => IconButton(
-          icon: Icon(Icons.menu),
+          icon: Icon(Icons.menu,color: Colors.white,),
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
       ),

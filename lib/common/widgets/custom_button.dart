@@ -3,7 +3,7 @@ import 'package:run_track/theme/colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color backgroundColor;
   final List<Color> gradientColors;
   final Color textColor;

@@ -4,7 +4,11 @@ class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const BottomNavBar({super.key, required this.currentIndex, required this.onTap});
+  const BottomNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,17 +17,14 @@ class BottomNavBar extends StatelessWidget {
       onTap: onTap,
       items: [
         // TODO Icons here
+        BottomNavigationBarItem(icon: Icon(Icons.timer_outlined), label: "Track activity"),
         BottomNavigationBarItem(
-          icon: Icon(Icons.access_time),
-          label: "Home"
+          icon: Icon(Icons.history_outlined),
+          label: "Activities",
         ),
         BottomNavigationBarItem(
-            icon: Icon(Icons.ac_unit_sharp),
-            label: "History"
-        ),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.accessibility_rounded),
-            label: "races"
+          icon: Icon(Icons.directions_run_outlined),
+          label: "Competitions",
         ),
       ],
     );
