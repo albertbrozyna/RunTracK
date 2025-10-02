@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/services/userService.dart';
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;

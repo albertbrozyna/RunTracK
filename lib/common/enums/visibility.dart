@@ -1,1 +1,1 @@
-enum Visibility { ME, FRIENDS, EVERYONE }
+enum Visibility { me, friends, everyone }

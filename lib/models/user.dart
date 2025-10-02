@@ -7,7 +7,6 @@ class User {
   String uid;
   String firstName;
   String lastName;
-  List<Activity>?activities;
   List<String>?activityNames;
   List<String>?friendsUids;
   String? email;
@@ -16,21 +15,23 @@ class User {
   // Default location for user
   LatLng userDefaultLocation;
   // User stats
-  int kilometers = 0;
-  int burnedCalories = 0;
-  int hoursOfActivity = 0;
+  int kilometers;
+  int burnedCalories;
+  int hoursOfActivity;
 
   User({
     required this.uid,
     required this.firstName,
     required this.lastName,
-    this.activities,
     this.friendsUids,
     this.activityNames,
     this.email,
     this.profilePhotoUrl,
     LatLng? defaultLocation,
     DateTime? dateOfBirth,
+    this.kilometers = 0,
+    this.burnedCalories = 0,
+    this.hoursOfActivity = 0,
 }) :  userDefaultLocation = defaultLocation ?? LatLng(0.0, 0.0);
 
   Map<String, dynamic> toMap() {
@@ -41,7 +42,6 @@ class User {
       'email': email,
       'activityNames': activityNames ?? [],
       'friendsUids': friendsUids ?? [],
-      'activities': activities?.map((a) => a.toMap()).toList() ?? [],
       'profilePhotoUrl': profilePhotoUrl,
       'userDefaultLocation': {
         'latitude': userDefaultLocation.latitude,

@@ -74,7 +74,6 @@ class _LoginPageState extends State<LoginPage> {
         firstName: userData['firstName'],
         lastName: userData['lastName'],
         activityNames: List<String>.from(userData['activityNames'] ?? []),
-        activities: [],
         friendsUids: List<String>.from(userData['friends'] ?? []),
         email: userData['email'],
       );

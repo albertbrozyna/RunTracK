@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
+import '../../../services/activity_service.dart';
+
 class RunStats extends StatelessWidget {
   final double totalDistance;
   final String pace;
@@ -46,7 +48,7 @@ class RunStats extends StatelessWidget {
                   children: [
                     _buildStatCard(
                       "Time:",
-                      '${AppUtils.formatDuration(elapsedTime)}',Icon(Icons.timer)
+                      '${ActivityService.formatElapsedTime(elapsedTime)}',Icon(Icons.timer)
                     ),
                     // TODO change icon
                     _buildStatCard(

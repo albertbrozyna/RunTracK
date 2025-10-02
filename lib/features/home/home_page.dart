@@ -5,6 +5,7 @@ import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
+import 'package:run_track/services/user_service.dart';
 
 import '../../common/widgets/navigation_bar.dart';
 import '../../common/widgets/side_menu.dart';
@@ -31,30 +32,17 @@ class _HomePageState extends State<HomePage> {
   void _loadCurrentUser() async {
     if (FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser == null) {
-      AppData.currentUser = await AppUtils.fetchUser(
-        FirebaseAuth.instance.currentUser!.uid,
-        context,
-        true,
-        true,
+      AppData.currentUser = await UserService.fetchUser(
+        FirebaseAuth.instance.currentUser!.uid
       );
       setState(() {});
-    }
-  }
-
-  void _askForLocation() async {
-    try {
-      final position = await LocationService.determinePosition();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
     }
   }
 
   @override
   void initState()  {
     super.initState();
-    _pages = [TrackScreen(), Activities(), Competitions()];
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage()];
     _loadCurrentUser();
     LocationService.determinePosition();
   }
@@ -65,7 +53,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: SideMenu(),
-      appBar: TopBar(backgroundColor: AppColors.secondary),
+      appBar: TopBar(
+
+        backgroundColor: AppColors.secondary,
+      title: _selectedIndex == 0 ? "RunTracK" : _selectedIndex == 1 ? "Activities" : "Competitions",
+
+      ),
       body: _pages[_selectedIndex],
 
       bottomNavigationBar: BottomNavBar(

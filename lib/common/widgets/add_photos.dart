@@ -7,13 +7,15 @@ import 'package:run_track/theme/ui_constants.dart';
 class AddPhotos extends StatefulWidget {
   final bool showSelectedPhots;
   final Function(List<XFile>)? onImagesSelected;
+  bool active = true;
 
   _AddPhotosState createState() => _AddPhotosState();
 
-  const AddPhotos({
+  AddPhotos({
     Key? key,
     required this.showSelectedPhots,
     required this.onImagesSelected,
+    this.active = true,
   }) : super(key: key);
 }
 
@@ -41,7 +43,7 @@ class _AddPhotosState extends State<AddPhotos> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: pickImages,
+            onPressed: widget.active ? pickImages : null,
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
@@ -54,11 +56,11 @@ class _AddPhotosState extends State<AddPhotos> {
             ),
             child: Ink(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [
-                    Color(0xFF833AB4), // Purple
-                    Color(0xFFF77737), // Orange
-                    Color(0xFFE1306C), // Pink
+                    widget.active ? Color(0xFF833AB4) : Colors.grey,
+                    widget.active ? Color(0xFFF77737) : Colors.grey,
+                    widget.active ? Color(0xFFE1306C) : Colors.grey,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),

@@ -42,10 +42,10 @@ class _TrackScreenState extends State<TrackScreen> {
   bool _gpsEnabled = true;
 
   // Activity name loaded from
-  String? activityName = null;
+  String? activityName;
 
   // Activity controller
-  TextEditingController activityController = new TextEditingController();
+  TextEditingController activityController = TextEditingController();
 
   // Current position
   LatLng? _currentPosition;
@@ -58,6 +58,8 @@ class _TrackScreenState extends State<TrackScreen> {
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
+    _timer?.cancel();
+    _finishTimer?.cancel();
     super.dispose();
   }
 
@@ -170,34 +172,40 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   void _stopTracking() {
+    // TODO TO DELETE
+    if(_trackedPath.isEmpty){
+      _trackedPath.add(LatLng(56, 56));
+    }
+    _trackingState = TrackingState.stopped;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
           elapsedTime: _elapsedTime,
           totalDistance: _totalDistance,
-          trackedPath: _trackedPath,
+          trackedPath: List<LatLng>.from(_trackedPath),
           activityType: activityName ?? "Unknown",
           startTime: _startTime,
         ),
       ),
     );
-    _positionStreamSubscription?.cancel();
+
     // Pause timer
-    _timer?.cancel();
-    _positionStreamSubscription = null;
-    setState(() {
-      _trackingState = TrackingState.stopped;
-      _trackedPath.clear();
-    });
+    // _timer?.cancel();
+    // _positionStreamSubscription = null;
+    // setState(() {
+    //   //_trackedPath.clear();
+    // });
   }
 
   void _startTracking() {
     // Setting starting parameters
     setState(() {
+      _trackedPath.clear();
       _totalDistance = 0.0;
       _elapsedTime = Duration.zero;
       _startTime = DateTime.now();
+
       _trackedPath.clear();
       _trackingState = TrackingState.running;
     });

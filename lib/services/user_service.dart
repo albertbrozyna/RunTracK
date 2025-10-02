@@ -6,6 +6,7 @@ import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
 class UserService {
+
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser != null &&
@@ -38,9 +39,6 @@ class UserService {
       uid: sourceUser.uid,
       firstName: sourceUser.firstName,
       lastName: sourceUser.lastName,
-      activities: sourceUser.activities != null
-          ? sourceUser.activities!.map((a) => a.clone()).toList()
-          : null,
       activityNames: sourceUser.activityNames != null
           ? List.from(sourceUser.activityNames!)
           : null,
@@ -82,6 +80,62 @@ class UserService {
       return false;
     }
   }
+
+  Map<String, dynamic> toMap(model.User user) {
+    return {
+      'uid': user.uid,
+      'firstName': user.firstName,
+      'lastName': user.lastName,
+      'email': user.email,
+      'activityNames': user.activityNames ?? [],
+      'friendsUids': user.friendsUids ?? [],
+      'profilePhotoUrl': user.profilePhotoUrl,
+      'userDefaultLocation': {
+        'latitude': user.userDefaultLocation.latitude,
+        'longitude': user.userDefaultLocation.longitude,
+      },
+    };
+  }
+
+  static model.User fromMap(Map<String, dynamic> map) {
+    final location = map['userDefaultLocation'];
+    return model.User(
+      uid: map['uid'] ?? '',
+      firstName: map['firstName'] ?? '',
+      lastName: map['lastName'] ?? '',
+      email: map['email'],
+      activityNames: List<String>.from(map['activityNames'] ?? []),
+      friendsUids: List<String>.from(map['friendsUids'] ?? []),
+      profilePhotoUrl: map['profilePhotoUrl'],
+      defaultLocation: location != null
+          ? LatLng(
+        (location['latitude'] ?? 0.0).toDouble(),
+        (location['longitude'] ?? 0.0).toDouble(),
+      )
+          : LatLng(0.0, 0.0),
+      dateOfBirth: map['dateOfBirth'] != null
+          ? (map['dateOfBirth'] as Timestamp).toDate()
+          : null,
+      kilometers: map['kilometers'] ?? 0,
+      burnedCalories: map['burnedCalories'] ?? 0,
+      hoursOfActivity: map['hoursOfActivity'] ?? 0,
+    );
+  }
+  /// Fetch one user data
+  static Future<model.User?>fetchUser(String uid) async{
+
+    final docSnapshot = await FirebaseFirestore.instance.collection("users").doc(uid).get();
+
+    if(docSnapshot.exists){
+      final userData = docSnapshot.data();
+      if(userData != null){
+        return UserService.fromMap(userData);
+      }
+    }
+}
+
+
+
 
   // To think
   // model.User? getUserData({required String uid,bool name = false, bool Activity = false, bool Friends = false,bool profilePhoto = false}){
