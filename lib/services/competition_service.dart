@@ -84,5 +84,89 @@ class CompetitionService {
     return true;
   }
 
+  // TODO
+  /// Fetch last {limit} activities from all users
+  static Future<List<Competition>> fetchLatestCompetitions(int limit) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('activities')
+          .where("visibility", isEqualTo: "EVERYONE")
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+      final activities = querySnapshot.docs
+          .map((doc) => CompetitionService.fromMap(doc.data()))
+          .toList();
+
+      return activities;
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching latest activities: $e");
+      return [];
+    }
+  }
+
+  /// Fetch last friend activities
+  static Future<List<Competition>> fetchLastFriendsCompetitions(
+      List<String> friendsUids,
+      int limit,
+      ) async {
+    List<Competition> lastCompetitions = [];
+    if (friendsUids.isEmpty) {
+      return lastCompetitions;
+    }
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('competitions')
+          .where("uid", whereIn: friendsUids)
+          .where("visibility", whereIn: ["everyone", "friends"])
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      final competitions = querySnapshot.docs
+          .map((doc) => CompetitionService.fromMap(doc.data()))
+          .toList();
+
+      lastCompetitions.addAll(competitions);
+
+      // Sort activities by date and take limit
+      lastCompetitions.sort((a, b) {
+        final aTime = a.createdAt ?? DateTime(1970);
+        final bTime = b.createdAt ?? DateTime(1970);
+        return bTime.compareTo(aTime);
+      });
+      return lastCompetitions.take(limit).toList();
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching friends' activities: $e");
+      return [];
+    }
+  }
+
+  static Future<List<Competition>> fetchLatestUserCompetitions(
+      String uid,
+      int limit,
+      ) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('competitions')
+          .where("uid", isEqualTo: "me")
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+      final competitions = querySnapshot.docs
+          .map((doc) => CompetitionService.fromMap(doc.data()))
+          .toList();
+
+      return competitions;
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching latest activities: $e");
+      return [];
+    }
+  }
+
 
 }

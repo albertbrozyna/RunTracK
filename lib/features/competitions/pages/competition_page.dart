@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
+import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/activity_service.dart';
+import 'package:run_track/services/competition_service.dart';
 import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart';
+import '../widgets/competition_block.dart';
 
 class CompetitionsPage extends StatefulWidget {
   _CompetitionsState createState() => _CompetitionsState();
@@ -80,8 +83,8 @@ class _CompetitionsState extends State<CompetitionsPage>
                 controller: _tabController,
                 children: [
                   Container(
-                    child: FutureBuilder<List<Activity>?>(
-                      future: ActivityService.fetchLatestUserActivities(
+                    child: FutureBuilder<List<Competition>?>(
+                      future:CompetitionService.fetchLatestUserCompetitions(
                         currentUser!.uid,
                         10,
                       ),
@@ -98,16 +101,16 @@ class _CompetitionsState extends State<CompetitionsPage>
                           return Center(child: Text("No activities found"));
                         }
 
-                        final activities = snapshot.data!;
+                        final competitions = snapshot.data!;
 
                         return ListView.builder(
-                          itemCount: activities.length,
+                          itemCount: competitions.length,
                           itemBuilder: (context, index) {
-                            final activity = activities[index];
-                            return ActivityBlock(
+                            final competitons = competitions[index];
+                            return CompetitionBlock(
                               firstName: currentUser!.firstName,
                               lastName: currentUser!.lastName,
-                              activity: activity,
+                              competition: competitons,
                             );
                           },
                         );

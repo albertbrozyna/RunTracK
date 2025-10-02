@@ -99,7 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // Create a new user
       try {
-        final docRef = await FirebaseFirestore.instance
+        final docRef = FirebaseFirestore.instance
             .collection("users")
             .doc(uid);
 

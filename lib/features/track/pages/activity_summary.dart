@@ -70,29 +70,19 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   Future<void> handleSaveActivity() async {
-    String? uid = FirebaseAuth.instance.currentUser?.uid;
-
-    if (uid == null) {
-      // TODO
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please log in to save your activity')),
-      );
-      FirebaseAuth.instance.signOut();
-      return;
+    if(!UserService.isUserLoggedIn()){
+      UserService.signOutUser();
     }
+
     // Photos from activity
     List<String> uploadedUrls = [];
     for (var image in _pickedImages) {
       final ref = FirebaseStorage.instance.ref().child(
-        'users/$uid/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
+        'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
       );
       await ref.putFile(File(image.path));
       final url = await ref.getDownloadURL();
       uploadedUrls.add(url);
-    }
-
-    if(!UserService.isUserLoggedIn()){
-      UserService.signOutUser();
     }
 
     // Activity data
@@ -110,15 +100,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     );
 
     // Save activity to database
-    try {
-      await FirebaseFirestore.instance
-          .collection("activities")
-          .add(userActivity.toMap());
+    bool saved = await ActivityService().saveActivity(userActivity);
+    if (saved) {
       setState(() {
         activitySaved = true;
       });
-    } catch (e) {
-      print('Error saving activity: $e');
+    } else {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to save activity')));

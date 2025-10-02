@@ -141,10 +141,17 @@ class ActivityService {
     }
   }
 
-  Future<void> saveActivity(Activity activity) async {
-    final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
-    activity.activityId = docRef.id;
-    await docRef.set(ActivityService.toMap(activity));
+  Future<bool> saveActivity(Activity activity) async {
+    try{
+      final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
+      activity.activityId = docRef.id;
+      await docRef.set(ActivityService.toMap(activity));
+      return true;
+    }catch(e){
+      print(e);
+      return false;
+    }
+
   }
 
 }
