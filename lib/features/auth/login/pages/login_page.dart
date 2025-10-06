@@ -5,6 +5,7 @@ import 'package:run_track/common/utils/validators.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/models/user.dart' as model;
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 
@@ -25,6 +26,12 @@ class _LoginPageState extends State<LoginPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    UserService.signOutUser();
   }
 
   void handleLogin() {
@@ -57,26 +64,16 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      DocumentSnapshot userData = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(userCredential.user?.uid)
-          .get();
-
-      if (!userData.exists) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("User data not found.")));
+      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
+      if(AppData.currentUser == null){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("User don't exists."),
+            backgroundColor: Colors.red,
+          ),
+        );
         return;
       }
-
-      AppData.currentUser = new model.User(
-        uid: FirebaseAuth.instance.currentUser!.uid,
-        firstName: userData['firstName'],
-        lastName: userData['lastName'],
-        activityNames: List<String>.from(userData['activityNames'] ?? []),
-        friendsUids: List<String>.from(userData['friends'] ?? []),
-        email: userData['email'],
-      );
 
       // TODO UI
       if (mounted) {

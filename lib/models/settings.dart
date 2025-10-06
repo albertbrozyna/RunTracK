@@ -1,17 +1,12 @@
 
 class AppSettings{
   String? measureUnits; // Meters
+  String? speedUnits;
   String? temperature;
+  String? weightUnit;
+
+  // Language
   String? language;
 
-
-  bool save_settings(){
-    return true;
-  }
-
-
-  bool read_settings(){
-    return true;
-  }
 
 }

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 
 import '../../../../common/utils/validators.dart';
+import '../../../../models/user.dart' as model;
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -86,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     await createUserWithEmailAndPassword();
   }
-
+  // TODO to check
   Future<void> createUserWithEmailAndPassword() async {
     try {
       final userCredential = await FirebaseAuth.instance
@@ -95,23 +97,21 @@ class _RegisterPageState extends State<RegisterPage> {
             password: _passwordController.text.trim(),
           );
 
-      final uid = userCredential.user!.uid;
-
-      // Create a new user
       try {
-        final docRef = FirebaseFirestore.instance
-            .collection("users")
-            .doc(uid);
-
-        await docRef.set({
-          "firstName": _firstNameController.text.trim(),
-          "lastName": _lastNameController.text.trim(),
-          "email": _emailController.text.trim(),
-          "dateOfBirth": _dateController.text.trim(),
-          "gender": _selectedGender,
-          "activityNames": AppUtils.getDefaultActivities(),
-          "friends": <String>[],
-        });
+        // Create a new user in Firestore
+        UserService.addUser(
+          model.User(
+            uid: "",
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            email: _emailController.text.trim(),
+            gender: _selectedGender,
+            dateOfBirth: DateTime.parse(_dateController.text.trim()),
+            profilePhotoUrl: "",
+            activityNames: AppUtils.getDefaultActivities(),
+            friendsUids: [],
+          ),
+        );
 
         // Successfully register
         if (FirebaseAuth.instance.currentUser != null) {

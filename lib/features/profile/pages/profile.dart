@@ -3,6 +3,7 @@ import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/features/profile/pages/settings.dart';
+import 'package:run_track/features/profile/pages/stats.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/activity_service.dart';
@@ -78,9 +79,8 @@ class _MyProfile extends State<MyProfile>
                 controller: _tabController,
                 children: [
                   ProfilePage(),
+                  Stats(),
                   SettingsPage(),
-
-
                 ],
               ),
             ),

@@ -22,6 +22,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool edit = false;
   bool changes = false;
+  bool search = false;
   bool myProfile =
       false; // Variable that tells us if we are viewing our own profile or not
   model.User? user; // User which we are showing
@@ -36,11 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
 
-    if (widget.uid == null) {
-      // TODO handle error
-    }
-
-    if (!UserService.isUserLoggedIn()) {
+    if (!UserService.isUserLoggedIn() || widget.uid == null) {
       UserService.signOutUser();
     }
     if (widget.uid == AppData.currentUser?.uid) {
@@ -205,28 +202,73 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 23,
-                      constraints: BoxConstraints(),
-                      icon: Icon(
-                        !edit ? Icons.edit : Icons.check,
-                        color: Colors.white,
+                if(myProfile && search == false)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Searcher
+                      IconButton(
+                        icon: Icon(Icons.search, color: Colors.white),
+                        onPressed: () {
+                          // action for left icon
+                        },
                       ),
-                      onPressed: () {
-                        setState(() {
-                          changes = true;
-                          if (edit) {
-                            onEditFinished();
-                          }
-                          edit = !edit;
-                        });
-                      },
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 23,
+                        constraints: BoxConstraints(),
+                        icon: Icon(
+                          !edit ? Icons.edit : Icons.check,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            changes = true;
+                            if (edit) {
+                              onEditFinished();
+                            }
+                            edit = !edit;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+
+                // If this is not my profile, show button add friends
+
+                if(!myProfile)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.red),
+                        side: MaterialStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                      ),
+                      onPressed: () => deleteAccountButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Add friend",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          // TODO icon to change
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.add_circle, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+
+
 
                 // My profile
                 // Edit my info button
@@ -523,7 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       ),
-                      onPressed: () => deleteAccountButtonPressed(context),
+                      onPressed: () => logoutButtonPressed(context),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
