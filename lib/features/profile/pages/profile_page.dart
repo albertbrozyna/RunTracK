@@ -79,10 +79,97 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return result;
   }
-
-  void deleteAccountButtonPressed() {
-    // TODO ASK
+  /// Delete account action
+  void deleteAccountButtonPressed(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Delete", textAlign: TextAlign.center),
+          content: const Text(
+            "Are you sure you want to delete your account? This action cannot be undone.",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: 15),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                    UserService.deleteUserFromFirestore();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Account deleted")),
+                    );
+                    UserService.signOutUser();
+                  },
+                  child: const Text("Delete my account"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
+
+  // Logout button action
+  void logoutButtonPressed(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Logout", textAlign: TextAlign.center),
+          content: const Text(
+            "Are you sure you want to log out?",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: 15),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    UserService.signOutUser();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Logged out")),
+                    );
+                    UserService.signOutUser();
+                  },
+                  child: const Text("Logout"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+
+  }
+
+
 
   /// Function invoked when edit is finished and changes are saved
   void onEditFinished() {}
@@ -99,55 +186,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "My profile",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Container(
-              decoration: BoxDecoration(),
-              alignment: Alignment.centerRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    iconSize: 23,
-                    constraints: BoxConstraints(),
-                    icon: Icon(
-                      !edit ? Icons.edit : Icons.check,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        changes = true;
-                        if (edit) {
-                          onEditFinished();
-                        }
-                        edit = !edit;
-                      });
-                    },
-                  ),
-
-                  // Text(
-                  //   !edit ? "Edit" : "Save",
-                  //   style: TextStyle(color: Colors.white),
-                  // ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -166,7 +204,30 @@ class _ProfilePageState extends State<ProfilePage> {
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      iconSize: 23,
+                      constraints: BoxConstraints(),
+                      icon: Icon(
+                        !edit ? Icons.edit : Icons.check,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          changes = true;
+                          if (edit) {
+                            onEditFinished();
+                          }
+                          edit = !edit;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+
                 // My profile
                 // Edit my info button
 
@@ -444,37 +505,73 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Container(
                 //   child: ,
                 // )
-                // Delete profile button
-                if (edit) SizedBox(height: 20),
-                Container(
-                  width: MediaQuery.of(context).size.width / 1.5,
-                  child: TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.red),
-                      side: MaterialStateProperty.all(
-                        BorderSide(
-                          color: Colors.white24,
-                          width: 1,
-                          style: BorderStyle.solid,
+
+                // Log out button
+                SizedBox(height: 20),
+
+                if(!edit)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(AppColors.primary),
+                        side: WidgetStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
                         ),
                       ),
-                    ),
-                    onPressed: () => UserService.deleteUserFromFirestore(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Delete my account",
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: Icon(Icons.delete, color: Colors.white),
-                        ),
-                      ],
+                      onPressed: () => deleteAccountButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Log out",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.logout, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+
+
+                // Delete profile button
+                if (edit)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.red),
+                        side: MaterialStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                      ),
+                      onPressed: () => deleteAccountButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Delete my account",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.delete, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

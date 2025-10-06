@@ -11,6 +11,7 @@ import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart';
 import '../widgets/competition_block.dart';
+import 'compeption_add.dart';
 
 class CompetitionsPage extends StatefulWidget {
   _CompetitionsState createState() => _CompetitionsState();
@@ -28,7 +29,12 @@ class _CompetitionsState extends State<CompetitionsPage>
     _tabController = TabController(length: 3, vsync: this);
   }
 
-  void onPressedAddCompetition() {}
+  void onPressedAddCompetition(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddCompetition()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +44,14 @@ class _CompetitionsState extends State<CompetitionsPage>
     }
 
     return Scaffold(
-      floatingActionButtonLocation: CustomFabLocation(xOffset: 50, yOffset: 80),
+      floatingActionButtonLocation: CustomFabLocation(xOffset: 20,yOffset: 70),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => onPressedAddCompetition,
+        onPressed: () => onPressedAddCompetition(context),
+        child: Icon(Icons.add_card, color: Colors.white),
+        backgroundColor: AppColors.primary,
+        shape: const CircleBorder(),
       ),
+      backgroundColor: AppColors.primary,
 
       body: Container(
         decoration: BoxDecoration(
@@ -84,7 +94,7 @@ class _CompetitionsState extends State<CompetitionsPage>
                 children: [
                   Container(
                     child: FutureBuilder<List<Competition>?>(
-                      future:CompetitionService.fetchLatestUserCompetitions(
+                      future: CompetitionService.fetchLatestUserCompetitions(
                         currentUser!.uid,
                         10,
                       ),

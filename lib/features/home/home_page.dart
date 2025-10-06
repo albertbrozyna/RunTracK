@@ -4,6 +4,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
+import 'package:run_track/features/profile/pages/profile.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 import 'package:run_track/services/user_service.dart';
 
@@ -42,9 +43,23 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState()  {
     super.initState();
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage()];
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), MyProfile()];
     _loadCurrentUser();
     LocationService.determinePosition();
+  }
+
+  String currentPageName(int index){
+    switch(index){
+      case 0:
+        return "RunTracK";
+        case 1:
+        return "Activities";
+      case 2:
+        return "Competitions";
+      case 3:
+        return "My profile";
+    }
+    return "";
   }
 
 
@@ -52,11 +67,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: SideMenu(),
       appBar: TopBar(
-
         backgroundColor: AppColors.secondary,
-      title: _selectedIndex == 0 ? "RunTracK" : _selectedIndex == 1 ? "Activities" : "Competitions",
+      title: currentPageName(_selectedIndex),
 
       ),
       body: _pages[_selectedIndex],
