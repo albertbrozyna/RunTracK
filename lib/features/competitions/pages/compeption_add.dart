@@ -88,7 +88,6 @@ class _AddCompetition extends State<AddCompetition> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
                 // Name of competition
                 TextField(
                   controller: _nameController,
@@ -108,7 +107,7 @@ class _AddCompetition extends State<AddCompetition> {
                     fillColor: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Description
                 TextField(
                   maxLines: 3,
@@ -129,7 +128,7 @@ class _AddCompetition extends State<AddCompetition> {
                   style: TextStyle(color: Colors.white),
                 ),
 
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 // Activity type of competition
                 Row(

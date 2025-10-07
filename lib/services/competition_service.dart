@@ -5,7 +5,7 @@ import '../common/enums/visibility.dart' as enums;
 
 class CompetitionService {
 
-  /// Convert Firestore data -> Competition object
+  /// Convert Firestore data => Competition object
   static Competition fromMap(Map<String, dynamic> map) {
     enums.Visibility? parseVisibility(String? str) {
       if (str == null) return null;

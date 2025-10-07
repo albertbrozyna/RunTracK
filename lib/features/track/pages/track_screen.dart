@@ -13,6 +13,8 @@ import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/services/preferences_service.dart';
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../common/utils/app_data.dart';
@@ -78,11 +80,16 @@ class _TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> fetchLastActivity() async {
-    // TODO DO this when internet is not available
-    activityName = await AppUtils.loadString("keyLastUserActivity");
+    activityName = await PreferencesService.loadString("keyLastUserActivity");
 
     // Set activity and return
     if (activityName != null) {
+      // Check if user list contains this activity
+      if(AppData.currentUser?.activityNames?.contains(activityName) == false){
+        // No last activity on the list, select first
+        activityName = AppData.currentUser?.activityNames?.first;
+      }
+
       setState(() {
         activityController.text = activityName!;
       });
@@ -91,34 +98,17 @@ class _TrackScreenState extends State<TrackScreen> {
 
     if (activityName == null) {
       try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          return; // No logged-in user
-        }
-        final uid = user.uid;
-
-        // Fetch user document
-        final docSnapshot = await FirebaseFirestore.instance
-            .collection("users")
-            .doc(uid)
-            .get();
-
-        if (docSnapshot.exists) {
-          final data = docSnapshot.data();
-          if (data != null && data.containsKey("activityNames")) {
-            AppData.currentUser?.activityNames = List<String>.from(data["activityNames"]);
-            if (AppData.currentUser != null && AppData.currentUser?.activityNames != null && AppData.currentUser!.activityNames!.isNotEmpty) {
-              setState(() {
-                activityName = AppData.currentUser!.activityNames!.first; // Get first activity
-                activityController.text = activityName!;
-              });
-            }
+        if(!UserService.isUserLoggedIn()){
+          UserService.signOutUser();
+          if(mounted){
+            Navigator.of(context).pushReplacementNamed('/start');
           }
+          return;
         }
 
         // Save the activityName locally
         if (activityName != null) {
-          await AppUtils.saveString("keyLastUserActivity", activityName!);
+          await PreferencesService.saveString("keyLastUserActivity", activityName!);
         }
       } catch (e) {
         print("Error fetching activity: $e");

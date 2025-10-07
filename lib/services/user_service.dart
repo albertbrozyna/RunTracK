@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
@@ -232,7 +233,7 @@ class UserService {
   }
 
   /// Create a user in firebase auth
-  Future<String> createUserInFirebaseAuth(String email, String password) async {
+  static Future<String> createUserInFirebaseAuth(String email, String password) async {
     try {
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -247,7 +248,8 @@ class UserService {
     }
   }
 
-  Future<String> createUserInFirestore(
+  // Create user account in firestore
+  static Future<String> createUserInFirestore(
     String uid,
     String firstname,
     String lastname,
@@ -277,7 +279,7 @@ class UserService {
   }
 
   /// Check if the user account exists in firestore
-  Future<bool> checkIfUserAccountExists(String uid) async {
+  static Future<bool> checkIfUserAccountExists(String uid) async {
     final docSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)

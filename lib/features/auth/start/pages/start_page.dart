@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/models/sign_in_result.dart';
 import 'package:run_track/services/google_service.dart';
+import 'package:run_track/models/user.dart' as model;
+import 'package:run_track/services/user_service.dart';
+import '../../../../common/enums/sign_in_status.dart';
+import '../../../../common/utils/app_data.dart';
+import '../../../../theme/ui_constants.dart';
+import '../widgets/additional_info_form.dart';
 
 class StartPage extends StatefulWidget {
+  const StartPage({super.key});
+
   @override
   State<StatefulWidget> createState() {
     return StartPageState();
@@ -13,6 +23,69 @@ class StartPage extends StatefulWidget {
 }
 
 class StartPageState extends State<StartPage> {
+  /// Handle sign in with google
+  Future<void> handleSignInWithGoogle() async {
+    AppData.blockedLoginState = true;
+    SignInResult result = await GoogleService.signInWithGoogle();
+
+    if (result.status == SignInStatus.success) {
+      AppData.blockedLoginState = false;
+      return;
+    } else if (result.status == SignInStatus.userDoesNotExists) {
+      model.User? newUser = result.user;
+
+      if (newUser == null) {
+        // TODO SIGN OUT FROM GOOGLE
+        AppData.blockedLoginState = false;
+        return;
+      }
+
+      // If we are logging for the first time, show modal with dateOfBirth and gender
+      if (mounted) {
+        final additionalData = await showDialog<Map<String, String>>(
+
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: AdditionalInfo(),
+            ),
+          ),
+        );
+        newUser.dateOfBirth = DateTime.parse(additionalData!["dob"]!);
+        newUser.gender = additionalData["gender"]!;
+        String message = await UserService.createUserInFirestore(
+          newUser.uid,
+          newUser.firstName,
+          newUser.lastName,
+          newUser.email!,
+          newUser.gender!,
+          newUser.dateOfBirth!,
+        );
+        if(mounted){
+          if(message == "User created"){
+            AppData.blockedLoginState = false;
+            AppUtils.showMessage(context, "Registered successfully!");
+            Navigator.of(context).pushReplacementNamed('/home');
+          }else{
+            AppData.blockedLoginState = false;
+            AppUtils.showMessage(context, "Register failed!",isError: true);
+          }
+        }
+      }
+    } else if (result.status == SignInStatus.failed) {
+      if (mounted && result.errorMessage != null) {
+        AppUtils.showMessage(context, result.errorMessage!, isError: true);
+      }
+      return;
+    }
+  }
+
   void handleLoginButton(BuildContext context) {
     Navigator.push(
       context,
@@ -65,7 +138,8 @@ class StartPageState extends State<StartPage> {
                 ),
               ),
 
-              const Spacer(), // Push logo section to the middle
+              const Spacer(),
+              // Push logo section to the middle
               // Logo
               Image.asset(
                 "assets/runtrack-app-icon-round.png", // your logo path
@@ -94,21 +168,6 @@ class StartPageState extends State<StartPage> {
 
               // Sized box to fill the screen
               SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: CustomButton(
-                  text: "Login",
-                  onPressed: () => handleLoginButton(context),
-                  gradientColors: [
-                    Color(0xFFFF6F00), // Orange
-                    Color(0xFFD9AA64), // Peach
-                    Color(0xFFD0CDCA), // Peach
-                  ],
-                  textSize: 20,
-                ),
-              ),
-              SizedBox(height: 16),
-              SizedBox(
                 height: 40,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -119,9 +178,7 @@ class StartPageState extends State<StartPage> {
                     elevation: 2,
                     padding: EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  onPressed: () async {
-                    await GoogleService.;
-                  },
+                  onPressed: () => handleSignInWithGoogle(),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.max,
@@ -145,8 +202,22 @@ class StartPageState extends State<StartPage> {
                   ),
                 ),
               ),
-              SizedBox(width: double.infinity, height: 15),
-
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: CustomButton(
+                  text: "Login",
+                  onPressed: () => handleLoginButton(context),
+                  gradientColors: [
+                    Color(0xFFFF6F00),
+                    Color(0xFFD9AA64),
+                    Color(0xFFD0CDCA),
+                  ],
+                  textSize: 20,
+                ),
+              ),
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
               SizedBox(
                 width: double.infinity,
                 height: 60,
@@ -155,9 +226,9 @@ class StartPageState extends State<StartPage> {
                   onPressed: () => handleRegisterButton(context),
                   textSize: 20,
                   gradientColors: [
-                    Color(0xFFFF8C00), // Vivid Orange
-                    Color(0xFFFFD180), // Soft Amber
-                    Color(0xFF64B5F6), // Light Sky Blue
+                    Color(0xFFFF8C00),
+                    Color(0xFFFFD180),
+                    Color(0xFF64B5F6),
                   ],
                 ),
               ),
