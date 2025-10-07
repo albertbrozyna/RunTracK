@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:run_track/common/utils/validators.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/home/home_page.dart';
@@ -20,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordHidden = true;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void dispose() {
@@ -33,6 +35,8 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     UserService.signOutUser();
   }
+
+
 
   void handleLogin() {
     if (!isEmailValid(_emailController.text.trim())) {
@@ -64,8 +68,10 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
-      if(AppData.currentUser == null){
+      AppData.currentUser = await UserService.fetchUser(
+        FirebaseAuth.instance.currentUser!.uid,
+      );
+      if (AppData.currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("User don't exists."),
@@ -77,9 +83,9 @@ class _LoginPageState extends State<LoginPage> {
 
       // TODO UI
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Logged in successfully")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Logged in successfully")));
       }
 
       Future.delayed(Duration(seconds: 1), () {
@@ -227,6 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                           ),
+
                         ],
                       ),
                     ),

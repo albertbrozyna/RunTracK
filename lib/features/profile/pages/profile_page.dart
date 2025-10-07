@@ -34,20 +34,26 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _dateController = TextEditingController();
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
+    initialize();
+  }
 
+  Future<void> initialize()  async{
     if (!UserService.isUserLoggedIn() || widget.uid == null) {
-      UserService.signOutUser();
+      await UserService.signOutUser();
     }
+
     if (widget.uid == AppData.currentUser?.uid) {
       myProfile = true;
     }
+
     initFields();
     randomFriends.addAll(
       getRandomFriends(AppData.currentUser?.friendsUids ?? [], 6),
     );
   }
+
 
   void initData() {
     if (myProfile) {

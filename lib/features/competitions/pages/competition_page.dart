@@ -10,6 +10,7 @@ import 'package:run_track/theme/colors.dart';
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart';
+import '../../../services/user_service.dart';
 import '../widgets/competition_block.dart';
 import 'compeption_add.dart';
 
@@ -27,6 +28,13 @@ class _CompetitionsState extends State<CompetitionsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    initialize();
+  }
+
+  Future<void> initialize()  async{
+    if (!UserService.isUserLoggedIn()) {
+      await UserService.signOutUser();
+    }
   }
 
   void onPressedAddCompetition(BuildContext context) {

@@ -52,7 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return true;
   }
 
-  void handleRegister() async {
+  void validateFields(){
     if (_passwordController.text.trim() !=
         _repeatPasswordController.text.trim()) {
       ScaffoldMessenger.of(
@@ -85,57 +85,57 @@ class _RegisterPageState extends State<RegisterPage> {
       ).showSnackBar(SnackBar(content: Text("Given email is incorrect")));
       return;
     }
-
-    await createUserWithEmailAndPassword();
   }
-  // TODO to check
-  Future<void> createUserWithEmailAndPassword() async {
-    try {
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim().toLowerCase(),
-            password: _passwordController.text.trim(),
-          );
 
-      try {
-        // Create a new user in Firestore
-        UserService.addUser(
-          model.User(
-            uid: "",
-            firstName: _firstNameController.text.trim(),
-            lastName: _lastNameController.text.trim(),
-            email: _emailController.text.trim(),
-            gender: _selectedGender,
-            dateOfBirth: DateTime.parse(_dateController.text.trim()),
-            profilePhotoUrl: "",
-            activityNames: AppUtils.getDefaultActivities(),
-            friendsUids: [],
-          ),
-        );
 
-        // Successfully register
-        if (FirebaseAuth.instance.currentUser != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
-        }
-      } catch (firestoreError) {
-        await userCredential.user!.delete();
-      }
 
-      // Navigate to login screen after registration
-      Future.delayed(Duration(seconds: 1), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      });
-      await FirebaseAuth.instance.signOut();
-    } on FirebaseAuthException catch (e) {
-      // TODO Better communicates
-      print("Auth error ${e.message}");
-    }
+  void handleRegister() async {
+    validateFields();
+    await createUserInFirebaseAuth(_emailController.text,_passwordController.text);
+    {
+
+    await createUserWithEmailAndPassword(_emailController.text,_passwordController.text);
+
+
+    // Navigate to login screen after registration
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    });
   }
+
+
+  Future<String> createUserInFirestore(String uid,String firstname,String lastname,String email,String gender,DateTime dateOfBirth)async {
+    model.User? user = await UserService.addUser(
+      model.User(
+        uid: uid,
+        firstName: firstname.trim(),
+        lastName: lastname.trim(),
+        email: email.trim(),
+        gender: gender.trim(),
+        dateOfBirth: dateOfBirth,
+        profilePhotoUrl: "",
+        activityNames: AppUtils.getDefaultActivities(),
+        friendsUids: [],
+      ));
+
+
+
+  }
+
+//   // Successfully register
+//   if (FirebaseAuth.instance.currentUser != null) {
+//   ScaffoldMessenger.of(
+//   context,
+//   ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
+//   }
+// } catch (firestoreError) {
+// await userCredential.user!.delete();
+// }
+
+
 
   @override
   Widget build(BuildContext context) {

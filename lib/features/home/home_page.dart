@@ -30,13 +30,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _loadCurrentUser() async {
+  Future<void> _loadCurrentUser() async {
     if (FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser == null) {
       AppData.currentUser = await UserService.fetchUser(
         FirebaseAuth.instance.currentUser!.uid
       );
-      setState(() {});
+      setState(() {
+      });
     }
   }
 
