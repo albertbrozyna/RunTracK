@@ -4,10 +4,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Color backgroundColor;
 
-  const TopBar({
-    this.title = "",
-    required this.backgroundColor,
-  });
+  const TopBar({this.title = "", required this.backgroundColor});
 
   void handleMenuButton(BuildContext context) {}
 
@@ -16,15 +13,12 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor,
       centerTitle: true,
-      title: Text(title,style: TextStyle(
-        color: Colors.white,
-        fontSize: 23,
-        fontWeight: FontWeight.w700
-      ),),
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: Icon(Icons.menu,color: Colors.white,),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 23,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

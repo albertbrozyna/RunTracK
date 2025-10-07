@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/common/utils/app_data.dart';
 
-import '../../features/sideMenu/profile_page.dart';
-import '../../features/sideMenu/pages/settings.dart';
+import '../../features/profile/pages/profile_page.dart';
+import '../../features/profile/pages/settings.dart';
 
 class SideMenu extends StatelessWidget {
   void onLogOutPressed(BuildContext context) async {

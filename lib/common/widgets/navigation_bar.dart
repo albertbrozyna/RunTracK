@@ -13,7 +13,9 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
+      backgroundColor: Colors.white,
       onTap: onTap,
       items: [
         // TODO Icons here
@@ -25,6 +27,10 @@ class BottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.directions_run_outlined),
           label: "Competitions",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          label: "My profile",
         ),
       ],
     );

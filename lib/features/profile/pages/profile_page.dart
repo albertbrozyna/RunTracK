@@ -22,6 +22,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool edit = false;
   bool changes = false;
+  bool search = false;
   bool myProfile =
       false; // Variable that tells us if we are viewing our own profile or not
   model.User? user; // User which we are showing
@@ -33,24 +34,26 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _dateController = TextEditingController();
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
+    initialize();
+  }
 
-    if (widget.uid == null) {
-      // TODO handle error
+  Future<void> initialize()  async{
+    if (!UserService.isUserLoggedIn() || widget.uid == null) {
+      await UserService.signOutUser();
     }
 
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-    }
     if (widget.uid == AppData.currentUser?.uid) {
       myProfile = true;
     }
+
     initFields();
     randomFriends.addAll(
       getRandomFriends(AppData.currentUser?.friendsUids ?? [], 6),
     );
   }
+
 
   void initData() {
     if (myProfile) {
@@ -79,10 +82,97 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return result;
   }
-
-  void deleteAccountButtonPressed() {
-    // TODO ASK
+  /// Delete account action
+  void deleteAccountButtonPressed(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Delete", textAlign: TextAlign.center),
+          content: const Text(
+            "Are you sure you want to delete your account? This action cannot be undone.",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: 15),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                    UserService.deleteUserFromFirestore();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Account deleted")),
+                    );
+                    UserService.signOutUser();
+                  },
+                  child: const Text("Delete my account"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
+
+  // Logout button action
+  void logoutButtonPressed(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Logout", textAlign: TextAlign.center),
+          content: const Text(
+            "Are you sure you want to log out?",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // close dialog
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: 15),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    UserService.signOutUser();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Logged out")),
+                    );
+                    UserService.signOutUser();
+                  },
+                  child: const Text("Logout"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+
+  }
+
+
 
   /// Function invoked when edit is finished and changes are saved
   void onEditFinished() {}
@@ -99,55 +189,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "My profile",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 5),
-            child: Container(
-              decoration: BoxDecoration(),
-              alignment: Alignment.centerRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    iconSize: 23,
-                    constraints: BoxConstraints(),
-                    icon: Icon(
-                      !edit ? Icons.edit : Icons.check,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        changes = true;
-                        if (edit) {
-                          onEditFinished();
-                        }
-                        edit = !edit;
-                      });
-                    },
-                  ),
-
-                  // Text(
-                  //   !edit ? "Edit" : "Save",
-                  //   style: TextStyle(color: Colors.white),
-                  // ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -166,7 +207,75 @@ class _ProfilePageState extends State<ProfilePage> {
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
+              children: [
+                if(myProfile && search == false)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Searcher
+                      IconButton(
+                        icon: Icon(Icons.search, color: Colors.white),
+                        onPressed: () {
+                          // action for left icon
+                        },
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 23,
+                        constraints: BoxConstraints(),
+                        icon: Icon(
+                          !edit ? Icons.edit : Icons.check,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            changes = true;
+                            if (edit) {
+                              onEditFinished();
+                            }
+                            edit = !edit;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+
+                // If this is not my profile, show button add friends
+
+                if(!myProfile)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.red),
+                        side: MaterialStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                      ),
+                      onPressed: () => deleteAccountButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Add friend",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          // TODO icon to change
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.add_circle, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+
+
                 // My profile
                 // Edit my info button
 
@@ -444,37 +553,73 @@ class _ProfilePageState extends State<ProfilePage> {
                 // Container(
                 //   child: ,
                 // )
-                // Delete profile button
-                if (edit) SizedBox(height: 20),
-                Container(
-                  width: MediaQuery.of(context).size.width / 1.5,
-                  child: TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.red),
-                      side: MaterialStateProperty.all(
-                        BorderSide(
-                          color: Colors.white24,
-                          width: 1,
-                          style: BorderStyle.solid,
+
+                // Log out button
+                SizedBox(height: 20),
+
+                if(!edit)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(AppColors.primary),
+                        side: WidgetStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
                         ),
                       ),
-                    ),
-                    onPressed: () => UserService.deleteUserFromFirestore(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Delete my account",
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: Icon(Icons.delete, color: Colors.white),
-                        ),
-                      ],
+                      onPressed: () => logoutButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Log out",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.logout, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+
+
+                // Delete profile button
+                if (edit)
+                  Container(
+                    width: MediaQuery.of(context).size.width / 1.5,
+                    child: TextButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.red),
+                        side: MaterialStateProperty.all(
+                          BorderSide(
+                            color: Colors.white24,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                      ),
+                      onPressed: () => deleteAccountButtonPressed(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Delete my account",
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.delete, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -5,6 +5,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 
@@ -141,7 +142,7 @@ class ActivityChooseState extends State<ActivityChoose> {
       context,
     ).showSnackBar(SnackBar(content: Text("Activity added to list")));
     addingEnabled = false;
-    AppData.currentUser?.saveUser();  // Save activity data to firestore
+    UserService.updateUser(AppData.currentUser!);  // Save activity data to firestore
   }
 
   void deleteActivity(int index) {

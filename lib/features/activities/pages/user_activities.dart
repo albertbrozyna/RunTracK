@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/services/activity_service.dart';
+import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
@@ -22,15 +23,17 @@ class _ActivitiesState extends State<ActivitiesPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    initialize();
+  }
+
+  Future<void> initialize()  async{
+    if (!UserService.isUserLoggedIn()) {
+      await UserService.signOutUser();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (currentUser == null) {
-      // TODO handle this better
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(

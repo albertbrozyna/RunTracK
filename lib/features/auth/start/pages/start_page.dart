@@ -3,6 +3,7 @@ import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/services/google_service.dart';
 
 class StartPage extends StatefulWidget {
   @override
@@ -106,7 +107,46 @@ class StartPageState extends State<StartPage> {
                   textSize: 20,
                 ),
               ),
+              SizedBox(height: 16),
+              SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  onPressed: () async {
+                    await GoogleService.;
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Image.asset(
+                        'assets/google-icon.png',
+                        height: 40,
+                        width: 40,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        "Sign in with Google",
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(width: double.infinity, height: 15),
+
               SizedBox(
                 width: double.infinity,
                 height: 60,

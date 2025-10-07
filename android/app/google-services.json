@@ -12,7 +12,20 @@
           "package_name": "com.albertbrozyna.runtrack"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "959724000751-trh438pkt94gcjv18q5e1ajmfack643j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.albertbrozyna.runtrack",
+            "certificate_hash": "828f7a367a02d34e8d4362dccd191691189503f7"
+          }
+        },
+        {
+          "client_id": "959724000751-qck4ccrr5vp7l2odas5pdjkursjlh6pr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBEpJs-OECYeiVA6dfONjYKqwQB6TDnOE4"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "959724000751-qck4ccrr5vp7l2odas5pdjkursjlh6pr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "959724000751-0fc56cfvb0ui1hofsuha930v6442furt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.albertbrozyna.runtrack"
+              }
+            }
+          ]
         }
       }
     }

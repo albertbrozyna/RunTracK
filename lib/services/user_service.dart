@@ -2,19 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
 class UserService {
-
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser != null &&
         AppData.currentUser!.uid == FirebaseAuth.instance.currentUser!.uid;
   }
 
-  static void signOutUser() {
-    FirebaseAuth.instance.signOut();
+  static Future<void> signOutUser() async {
+    await FirebaseAuth.instance.signOut();
     AppData.currentUser = null;
   }
 
@@ -34,11 +34,13 @@ class UserService {
     return age;
   }
 
+  // TODO check if you clone all fields
   static model.User cloneUserData(model.User sourceUser) {
     return model.User(
       uid: sourceUser.uid,
       firstName: sourceUser.firstName,
       lastName: sourceUser.lastName,
+      gender: sourceUser.gender,
       activityNames: sourceUser.activityNames != null
           ? List.from(sourceUser.activityNames!)
           : null,
@@ -81,13 +83,17 @@ class UserService {
     }
   }
 
-  Map<String, dynamic> toMap(model.User user) {
+  static Map<String, dynamic> toMap(model.User user) {
     return {
       'uid': user.uid,
       'firstName': user.firstName,
       'lastName': user.lastName,
       'email': user.email,
       'activityNames': user.activityNames ?? [],
+      'dateOfBirth': user.dateOfBirth != null
+          ? Timestamp.fromDate(user.dateOfBirth!)
+          : null,
+      'gender': user.gender,
       'friendsUids': user.friendsUids ?? [],
       'profilePhotoUrl': user.profilePhotoUrl,
       'userDefaultLocation': {
@@ -109,39 +115,173 @@ class UserService {
       profilePhotoUrl: map['profilePhotoUrl'],
       defaultLocation: location != null
           ? LatLng(
-        (location['latitude'] ?? 0.0).toDouble(),
-        (location['longitude'] ?? 0.0).toDouble(),
-      )
+              (location['latitude'] ?? 0.0).toDouble(),
+              (location['longitude'] ?? 0.0).toDouble(),
+            )
           : LatLng(0.0, 0.0),
       dateOfBirth: map['dateOfBirth'] != null
           ? (map['dateOfBirth'] as Timestamp).toDate()
           : null,
+      gender: map['gender'],
       kilometers: map['kilometers'] ?? 0,
       burnedCalories: map['burnedCalories'] ?? 0,
       hoursOfActivity: map['hoursOfActivity'] ?? 0,
     );
   }
+
   /// Fetch one user data
-  static Future<model.User?>fetchUser(String uid) async{
+  static Future<model.User?> fetchUser(String uid) async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .get();
 
-    final docSnapshot = await FirebaseFirestore.instance.collection("users").doc(uid).get();
-
-    if(docSnapshot.exists){
+    if (docSnapshot.exists) {
       final userData = docSnapshot.data();
-      if(userData != null){
+      if (userData != null) {
         return UserService.fromMap(userData);
       }
     }
-}
+    return null;
+  }
 
+  /// Create a new user in firestore
+  static Future<model.User?> addUser(model.User user) async {
+    if (user.uid.isEmpty) {
+      return null;
+    }
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
+      await docRef.set(UserService.toMap(user));
+      return user;
+    } catch (e) {
+      print(e);
+      return null;
+    }
+  }
 
+  /// Update existing user
+  static Future<model.User?> updateUser(model.User user) async {
+    try {
+      if (user.uid.isEmpty) {
+        return null;
+      }
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
+      await docRef.set(UserService.toMap(user));
+      return user;
+    } catch (e) {
+      print(e);
+      return null;
+    }
+  }
 
+  /// Send invitations to friends to another user returns true if success
+  static Future<bool> inviteToFriends(
+    String senderUid,
+    String receiverUid,
+  ) async {
+    // TODO
+    try {
+      // Add a uid to send invites
+      model.User? sender = await UserService.fetchUser(senderUid);
+      model.User? receiver = await UserService.fetchUser(receiverUid);
 
-  // To think
-  // model.User? getUserData({required String uid,bool name = false, bool Activity = false, bool Friends = false,bool profilePhoto = false}){
-  //   if(name){
-  //
-  //   })
-  //
-  // }
+      if (sender == null || receiver == null) {
+        return false;
+      }
+      sender.pendingInvitations.add(receiverUid);
+      receiver.receivedInvitations.add(senderUid);
+      await UserService.updateUser(sender);
+      await UserService.updateUser(receiver);
+    } catch (e) {
+      print(e);
+    }
+    return false;
+  }
+
+  /// Accept invitations to friends from another user, returns true if success
+  static Future<bool> acceptFriend(String senderUid, String receiverUid) async {
+    // TODO
+    try {
+      // Add a uid to send invites
+      model.User? sender = await UserService.fetchUser(senderUid);
+      model.User? receiver = await UserService.fetchUser(receiverUid);
+
+      if (sender == null || receiver == null) {
+        return false;
+      }
+      if (sender.pendingInvitations.contains(receiverUid)) {
+        sender.pendingInvitations.remove(receiverUid);
+      }
+      if (receiver.receivedInvitations.contains(senderUid)) {
+        receiver.receivedInvitations.remove(senderUid);
+      }
+      // TODO The same as with invitations
+      receiver.friendsUids?.add(senderUid);
+      sender.friendsUids?.add(receiverUid);
+      await UserService.updateUser(sender);
+      await UserService.updateUser(receiver);
+    } catch (e) {
+      print(e);
+    }
+    return false;
+  }
+
+  /// Create a user in firebase auth
+  Future<String> createUserInFirebaseAuth(String email, String password) async {
+    try {
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: email.trim().toLowerCase(),
+            password: password.trim(),
+          );
+
+      await FirebaseAuth.instance.signOut();
+      return "User created";
+    } on FirebaseAuthException catch (e) {
+      return ("Auth error ${e.message}");
+    }
+  }
+
+  Future<String> createUserInFirestore(
+    String uid,
+    String firstname,
+    String lastname,
+    String email,
+    String gender,
+    DateTime dateOfBirth,
+  ) async {
+    if (await checkIfUserAccountExists(uid)) {
+      return "User already exists";
+    }
+
+    model.User? user = await UserService.addUser(
+      model.User(
+        uid: uid,
+        firstName: firstname.trim(),
+        lastName: lastname.trim(),
+        email: email.trim(),
+        gender: gender.trim(),
+        dateOfBirth: dateOfBirth,
+        profilePhotoUrl: "",
+        activityNames: AppUtils.getDefaultActivities(),
+        friendsUids: [],
+      ),
+    );
+
+    return "User created";
+  }
+
+  /// Check if the user account exists in firestore
+  Future<bool> checkIfUserAccountExists(String uid) async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    return docSnapshot.exists;
+  }
 }
