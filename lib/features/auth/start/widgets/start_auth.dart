@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../home/home_page.dart';
 import '../pages/start_page.dart';
-import 'home_page.dart';
-import 'firebase_auth_start_page.dart';
+import '../../../home/home_page.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});

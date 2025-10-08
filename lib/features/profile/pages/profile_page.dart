@@ -160,7 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                     UserService.signOutUser();
                     Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/home',(Route<dynamic> route) => false,
+                      '/start',(Route<dynamic> route) => false,
                     );
                   },
                   child: const Text("Logout"),

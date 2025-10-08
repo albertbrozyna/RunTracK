@@ -33,6 +33,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadCurrentUser() async {
     if (FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser == null) {
+
+      bool userExists = await UserService.checkIfUserAccountExists(
+        FirebaseAuth.instance.currentUser!.uid
+      );
+
+
       AppData.currentUser = await UserService.fetchUser(
         FirebaseAuth.instance.currentUser!.uid
       );
