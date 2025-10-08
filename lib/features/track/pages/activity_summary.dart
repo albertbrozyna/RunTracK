@@ -163,8 +163,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             child: Column(
               children: [
 
-
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Title
                 TextField(
                   controller: titleController,
@@ -184,7 +183,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     fillColor: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Description
                 TextField(
                   maxLines: 3,
@@ -205,7 +204,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   style: TextStyle(color: Colors.white),
                 ),
 
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 // Activity type
                 Row(
@@ -315,7 +314,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     ),
                   ],
                 ),
-                SizedBox(height: 8,),
+                SizedBox(height: 8),
                 IntrinsicHeight(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -358,7 +357,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           ),
                         ),
                       ),
-
                       // Distance
                       Expanded(
                         child: Container(
@@ -447,8 +445,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       ),
                     ),
                   ),
-
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Photos section
                 AddPhotos(
                   showSelectedPhots: true,
@@ -457,7 +454,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   },
                 ),
 
-                SizedBox(height: AppUiConstants.kTextFieldSpacing),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 // TODO Change color after saving activity
                   SizedBox(

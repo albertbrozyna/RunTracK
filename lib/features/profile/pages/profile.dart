@@ -33,11 +33,6 @@ class _MyProfile extends State<MyProfile>
 
   @override
   Widget build(BuildContext context) {
-    if (currentUser == null) {
-      // TODO handle this better
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -78,7 +73,7 @@ class _MyProfile extends State<MyProfile>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  ProfilePage(),
+                  ProfilePage(uid: AppData.currentUser!.uid,),
                   Stats(),
                   SettingsPage(),
                 ],

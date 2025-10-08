@@ -4,7 +4,7 @@ class User {
   String uid;
   String firstName;
   String lastName;
-  List<String>? activityNames;
+  List<String>? activityNames;  // Activity names
   String? email;
   String? profilePhotoUrl; // Profile photo url
   DateTime? dateOfBirth;
@@ -19,8 +19,8 @@ class User {
   int hoursOfActivity;
 
   // Social functions
-  List<String>? friendsUids;
-  List<String> pendingInvitations ; // Sent invitations to users
+  List<String> friendsUids;
+  List<String> pendingInvitations; // Sent invitations to users
   List<String> receivedInvitations; // Received invitations to users
 
   User({
@@ -28,7 +28,6 @@ class User {
     required this.firstName,
     required this.lastName,
     required this.gender,
-    this.friendsUids,
     this.activityNames,
     this.email,
     this.profilePhotoUrl,
@@ -37,9 +36,11 @@ class User {
     this.kilometers = 0,
     this.burnedCalories = 0,
     this.hoursOfActivity = 0,
+    List<String>? friendsUids,
     List<String>? pendingInvitations,
     List<String>? receivedInvitations,
   }) : pendingInvitations = pendingInvitations ?? [],
        receivedInvitations = receivedInvitations ?? [],
+       friendsUids = friendsUids ?? [],
        userDefaultLocation = defaultLocation ?? LatLng(0.0, 0.0);
 }

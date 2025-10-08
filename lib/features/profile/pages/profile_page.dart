@@ -159,6 +159,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SnackBar(content: Text("Logged out")),
                     );
                     UserService.signOutUser();
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/home',(Route<dynamic> route) => false,
+                    );
                   },
                   child: const Text("Logout"),
                 ),
@@ -595,8 +598,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     width: MediaQuery.of(context).size.width / 1.5,
                     child: TextButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(Colors.red),
-                        side: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(Colors.red),
+                        side: WidgetStateProperty.all(
                           BorderSide(
                             color: Colors.white24,
                             width: 1,
