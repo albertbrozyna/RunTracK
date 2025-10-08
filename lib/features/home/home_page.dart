@@ -12,7 +12,7 @@ import '../../common/widgets/navigation_bar.dart';
 import '../../common/widgets/side_menu.dart';
 import '../../common/widgets/top_bar.dart';
 import '../../theme/colors.dart';
-import 'package:run_track/common/utils/permission_utils.dart'; // adjust the path if needed
+import 'package:run_track/common/utils/permission_utils.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -22,7 +22,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // TODO To learn
   late List<Widget> _pages;
+  late TrackScreen _trackScreen;
   int _selectedIndex = 0;
+  final GlobalKey<TrackScreenState> trackScreenKey = GlobalKey<TrackScreenState>();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -33,11 +35,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadCurrentUser() async {
     if (FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser == null) {
-
-      bool userExists = await UserService.checkIfUserAccountExists(
-        FirebaseAuth.instance.currentUser!.uid
-      );
-
 
       AppData.currentUser = await UserService.fetchUser(
         FirebaseAuth.instance.currentUser!.uid
@@ -50,7 +47,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState()  {
     super.initState();
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), MyProfile()];
+    _trackScreen = _trackScreen = TrackScreen(key: trackScreenKey);
+
+    _pages = [_trackScreen, ActivitiesPage(), CompetitionsPage(), MyProfile()];
     _loadCurrentUser();
     LocationService.determinePosition();
   }
@@ -81,7 +80,19 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _pages[_selectedIndex],
 
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: (_selectedIndex == 0)
+          ? ValueListenableBuilder<bool>(
+        valueListenable: trackScreenKey.currentState?.isTrackingNotifier ?? ValueNotifier(false),
+        builder: (context, isTracking, _) {
+          return isTracking
+              ? SizedBox.shrink()
+              : BottomNavBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+          );
+        },
+      )
+          : BottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),

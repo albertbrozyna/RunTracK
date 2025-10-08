@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -29,13 +27,13 @@ class ActivitySummary extends StatefulWidget {
   final DateTime? startTime;
 
   const ActivitySummary({
-    Key? key,
+    super.key,
     required this.trackedPath,
     required this.totalDistance,
     required this.elapsedTime,
     required this.activityType,
     required this.startTime,
-  }) : super(key: key);
+  });
 
   @override
   _ActivitySummaryState createState() => _ActivitySummaryState();
@@ -44,10 +42,10 @@ class ActivitySummary extends StatefulWidget {
 class _ActivitySummaryState extends State<ActivitySummary> {
   // This var tells us if activity is saved
   bool activitySaved = false;
-  TextEditingController titleController = new TextEditingController();
-  TextEditingController descriptionController = new TextEditingController();
-  TextEditingController notesController = new TextEditingController();
-  TextEditingController activityController = new TextEditingController();
+  TextEditingController titleController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+  TextEditingController notesController = TextEditingController();
+  TextEditingController activityController = TextEditingController();
 
   // TODO idea save last visibility as preferences
   vb.Visibility _visibility = vb.Visibility.me;
@@ -70,10 +68,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   Future<void> handleSaveActivity() async {
-    if(!UserService.isUserLoggedIn()){
-      UserService.signOutUser();
-    }
-
     // Photos from activity
     List<String> uploadedUrls = [];
     for (var image in _pickedImages) {
@@ -100,17 +94,63 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     );
 
     // Save activity to database
-    bool saved = await ActivityService().saveActivity(userActivity);
+    bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
       setState(() {
         activitySaved = true;
       });
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save activity')));
+      if(mounted){
+        AppUtils.showMessage(context, 'Failed to save activity');
+      }
     }
   }
+
+  /// Ask if we are sure if we want to leave a page without saving
+  void leavePage(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true, // Close by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            "Warning",
+            textAlign: TextAlign.center,
+          ),
+          content: const Text(
+            "You haven't saved this activity yet.\n\n"
+                "If you leave now, your activity will be lost.\n\n"
+                "Are you sure you want to leave?",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Two times to close dialog and screen
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Yes"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   /// Method invoked when user wants to select change activity
   void onTapActivity() async {
@@ -129,137 +169,110 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        title: Text(
-          "Activity summary",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/background-first.jpg"),
-            fit: BoxFit.cover,
+    if(!UserService.isUserLoggedIn()){
+    UserService.signOutUser();
+    Navigator.of(context).pushNamedAndRemoveUntil('/start',(route) => false);
+    }
 
-            colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.25),
-              BlendMode.darken,
+
+    return PopScope(
+      canPop: false,
+    onPopInvokedWithResult: (bool didPop,String? result)async {
+      if(!didPop){
+        if (!activitySaved) {
+            leavePage(context);
+        }else{
+          Navigator.pop(context,null);
+        }
+      }
+    },
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        appBar: AppBar(
+          title: Text(
+            "Activity summary",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 1,
             ),
           ),
+          centerTitle: true,
+          backgroundColor: AppColors.primary,
         ),
-        child: Padding(
-          padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/background-first.jpg"),
+              fit: BoxFit.cover,
 
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                // Title
-                TextField(
-                  controller: titleController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white24, width: 1),
-                    ),
+              colorFilter: ColorFilter.mode(
+                Colors.black.withValues(alpha: 0.25),
+                BlendMode.darken,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
 
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    label: Text("Title", style: TextStyle(color: Colors.white)),
-                    labelStyle: TextStyle(fontSize: 18),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                // Description
-                TextField(
-                  maxLines: 3,
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    // Normal border
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.white24, width: 1),
-                    ),
-                    label: Text(
-                      "Description",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                    filled: true,
-                  ),
-                  style: TextStyle(color: Colors.white),
-                ),
-
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-                // Activity type
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        style: TextStyle(color: Colors.white),
-                        textAlign: TextAlign.left,
-                        controller: activityController,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
-                          ),
-                          label: Text(
-                            "Activity type",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          suffixIcon: Padding(
-                            padding: EdgeInsets.all(
-                              AppUiConstants.paddingTextFields,
-                            ),
-                            child: IconButton(
-                              onPressed: () => onTapActivity(),
-                              icon: Icon(Icons.list, color: Colors.white),
-                            ),
-                          ),
-                          fillColor: Colors.white.withValues(alpha: 0.1),
-                          filled: true,
-                        ),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                  // Title
+                  TextField(
+                    controller: titleController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white24, width: 1),
                       ),
+
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      label: Text("Title", style: TextStyle(color: Colors.white)),
+                      labelStyle: TextStyle(fontSize: 18),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.1),
                     ),
-                    SizedBox(width: 15),
-                    // Visibility
-                    Expanded(
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          iconTheme: IconThemeData(
-                            color: Colors.white,
-                          ),
-                        ),
-                        child: DropdownMenu(
-                          textStyle: TextStyle(color: Colors.white),
-                          label: Text(
-                            "Visibility",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          initialSelection: _visibility,
-                          inputDecorationTheme: InputDecorationTheme(
-                            filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
+                  ),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                  // Description
+                  TextField(
+                    maxLines: 3,
+                    controller: descriptionController,
+                    decoration: InputDecoration(
+                      // Normal border
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white24, width: 1),
+                      ),
+                      label: Text(
+                        "Description",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      fillColor: Colors.white.withValues(alpha: 0.1),
+                      filled: true,
+                    ),
+                    style: TextStyle(color: Colors.white),
+                  ),
+
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
+                  // Activity type
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          style: TextStyle(color: Colors.white),
+                          textAlign: TextAlign.left,
+                          controller: activityController,
+                          readOnly: true,
+                          decoration: InputDecoration(
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
@@ -267,212 +280,257 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                 width: 1,
                               ),
                             ),
-                          ),
-                          width: double.infinity,
-                          textAlign: TextAlign.left,
-                          // Selecting visibility
-                          onSelected: (vb.Visibility? visibility) {
-                            setState(() {
-                              if (visibility != null) {
-                                _visibility = visibility;
-                              }
-                            });
-                          },
-                          // Icon
-                          trailingIcon: Icon(
-                            color: Colors.white,
-                            Icons.arrow_drop_down
-                          ),
-                          selectedTrailingIcon: Icon(
-                            color: Colors.white,
-                            Icons.arrow_drop_up
-                          ),
-
-                          menuStyle: MenuStyle(
-                            backgroundColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.8)),
-                            alignment: Alignment.center,
-
-
-                          ),
-                          dropdownMenuEntries:
-                              <DropdownMenuEntry<vb.Visibility>>[
-                                DropdownMenuEntry(
-                                  value: vb.Visibility.me,
-                                  label: "Only Me",
-                                ),
-                                DropdownMenuEntry(
-                                  value: vb.Visibility.friends,
-                                  label: "Friends",
-                                ),
-                                DropdownMenuEntry(
-                                  value: vb.Visibility.everyone,
-                                  label: "Everyone",
-                                ),
-                              ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                IntrinsicHeight(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Time
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.only(top: 12,bottom: 12),
-                          margin: EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24, width: 1),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                color: Colors.white,
-                                size: 28,
+                            label: Text(
+                              "Activity type",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            suffixIcon: Padding(
+                              padding: EdgeInsets.all(
+                                AppUiConstants.paddingTextFields,
                               ),
-                              SizedBox(height: 5),
-                              Text(
-                                ActivityService.formatElapsedTime(widget.elapsedTime),
-                                style: AppTextStyles.heading.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                              child: IconButton(
+                                onPressed: () => onTapActivity(),
+                                icon: Icon(Icons.list, color: Colors.white),
                               ),
-                              Text(
-                                "Time",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                            ),
+                            fillColor: Colors.white.withValues(alpha: 0.1),
+                            filled: true,
                           ),
                         ),
                       ),
-                      // Distance
+                      SizedBox(width: 15),
+                      // Visibility
                       Expanded(
-                        child: Container(
-                          padding: EdgeInsets.only(top: 12,bottom: 12),
-                          margin: EdgeInsets.only(left: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24, width: 1),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            iconTheme: IconThemeData(
+                              color: Colors.white,
+                            ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.route, color: Colors.white, size: 28),
-                              SizedBox(height: 5),
-                              Text(
-                                "${widget.totalDistance.toStringAsFixed(2)} km",
-                                style: AppTextStyles.heading.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                          child: DropdownMenu(
+                            textStyle: TextStyle(color: Colors.white),
+                            label: Text(
+                              "Visibility",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            initialSelection: _visibility,
+                            inputDecorationTheme: InputDecorationTheme(
+                              filled: true,
+                              fillColor: Colors.white.withValues(alpha: 0.1),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.white24,
+                                  width: 1,
                                 ),
                               ),
-                              Text(
-                                "Distance",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                            ),
+                            width: double.infinity,
+                            textAlign: TextAlign.left,
+                            // Selecting visibility
+                            onSelected: (vb.Visibility? visibility) {
+                              setState(() {
+                                if (visibility != null) {
+                                  _visibility = visibility;
+                                }
+                              });
+                            },
+                            // Icon
+                            trailingIcon: Icon(
+                              color: Colors.white,
+                              Icons.arrow_drop_down
+                            ),
+                            selectedTrailingIcon: Icon(
+                              color: Colors.white,
+                              Icons.arrow_drop_up
+                            ),
+
+                            menuStyle: MenuStyle(
+                              backgroundColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.8)),
+                              alignment: Alignment.center,
+
+
+                            ),
+                            dropdownMenuEntries:
+                                <DropdownMenuEntry<vb.Visibility>>[
+                                  DropdownMenuEntry(
+                                    value: vb.Visibility.me,
+                                    label: "Only Me",
+                                  ),
+                                  DropdownMenuEntry(
+                                    value: vb.Visibility.friends,
+                                    label: "Friends",
+                                  ),
+                                  DropdownMenuEntry(
+                                    value: vb.Visibility.everyone,
+                                    label: "Everyone",
+                                  ),
+                                ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-
-                // Flutter map if there is a path
-                if (widget.trackedPath.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0,bottom: 10.0),
-                    child: ClipRRect(
-                     borderRadius: BorderRadius.all(Radius.circular(12)),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.4,
-                        child: FlutterMap(
-                          options: MapOptions(
-                            initialCenter: widget.trackedPath.first,
-                            initialZoom: 15.0,
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.example.runtrack',
+                  SizedBox(height: 8),
+                  IntrinsicHeight(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Time
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.only(top: 12,bottom: 12),
+                            margin: EdgeInsets.only(right: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24, width: 1),
                             ),
-                            PolylineLayer(
-                              polylines: [
-                                Polyline(
-                                  points: widget.trackedPath,
-                                  color: Colors.blue,
-                                  strokeWidth: 4.0,
-                      
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  color: Colors.white,
+                                  size: 28,
                                 ),
-                              ],
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: widget.trackedPath.first,
-                                  width: 40,
-                                  height: 40,
-                                  child: Icon(Icons.flag, color: Colors.green),
-                                ),
-                                if(widget.trackedPath.length > 1)
-                                  Marker(
-                                    point: widget.trackedPath.last,
-                                    width: 40,
-                                    height: 40,
-                                    child: Icon(Icons.stop, color: Colors.red),
+                                SizedBox(height: 5),
+                                Text(
+                                  ActivityService.formatElapsedTime(widget.elapsedTime),
+                                  style: AppTextStyles.heading.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
+                                ),
+                                Text(
+                                  "Time",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                // Photos section
-                AddPhotos(
-                  showSelectedPhots: true,
-                  onImagesSelected: (images) {
-                    _pickedImages = images;
-                  },
-                ),
-
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-                // TODO Change color after saving activity
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: CustomButton(
-                      text: activitySaved ? "Activity saved" : "Save activity",
-                      onPressed: activitySaved
-                          ? null
-                          : () => handleSaveActivity(),
-                      gradientColors: [
-                        activitySaved ? Colors.grey :Color(0xFFFFB74D),
-                        activitySaved ? Colors.grey :Color(0xFFFF9800),
-                        activitySaved ? Colors.grey :Color(0xFFF57C00),
+                        // Distance
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.only(top: 12,bottom: 12),
+                            margin: EdgeInsets.only(left: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24, width: 1),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.route, color: Colors.white, size: 28),
+                                SizedBox(height: 5),
+                                Text(
+                                  "${widget.totalDistance.toStringAsFixed(2)} km",
+                                  style: AppTextStyles.heading.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  "Distance",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-              ],
+
+                  // Flutter map if there is a path
+                  if (widget.trackedPath.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0,bottom: 10.0),
+                      child: ClipRRect(
+                       borderRadius: BorderRadius.all(Radius.circular(12)),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.4,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: widget.trackedPath.first,
+                              initialZoom: 15.0,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.example.runtrack',
+                              ),
+                              PolylineLayer(
+                                polylines: [
+                                  Polyline(
+                                    points: widget.trackedPath,
+                                    color: Colors.blue,
+                                    strokeWidth: 4.0,
+
+                                  ),
+                                ],
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: widget.trackedPath.first,
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(Icons.flag, color: Colors.green),
+                                  ),
+                                  if(widget.trackedPath.length > 1)
+                                    Marker(
+                                      point: widget.trackedPath.last,
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(Icons.stop, color: Colors.red),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                  // Photos section
+                  AddPhotos(
+                    showSelectedPhots: true,
+                    onImagesSelected: (images) {
+                      _pickedImages = images;
+                    },
+                  ),
+
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
+                  // TODO Change color after saving activity
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: CustomButton(
+                        text: activitySaved ? "Activity saved" : "Save activity",
+                        onPressed: activitySaved
+                            ? null
+                            : () => handleSaveActivity(),
+                        gradientColors: [
+                          activitySaved ? Colors.grey :Color(0xFFFFB74D),
+                          activitySaved ? Colors.grey :Color(0xFFFF9800),
+                          activitySaved ? Colors.grey :Color(0xFFF57C00),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

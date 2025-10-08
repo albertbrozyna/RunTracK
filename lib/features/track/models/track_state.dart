@@ -14,10 +14,16 @@ class TrackState extends ChangeNotifier {
   TrackingState trackingState;
   List<LatLng> trackedPath;
   double totalDistance;
-
+  Duration accumulatedTime = Duration.zero;
   DateTime startTime;
   Duration elapsedTime;
   Timer? timer;
+  DateTime? lastPositionTime; // Time of the last position
+  double calories;
+  double avgSpeed; // km/h
+  double currentSpeedValue; // km/h
+  double elevationGain; // m
+  int steps;
 
   StreamSubscription<Position>? positionStream;
   final Distance distanceCalculator = Distance(); // To calculate distance between points
@@ -39,12 +45,22 @@ class TrackState extends ChangeNotifier {
     TrackingState? trackingState,
     DateTime? startTime,
     Duration? elapsedTime,
+    double? calories,
+    double? avgSpeed, // km/h
+    double? currentSpeedValue, // km/h
+    double? elevationGain, // m
+    int? steps,
     this.currentPosition,
   }) : trackedPath = trackedPath ?? [],
        trackingState = trackingState ?? TrackingState.stopped,
        totalDistance = totalDistance ?? 0.0,
        elapsedTime = elapsedTime ?? Duration.zero,
-       startTime = startTime ?? DateTime.now();
+       startTime = startTime ?? DateTime.now(),
+       calories = calories ?? 0.0,
+       avgSpeed = avgSpeed ?? 0.0,
+       currentSpeedValue = currentSpeedValue ?? 0.0,
+       elevationGain = elevationGain ?? 0.0,
+       steps = steps ?? 0;
 
   @override
   void dispose() {
@@ -84,7 +100,7 @@ class TrackState extends ChangeNotifier {
     timer?.cancel();
 
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      elapsedTime = DateTime.now().difference(startTime);
+      elapsedTime = accumulatedTime + DateTime.now().difference(startTime);
       notifyListeners();
     });
   }
@@ -101,8 +117,29 @@ class TrackState extends ChangeNotifier {
       latestPosition = position;
       if (currentPosition != null) {
         // Calculate distance from last position
-        totalDistance += distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
+        double dist = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
+        totalDistance += dist;
+
+        final deltaTime = lastPositionTime != null ? DateTime.now().difference(lastPositionTime!).inSeconds.toDouble() : 1.0;
+
+        if (deltaTime > 0) {
+          // to km/h from meters
+          currentSpeedValue = (dist / deltaTime) * 3.6;
+        }
+
+        if (position.altitude > (latestPosition?.altitude ?? 0)) {
+          // Elevation gain
+          elevationGain += position.altitude - (latestPosition?.altitude ?? 0);
+        }
+
+        avgSpeed = (elapsedTime.inSeconds > 0)
+            ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600)
+            : 0.0;
+        steps = (totalDistance / 0.78).round(); // Steps
       }
+
+      lastPositionTime = DateTime.now();
+
       currentPosition = latLng;
       trackedPath.add(latLng);
 
@@ -120,9 +157,15 @@ class TrackState extends ChangeNotifier {
     trackedPath.clear();
     totalDistance = 0.0;
     elapsedTime = Duration.zero;
+    accumulatedTime = Duration.zero;
     startTime = DateTime.now();
     trackingState = TrackingState.running;
-
+    calories = 0.0;
+    avgSpeed = 0.0;
+    currentSpeedValue = 0.0;
+    elevationGain = 0.0;
+    steps = 0;
+    lastPositionTime = DateTime.now();
     _startTimer();
     _createPositionStream();
     notifyListeners();
@@ -137,6 +180,7 @@ class TrackState extends ChangeNotifier {
       positionStream?.cancel();
       _createPositionStream();
     }
+    startTime = DateTime.now();
     // Restart timer
     _startTimer();
     {
@@ -153,6 +197,7 @@ class TrackState extends ChangeNotifier {
     positionStream!.pause();
     // Pause timer
     _stopTimer();
+    accumulatedTime += DateTime.now().difference(startTime);
 
     trackingState = TrackingState.paused;
     notifyListeners();

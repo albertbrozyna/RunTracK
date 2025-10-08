@@ -9,7 +9,7 @@ class AppData{
   static bool images = false; // Handling images
 
   // Saved locally
-  String? lastActivityString;
+  static String? lastActivityString;
 
   // When no internet activities which we need to add
   List<String>activities = [];

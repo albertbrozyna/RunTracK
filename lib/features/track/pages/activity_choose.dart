@@ -9,6 +9,8 @@ import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 
+import '../../../common/utils/utils.dart';
+
 class ActivityChoose extends StatefulWidget {
   final String currentActivity;
 
@@ -19,7 +21,7 @@ class ActivityChoose extends StatefulWidget {
 }
 
 class ActivityChooseState extends State<ActivityChoose> {
-  TextEditingController _newActivityController = TextEditingController();
+  final TextEditingController _newActivityController = TextEditingController();
   int _selectedActivity = 0;
   bool addingEnabled = false;
 
@@ -115,9 +117,7 @@ class ActivityChooseState extends State<ActivityChoose> {
     // Check if this text controller is not empty
     if (_newActivityController.text.trim().isEmpty) {
       // TODO Make this messenger look better
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Activity name cannot be empty")));
+      AppUtils.showMessage(context, "Activity name cannot be empty");
       return;
     }
 
@@ -125,9 +125,7 @@ class ActivityChooseState extends State<ActivityChoose> {
           _newActivityController.text.trim(),
         ) ??
         false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Activity is already on the list")),
-      );
+      AppUtils.showMessage(context, "Activity is already on the list");
       return;
     }
 
@@ -138,13 +136,12 @@ class ActivityChooseState extends State<ActivityChoose> {
       _newActivityController.text = "";
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text("Activity added to list")));
+    AppUtils.showMessage(context, "Activity added to list");
     addingEnabled = false;
     UserService.updateUser(AppData.currentUser!);  // Save activity data to firestore
   }
 
+  /// Delete activity from list
   void deleteActivity(int index) {
     setState(() {
       AppData.currentUser?.activityNames?.removeAt(index);
@@ -169,19 +166,17 @@ class ActivityChooseState extends State<ActivityChoose> {
       );
     }
 
-    // When activities are loaded
-    return WillPopScope(
-      // TODO FIND A good approach with popScope
-      onWillPop: () async {
-        if (AppData.currentUser?.activityNames != null &&
-            (AppData.currentUser?.activityNames?.isNotEmpty ?? false)) {
-          final selected =
-              AppData.currentUser!.activityNames![_selectedActivity];
-          Navigator.pop(context, selected);
-        } else {
-          Navigator.pop(context, null); // fallback
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop,String? result)async {
+        if(!didPop){
+          if (AppData.currentUser?.activityNames?.isNotEmpty ?? false) {
+            Navigator.pop(context,AppData.currentUser!.activityNames![_selectedActivity]);
+          }else{
+            Navigator.pop(context,"Unknown");
+          }
         }
-        return false;
       },
       child: Scaffold(
         appBar: AppBar(
