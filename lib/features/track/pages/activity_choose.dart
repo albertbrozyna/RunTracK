@@ -19,7 +19,7 @@ class ActivityChoose extends StatefulWidget {
 }
 
 class ActivityChooseState extends State<ActivityChoose> {
-  TextEditingController _newActivityController = new TextEditingController();
+  TextEditingController _newActivityController = TextEditingController();
   int _selectedActivity = 0;
   bool addingEnabled = false;
 

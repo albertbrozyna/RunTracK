@@ -70,7 +70,6 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                             "${pickedDate.month.toString().padLeft(2,'0')}-"
                             "${pickedDate.day.toString().padLeft(2,'0')}";
                         _dateController.text = formattedDate;
-                        _dateController.text = formattedDate;
                       }
                     },
                   ),

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_constants.dart';
@@ -11,9 +10,11 @@ import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/validators.dart';
-import '../../../../models/user.dart' as model;
+import '../../models/auth_response.dart';
 
 class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+
   @override
   State<RegisterPage> createState() {
     return _RegisterPageState();
@@ -34,6 +35,17 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordHidden = true;
   bool _isPasswordRepeatHidden = true;
 
+
+  @override
+  void dispose(){
+    _emailController.dispose();
+    _passwordController.dispose();
+    _repeatPasswordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
   // Method to check password complexity
   bool checkPasswordComplexity(String password) {
     // Minimum 8 characters
@@ -106,55 +118,72 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
+  /// Handle register button click
   void handleRegister() async {
-      bool error = false;
-      String? resultMessage = await UserService.createUserInFirebaseAuth(_emailController.text,_passwordController.text);
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      if(resultMessage != "User created"){
-          error = true;
+    bool error = false;
+    AuthResponse? result = await UserService.createUserInFirebaseAuth(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (result.message == null || result.message != "User created") {
+      error = true;
+    }
+
+
+    if (!error) {
+      String? resultMessage = await UserService.createUserInFirestore(
+        result.userCredential!.user!.uid,
+        _firstNameController.text.trim(),
+        _lastNameController.text.trim(),
+        _emailController.text.trim(),
+        _selectedGender!,
+        DateTime.parse(_dateController.text.trim()),
+      );
+      if (resultMessage != "User created") {
+        error = true;
       }
-      if(!error) {
-        resultMessage = await UserService.createUserInFirestore(
-          FirebaseAuth.instance.currentUser!.uid,
-          _firstNameController.text,
-          _lastNameController.text,
-          _emailController.text,
-          _selectedGender!,
-          DateTime.parse(_dateController.text),
+    }
+    if (error) {
+      User? firebaseUser = result.userCredential?.user;
+      if (firebaseUser != null) {
+        try {
+          await firebaseUser.delete();
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'requires-recent-login') {
+            // Log in again if there is a this err code
+            await firebaseUser.reauthenticateWithCredential(
+              EmailAuthProvider.credential(
+                email: _emailController.text.trim(),
+                password: _passwordController.text.trim(),
+              ),
+            );
+            await firebaseUser.delete();
+          }
+        }
+      }
+
+      if (mounted) {
+        AppUtils.showMessage(context, "Register failed!", isError: true);
+      }
+    } else {
+      // Success
+      if (mounted) {
+        AppUtils.showMessage(context, "Registered successfully!");
+        FirebaseAuth.instance.signOut();
+      }
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
         );
-        if (resultMessage != "User created") {
-          error = true;
-        }
-      }
-      if(error) {
-        if(mounted) {
-          AppUtils.showMessage(context, "Register failed!",isError: true);
-        }
-      }else { // Success
-        if(mounted) {
-          AppUtils.showMessage(context, "Registered successfully!");
-        }
-        Future.delayed(Duration(seconds: 1), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => LoginPage()),
-          );
-        });
-      }
+      });
+    }
   }
-
-
-
-
-//   // Successfully register
-//   if (FirebaseAuth.instance.currentUser != null) {
-//   ScaffoldMessenger.of(
-//   context,
-//   ).showSnackBar(SnackBar(content: Text("Registered successfully!")));
-//   }
-// } catch (firestoreError) {
-// await userCredential.user!.delete();
-// }
 
   @override
   Widget build(BuildContext context) {
@@ -187,14 +216,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       decoration: BoxDecoration(
                         color: AppColors.formBackgroundOverlay,
                         borderRadius: AppUiConstants.borderRadiusForm,
-                        boxShadow: AppUiConstants.boxShadowForm
+                        boxShadow: AppUiConstants.boxShadowForm,
                       ),
                       child: Column(
                         children: [
                           // First Name
                           TextFormField(
                             controller: _firstNameController,
-                            validator: (value) => validateFields('firstName', value),
+                            validator: (value) =>
+                                validateFields('firstName', value),
                             keyboardType: TextInputType.text,
                             decoration: InputDecoration(
                               labelText: "First Name",
@@ -210,38 +240,42 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Last name
                           TextFormField(
                             controller: _lastNameController,
-                            validator: (value) => validateFields('lastName', value),
+                            validator: (value) =>
+                                validateFields('lastName', value),
                             keyboardType: TextInputType.text,
                             decoration: InputDecoration(
                               labelText: "Last name",
                               prefixIcon: Icon(Icons.person),
                               border: OutlineInputBorder(
-                                borderRadius: AppUiConstants.borderRadiusTextFields,
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 16,
-                              ),
+                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                          SizedBox(
+                            height: AppUiConstants.verticalSpacingTextFields,
+                          ),
                           // Date of birth
                           TextFormField(
                             controller: _dateController,
-                            validator: (value) => validateFields('dateOfBirth', value),
+                            validator: (value) =>
+                                validateFields('dateOfBirth', value),
                             readOnly: true,
                             decoration: InputDecoration(
                               labelText: "Date of Birth",
                               prefixIcon: Icon(Icons.calendar_today),
 
                               border: OutlineInputBorder(
-                                borderRadius: AppUiConstants.borderRadiusTextFields
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
                               ),
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
+                              contentPadding:
+                                  AppUiConstants.contentPaddingTextFields,
                             ),
                             onTap: () async {
                               DateTime? pickedDate = await showDatePicker(
@@ -251,13 +285,16 @@ class _RegisterPageState extends State<RegisterPage> {
                                 lastDate: DateTime.now(),
                               );
                               if (pickedDate != null) {
-                                String formattedDate =
-                                    "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+                                String formattedDate = "${pickedDate.year.toString().padLeft(4,'0')}-"
+                                    "${pickedDate.month.toString().padLeft(2,'0')}-"
+                                    "${pickedDate.day.toString().padLeft(2,'0')}";
                                 _dateController.text = formattedDate;
                               }
                             },
                           ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                          SizedBox(
+                            height: AppUiConstants.verticalSpacingTextFields,
+                          ),
                           // Gender
                           DropdownButtonFormField<String>(
                             initialValue: _selectedGender,
@@ -265,9 +302,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               labelText: "Gender",
                               prefixIcon: Icon(Icons.person_outline),
                               border: OutlineInputBorder(
-                                borderRadius: AppUiConstants.borderRadiusTextFields,
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
                               ),
-                              contentPadding: AppUiConstants.contentPaddingTextFields
+                              contentPadding:
+                                  AppUiConstants.contentPaddingTextFields,
                             ),
                             items: AppConstants.genders.map((String gender) {
                               return DropdownMenuItem<String>(
@@ -281,25 +320,33 @@ class _RegisterPageState extends State<RegisterPage> {
                               });
                             },
                           ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                          SizedBox(
+                            height: AppUiConstants.verticalSpacingTextFields,
+                          ),
                           // Email field
                           TextFormField(
                             controller: _emailController,
-                            validator: (value) => validateFields('email', value),
+                            validator: (value) =>
+                                validateFields('email', value),
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
                               labelText: "Email",
                               prefixIcon: Icon(Icons.email),
                               border: OutlineInputBorder(
-                                borderRadius: AppUiConstants.borderRadiusTextFields,
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
                               ),
-                                contentPadding: AppUiConstants.contentPaddingTextFields
+                              enabledBorder: AppUiConstants.enabledBorderTextfields,
+                              focusedBorder: AppUiConstants.focusedBorderTextfields,
+                              contentPadding:
+                                  AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height:AppUiConstants.verticalSpacingTextFields),
                           TextFormField(
                             controller: _passwordController,
-                            validator: (value) => validateFields('password', value),
+                            validator: (value) =>
+                                validateFields('password', value),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordHidden,
                             decoration: InputDecoration(
@@ -318,14 +365,25 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: AppUiConstants.borderRadiusTextFields,
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
                               ),
-                              contentPadding: AppUiConstants.contentPaddingTextFields
+                              enabledBorder:
+                                  AppUiConstants.enabledBorderTextfields,
+                              focusedBorder:
+                                  AppUiConstants.focusedBorderTextfields,
+                              contentPadding:
+                                  AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          TextField(
+                          SizedBox(
+                            height: AppUiConstants.verticalSpacingTextFields,
+                          ),
+                          // Repeat password
+                          TextFormField(
                             controller: _repeatPasswordController,
+                            validator: (value) =>
+                                validateFields('repeatPassword', value),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordRepeatHidden,
                             decoration: InputDecoration(
@@ -344,14 +402,22 @@ class _RegisterPageState extends State<RegisterPage> {
                                       : Icons.visibility,
                                 ),
                               ),
-                                border: OutlineInputBorder(
-                                  borderRadius: AppUiConstants.borderRadiusTextFields,
-                                ),
-                                contentPadding: AppUiConstants.contentPaddingTextFields
+                              border: OutlineInputBorder(
+                                borderRadius:
+                                    AppUiConstants.borderRadiusTextFields,
+                              ),
+                              enabledBorder:
+                                  AppUiConstants.enabledBorderTextfields,
+                              focusedBorder:
+                                  AppUiConstants.focusedBorderTextfields,
+                              contentPadding:
+                                  AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
                           // Register button
-                          SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                          SizedBox(
+                            height: AppUiConstants.verticalSpacingButtons,
+                          ),
                           SizedBox(
                             width: double.infinity,
                             height: 60,
@@ -379,4 +445,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
+import 'package:run_track/features/auth/models/auth_response.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
@@ -151,6 +152,11 @@ class UserService {
     if (user.uid.isEmpty) {
       return null;
     }
+
+    final userf = FirebaseAuth.instance.currentUser;
+    if (userf == null) {
+      print("User not logged in!");
+    }
     try {
       final docRef = FirebaseFirestore.instance
           .collection('users')
@@ -233,7 +239,7 @@ class UserService {
   }
 
   /// Create a user in firebase auth
-  static Future<String> createUserInFirebaseAuth(String email, String password) async {
+  static Future<AuthResponse> createUserInFirebaseAuth(String email, String password) async {
     try {
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -241,10 +247,11 @@ class UserService {
             password: password.trim(),
           );
 
-      await FirebaseAuth.instance.signOut();
-      return "User created";
+      return AuthResponse(message: "User created",userCredential: userCredential);
     } on FirebaseAuthException catch (e) {
-      return ("Auth error ${e.message}");
+      return AuthResponse(message:"Auth error ${e.message}");
+    } catch (e) {
+      return AuthResponse(message:"Auth error $e");
     }
   }
 
@@ -257,10 +264,6 @@ class UserService {
     String gender,
     DateTime dateOfBirth,
   ) async {
-    if (await checkIfUserAccountExists(uid)) {
-      return "User already exists";
-    }
-
     model.User? user = await UserService.addUser(
       model.User(
         uid: uid,
@@ -279,11 +282,16 @@ class UserService {
   }
 
   /// Check if the user account exists in firestore
+  // TODO TO FIX THIS with returning true
   static Future<bool> checkIfUserAccountExists(String uid) async {
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
-    return docSnapshot.exists;
+    try{
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      return docSnapshot.exists;
+    }catch(e){
+      return true;
+    }
   }
 }
