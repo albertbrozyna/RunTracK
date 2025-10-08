@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('pl'), // Polish (example)
       ],
-      home: StartPage(),
+      home: FirebaseAuthStartPage(),
       // home: StreamBuilder(stream: FirebaseAuth.instance.authStateChanges(), builder: (context,snapshot) {
       //   if(AppData.blockedLoginState = false){
       //

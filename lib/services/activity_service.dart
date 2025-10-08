@@ -3,6 +3,10 @@ import 'dart:core';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/models/activity.dart';
+import 'package:run_track/services/preferences_service.dart';
+import 'package:run_track/services/user_service.dart';
+
+import '../common/utils/app_data.dart';
 
 class ActivityService {
   /// Format elapsed time from duration to hh:mm:ss
@@ -152,6 +156,29 @@ class ActivityService {
       return false;
     }
 
+  }
+  /// Fetch last activity from local preferences
+  static Future<String> fetchLastActivityFromPrefs() async {
+    String? activityName = await PreferencesService.loadString("keyLastUserActivity");
+
+    final userActivities = AppData.currentUser?.activityNames;
+
+    // If saved and on the user list
+    if (activityName != null && userActivities?.contains(activityName) == true) {
+      return activityName;
+    }
+
+    // If not first activity or unknown
+    String defaultActivity = userActivities != null && userActivities.isNotEmpty
+        ? userActivities.first
+        : "Unknown";
+
+    try {
+      await PreferencesService.saveString("keyLastUserActivity", defaultActivity);
+    } catch (e) {
+      print("Error saving default activity: $e");
+    }
+    return defaultActivity;
   }
 
 }
