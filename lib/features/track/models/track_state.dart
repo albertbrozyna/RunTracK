@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../common/enums/tracking_state.dart';
 import '../../profile/models/settings.dart';
@@ -17,6 +20,7 @@ class TrackState extends ChangeNotifier {
   Duration accumulatedTime = Duration.zero;
   DateTime startTime;
   Duration elapsedTime;
+  Timer? autoSaveTimer; // Timer to save a data to a local storage
   Timer? timer;
   DateTime? lastPositionTime; // Time of the last position
   double calories;
@@ -24,6 +28,8 @@ class TrackState extends ChangeNotifier {
   double currentSpeedValue; // km/h
   double elevationGain; // m
   int steps;
+  bool activitySaved = false; // State is saved to firestore?
+  // TODO make auto save disabled in settings by user
 
   StreamSubscription<Position>? positionStream;
   final Distance distanceCalculator = Distance(); // To calculate distance between points
@@ -169,6 +175,7 @@ class TrackState extends ChangeNotifier {
     _startTimer();
     _createPositionStream();
     notifyListeners();
+    _startAutoSave();
   }
 
   // Function to resume tracking
@@ -186,6 +193,7 @@ class TrackState extends ChangeNotifier {
     {
       trackingState = TrackingState.running;
     }
+    _startAutoSave();
     notifyListeners();
   }
 
@@ -200,6 +208,8 @@ class TrackState extends ChangeNotifier {
     accumulatedTime += DateTime.now().difference(startTime);
 
     trackingState = TrackingState.paused;
+    autoSaveTimer?.cancel();  // Cancel save timer
+    saveToFile();
     notifyListeners();
   }
 
@@ -214,6 +224,100 @@ class TrackState extends ChangeNotifier {
     positionStream = null;
     _stopTimer();
     trackingState = TrackingState.stopped;
+    autoSaveTimer?.cancel();  // Cancel save timer
+    saveToFile(); // Save to file to save a state of the run as as stopped
     notifyListeners();
+  }
+
+
+  // Auto save to a file
+
+  /// Start saving a state to a file
+  void _startAutoSave() {
+    autoSaveTimer?.cancel();
+    autoSaveTimer = Timer.periodic(Duration(seconds: AppSettings.saveIntervalTime), (_) => saveToFile());
+  }
+
+
+  /// Map this run state to json
+  Map<String, dynamic> toJson() {
+    return {
+      'trackingState': trackingState.toString(),
+      'trackedPath': trackedPath.map((e) => {'lat': e.latitude, 'lng': e.longitude}).toList(),
+      'totalDistance': totalDistance,
+      'accumulatedTime': accumulatedTime.inSeconds,
+      'startTime': startTime.toIso8601String(),
+      'elapsedTime': elapsedTime.inSeconds,
+      'calories': calories,
+      'avgSpeed': avgSpeed,
+      'currentSpeedValue': currentSpeedValue,
+      'elevationGain': elevationGain,
+      'steps': steps,
+      'currentPosition': currentPosition != null
+          ? {'lat': currentPosition!.latitude, 'lng': currentPosition!.longitude}
+          : null,
+    };
+  }
+
+  static Future<TrackState?> loadFromFile(MapController? controller) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory(); // App documents
+      final file = File('${dir.path}/track_state.json');
+      if (!await file.exists()) {
+        return null;
+      }
+        final jsonStr = await file.readAsString();
+        final data = jsonDecode(jsonStr);
+
+        return TrackState(
+          mapController: controller,
+          trackedPath: (data['trackedPath'] as List)
+              .map((e) => LatLng(e['lat'], e['lng']))
+              .toList(),
+          totalDistance: (data['totalDistance'] ?? 0).toDouble(),
+          trackingState: TrackingState.values.firstWhere(
+                  (e) => e.toString() == data['trackingState'],
+              orElse: () => TrackingState.stopped),
+          startTime: DateTime.parse(data['startTime']),
+          elapsedTime: Duration(seconds: data['elapsedTime'] ?? 0),
+          calories: (data['calories'] ?? 0).toDouble(),
+          avgSpeed: (data['avgSpeed'] ?? 0).toDouble(),
+          currentSpeedValue: (data['currentSpeedValue'] ?? 0).toDouble(),
+          elevationGain: (data['elevationGain'] ?? 0).toDouble(),
+          steps: data['steps'] ?? 0,
+          currentPosition: data['currentPosition'] != null
+              ? LatLng(data['currentPosition']['lat'], data['currentPosition']['lng'])
+              : null,
+        );
+    } catch (e) {
+      print('Error loading track state: $e');
+      return null;
+    }
+  }
+
+  /// Save a file with a tracking state to local memory
+  Future<void> saveToFile() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/track_state.json');
+      await file.writeAsString(jsonEncode(toJson()), flush: true); // Write it immediately to the file, not wait
+    } catch (e) {
+      print("Error: " + e.toString());
+    }
+  }
+
+  /// Delete a file with a tracking state from memory
+  Future<void> deleteFile() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/track_state.json');
+      if (await file.exists()) {
+        await file.delete();
+      } else {
+        print('File not found.');
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 }

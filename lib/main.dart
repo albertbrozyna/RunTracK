@@ -6,6 +6,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/auth/start/widgets/additional_info_form.dart';
 import 'package:run_track/features/home/home_page.dart';
+import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 
 import 'config/firebase_options.dart';

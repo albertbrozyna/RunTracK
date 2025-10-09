@@ -9,6 +9,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/features/track/models/track_state.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
@@ -25,6 +26,8 @@ class ActivitySummary extends StatefulWidget {
   final Duration elapsedTime;
   final String activityType;
   final DateTime? startTime;
+  final TrackState? trackState;
+
 
   const ActivitySummary({
     super.key,
@@ -33,6 +36,7 @@ class ActivitySummary extends StatefulWidget {
     required this.elapsedTime,
     required this.activityType,
     required this.startTime,
+    this.trackState
   });
 
   @override
@@ -70,13 +74,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   Future<void> handleSaveActivity() async {
     // Photos from activity
     List<String> uploadedUrls = [];
-    for (var image in _pickedImages) {
-      final ref = FirebaseStorage.instance.ref().child(
-        'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
-      );
-      await ref.putFile(File(image.path));
-      final url = await ref.getDownloadURL();
-      uploadedUrls.add(url);
+    if(AppData.images){ // If images are available
+      for (var image in _pickedImages) {
+        final ref = FirebaseStorage.instance.ref().child(
+          'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
+        );
+        await ref.putFile(File(image.path));
+        final url = await ref.getDownloadURL();
+        uploadedUrls.add(url);
+      }
     }
 
     // Activity data
@@ -96,6 +102,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
+      if(widget.trackState != null){
+        widget.trackState?.deleteFile(); // Delete a file from local store if it is saved
+      }
+
       setState(() {
         activitySaved = true;
       });
@@ -138,6 +148,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
+                    if(widget.trackState != null){
+                      widget.trackState?.deleteFile(); // Delete a file from local store if user wants to exit
+                    }
+
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
                   },

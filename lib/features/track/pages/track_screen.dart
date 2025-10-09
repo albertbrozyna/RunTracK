@@ -51,7 +51,6 @@ class TrackScreenState extends State<TrackScreen> {
   @override
   void initState() {
     super.initState();
-    _trackState = TrackState(mapController: _mapController);
     _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       _trackState.updateGpsIcon();
     });
@@ -62,6 +61,14 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
+    // Last state of run, we check if last run was not interrupted by crash, if yes we load last state
+    TrackState? lastTrackState = await TrackState.loadFromFile(_mapController);
+    if(lastTrackState == null){
+    _trackState = TrackState(mapController: _mapController);
+    } else {
+      _trackState = lastTrackState;
+    }
+
     final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
     setState(() {
       activityName = lastActivity;
