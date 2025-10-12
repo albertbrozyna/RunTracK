@@ -116,7 +116,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Activity data
     Activity userActivity = Activity(
       uid: widget.activityData.uid,
-      activityType: widget.activityData.activityType,
+      activityType: activityController.text.trim(),
       description: descriptionController.text.trim(),
       title: titleController.text.trim(),
       totalDistance: widget.activityData.totalDistance,

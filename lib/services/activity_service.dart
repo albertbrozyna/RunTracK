@@ -51,6 +51,7 @@ class ActivityService {
   /// Convert Activity object to Firestore map
   static Map<String, dynamic> toMap(Activity activity) {
     return {
+      'uid':activity.uid,
       'totalDistance': activity.totalDistance,
       'elapsedTime': activity.elapsedTime,
       'trackedPath': activity.trackedPath
@@ -140,7 +141,7 @@ class ActivityService {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('activities')
-          .where("uid", isEqualTo: "me")
+          .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
