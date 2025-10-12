@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/enums/visibility.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
@@ -29,14 +30,21 @@ class ActivityService {
       uid: map['uid'],
       totalDistance: map['totalDistance']?.toDouble(),
       elapsedTime: map['elapsedTime'],
-      trackedPath: (map['trackedPath'] as List?)?.map((point) => LatLng(point['lat'], point['lng'])).toList(),
+      trackedPath: (map['trackedPath'] as List?)
+          ?.map((point) => LatLng(point['lat'], point['lng']))
+          .toList(),
       activityType: map['activityType'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       startTime: (map['startTime'] as Timestamp?)?.toDate(),
       title: map['title'],
       description: map['description'],
-      visibility: map['visibility'],
+      visibility: parseVisibility( map['visibility']) ?? Visibility.me,
       photos: List<String>.from(map['photos'] ?? []),
+      avgSpeed: map['avgSpeed']?.toDouble(),
+      calories: map['calories']?.toDouble(),
+      elevationGain: map['elevationGain']?.toDouble(),
+      steps: map['steps']?.toInt(),
+      pace: map['pace']?.toDouble(),
     );
   }
 
@@ -45,14 +53,23 @@ class ActivityService {
     return {
       'totalDistance': activity.totalDistance,
       'elapsedTime': activity.elapsedTime,
-      'trackedPath': activity.trackedPath?.map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude}).toList(),
+      'trackedPath': activity.trackedPath
+          ?.map((latLng) => {'lat': latLng.latitude, 'lng': latLng.longitude})
+          .toList(),
       'activityType': activity.activityType,
       'createdAt': activity.createdAt ?? FieldValue.serverTimestamp(),
-      'startTime': activity.startTime != null ? Timestamp.fromDate(activity.startTime!) : null,
+      'startTime': activity.startTime != null
+          ? Timestamp.fromDate(activity.startTime!)
+          : null,
       'title': activity.title,
       'description': activity.description,
-      'visibility': activity.visibility,
+      'visibility': activity.visibility.toString(),
       'photos': activity.photos,
+      'calories': activity.calories,
+      'avgSpeed': activity.avgSpeed,
+      'elevationGain': activity.elevationGain,
+      'steps': activity.steps,
+      'pace': activity.pace,
     };
   }
 
@@ -65,7 +82,9 @@ class ActivityService {
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
-      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data())).toList();
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data()))
+          .toList();
 
       return activities;
     } catch (e) {
@@ -76,7 +95,10 @@ class ActivityService {
   }
 
   /// Fetch last friend activities
-  static Future<List<Activity>> fetchLastFriendsActivities(List<String> friendsUids, int limit) async {
+  static Future<List<Activity>> fetchLastFriendsActivities(
+    List<String> friendsUids,
+    int limit,
+  ) async {
     List<Activity> lastActivities = [];
     if (friendsUids.isEmpty) {
       return lastActivities;
@@ -91,7 +113,9 @@ class ActivityService {
           .limit(limit)
           .get();
 
-      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data())).toList();
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data()))
+          .toList();
 
       lastActivities.addAll(activities);
 
@@ -109,7 +133,10 @@ class ActivityService {
     }
   }
 
-  static Future<List<Activity>> fetchLatestUserActivities(String uid, int limit) async {
+  static Future<List<Activity>> fetchLatestUserActivities(
+    String uid,
+    int limit,
+  ) async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('activities')
@@ -117,7 +144,9 @@ class ActivityService {
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
-      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data())).toList();
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data()))
+          .toList();
 
       return activities;
     } catch (e) {
@@ -129,7 +158,9 @@ class ActivityService {
 
   static Future<bool> saveActivity(Activity activity) async {
     try {
-      final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
+      final docRef = FirebaseFirestore.instance
+          .collection('activities')
+          .doc(); // Generate id
       activity.activityId = docRef.id;
       await docRef.set(ActivityService.toMap(activity));
       return true;
@@ -141,7 +172,9 @@ class ActivityService {
 
   /// Fetch last activity from local preferences
   static Future<String> fetchLastActivityFromPrefs() async {
-    String? activityName = await PreferencesService.loadString(PreferenceNames.lastUsedPreference);
+    String? activityName = await PreferencesService.loadString(
+      PreferenceNames.lastUsedPreference,
+    );
 
     final userActivities = AppData.currentUser?.activityNames;
     // If saved and on the user list
@@ -149,7 +182,9 @@ class ActivityService {
       return activityName;
     }
     // If not first activity or unknown
-    String defaultActivity = userActivities != null && userActivities.isNotEmpty ? userActivities.first : "Unknown";
+    String defaultActivity = userActivities != null && userActivities.isNotEmpty
+        ? userActivities.first
+        : "Unknown";
 
     return defaultActivity;
   }

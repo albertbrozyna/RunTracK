@@ -16,6 +16,12 @@ class Activity {
   enums.Visibility visibility;
   List<String> photos;
 
+  double? calories;
+  double? avgSpeed; // km/h
+  double? elevationGain; // m
+  int? steps;
+  double? pace;
+
   Activity({
     this.activityId = "",
     required this.uid,
@@ -28,28 +34,12 @@ class Activity {
     this.description,
     this.visibility = enums.Visibility.me,
     this.photos = const [],
-    this.createdAt
+    this.createdAt,
+    this.calories,
+    this.avgSpeed,
+    this.elevationGain,
+    this.steps,
+    this.pace
   });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'totalDistance': totalDistance,
-      'elapsedTime': elapsedTime,
-      'trackedPath': trackedPath
-          ?.map((latLng) =>
-      {
-        'lat': latLng.latitude.toDouble(),
-        'lng': latLng.longitude.toDouble()
-      })
-          .toList(),
-      'activityType': activityType,
-      'createdAt': createdAt ?? FieldValue.serverTimestamp(),
-      'startTime': startTime != null ? Timestamp.fromDate(startTime!) : null,
-      'title': title,
-      'description': description,
-      'visibility': visibility,
-      'photos': photos,
-    };
-  }
 
 }

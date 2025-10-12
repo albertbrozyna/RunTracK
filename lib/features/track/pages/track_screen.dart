@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/profile/models/settings.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
@@ -11,14 +10,14 @@ import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 import 'package:run_track/theme/ui_constants.dart';
-
+import 'package:run_track/common/enums/visibility.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
-import '../models/track_state.dart';
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -28,7 +27,6 @@ class TrackScreen extends StatefulWidget {
 }
 
 class TrackScreenState extends State<TrackScreen> {
-  late TrackState _trackState;
   final MapController _mapController = MapController();
   bool _followUser = true;
   TextEditingController activityController = TextEditingController();
@@ -37,37 +35,21 @@ class TrackScreenState extends State<TrackScreen> {
   Timer? _finishTimer;
   Timer? _gpsTimer; // Gps timer to refresh gps
 
-  final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
-
-  bool get isTrackingRunning => _trackState.trackingState == TrackingState.running;
-
   @override
   void dispose() {
-    _gpsTimer?.cancel();
-    _trackState.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _trackState.updateGpsIcon();
-    });
-    _trackState.addListener(() {
-      isTrackingNotifier.value = _trackState.trackingState == TrackingState.running || _trackState.trackingState == TrackingState.paused;
-    });
     initialize();
   }
 
   Future<void> initialize() async {
-    // Last state of run, we check if last run was not interrupted by crash, if yes we load last state
-    TrackState? lastTrackState = await TrackState.loadFromFile(_mapController);
-    if(lastTrackState == null){
-    _trackState = TrackState(mapController: _mapController);
-    } else {
-      _trackState = lastTrackState;
-    }
+    _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      AppData.trackState.updateGpsIcon();
+    });
 
     final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
     setState(() {
@@ -77,16 +59,25 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   void handleStopTracking() {
-    _trackState.stopTracking();
+    AppData.trackState.stopTracking();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
-          elapsedTime: _trackState.elapsedTime,
-          totalDistance: _trackState.totalDistance,
-          trackedPath: List<LatLng>.from(_trackState.trackedPath),
-          activityType: activityName ?? "Unknown",
-          startTime: _trackState.startTime,
+          activityData: Activity(uid: AppData.currentUser!.uid,
+          activityType: activityController.text.trim(),
+          avgSpeed: AppData.trackState.avgSpeed,
+          calories: AppData.trackState.calories,
+            steps: AppData.trackState.steps,
+              elevationGain: AppData.trackState.elevationGain,
+              trackedPath: AppData.trackState.trackedPath,
+              elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
+              totalDistance: AppData.trackState.totalDistance,
+              startTime: AppData.trackState.startOfTheActivity,
+              createdAt: AppData.trackState.startOfTheActivity,
+              title: "",
+              description: "",
+           ),
         ),
       ),
     );
@@ -94,14 +85,14 @@ class TrackScreenState extends State<TrackScreen> {
 
   // Controls with pace time and start/stop buttons
   Widget _buildControls() {
-    switch (_trackState.trackingState) {
+    switch (AppData.trackState.trackingState) {
       case TrackingState.stopped:
         return SizedBox(
           height: 50.0,
           width: double.infinity,
           child: CustomButton(
             text: AppLocalizations.of(context)!.trackScreenStartTraining,
-            onPressed: _trackState.startTracking,
+            onPressed: AppData.trackState.startTracking,
             gradientColors: [const Color(0xFFFFA726), const Color(0xFFFF5722)],
           ),
         );
@@ -114,7 +105,7 @@ class TrackScreenState extends State<TrackScreen> {
               width: double.infinity,
               child: CustomButton(
                 text: "Stop",
-                onPressed: _trackState.pauseTracking,
+                onPressed: AppData.trackState.pauseTracking,
                 gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
               ),
             ),
@@ -132,7 +123,7 @@ class TrackScreenState extends State<TrackScreen> {
                     height: 50,
                     child: CustomButton(
                       text: "Resume",
-                      onPressed: _trackState.resumeTracking,
+                      onPressed: AppData.trackState.resumeTracking,
                       gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
                     ),
                   ),
@@ -220,7 +211,7 @@ class TrackScreenState extends State<TrackScreen> {
       // Custom fab location to set a fab
       floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       body: AnimatedBuilder(
-        animation: _trackState,
+        animation: AppData.trackState,
         builder: (BuildContext context, _) {
           return Stack(
             children: [
@@ -230,7 +221,7 @@ class TrackScreenState extends State<TrackScreen> {
                   Row(
                     children: [
                       SizedBox(width: 10.0),
-                      Column(mainAxisSize: MainAxisSize.min, children: [_trackState.gpsIcon, Text("GPS")]),
+                      Column(mainAxisSize: MainAxisSize.min, children: [AppData.trackState.gpsIcon, Text("GPS")]),
                       Expanded(
                         child: TextField(
                           controller: activityController,
@@ -251,7 +242,7 @@ class TrackScreenState extends State<TrackScreen> {
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: _trackState.currentPosition ?? AppSettings.defaultLocation,
+                        initialCenter: AppData.trackState.currentPosition ?? AppSettings.defaultLocation,
                         initialZoom: 15.0,
                         interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
@@ -260,15 +251,15 @@ class TrackScreenState extends State<TrackScreen> {
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.runtrack',
                         ),
-                        if (_trackState.trackedPath.isNotEmpty)
+                        if (AppData.trackState.trackedPath.isNotEmpty)
                           PolylineLayer(
-                            polylines: [Polyline(points: _trackState.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
+                            polylines: [Polyline(points: AppData.trackState.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
                           ),
-                        if (_trackState.currentPosition != null)
+                        if (AppData.trackState.currentPosition != null)
                           MarkerLayer(
                             markers: [
                               Marker(
-                                point: _trackState.currentPosition!,
+                                point: AppData.trackState.currentPosition!,
                                 width: 40,
                                 height: 40,
                                 child: Icon(Icons.location_pin, color: Colors.red, size: 40),
@@ -282,19 +273,19 @@ class TrackScreenState extends State<TrackScreen> {
               ),
 
               /// RunStats positioned as draggable sheet
-              if (_trackState.trackingState == TrackingState.running || _trackState.trackingState == TrackingState.paused)
+              if (AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused)
                 Positioned.fill(
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: RunStats(
-                      totalDistance: _trackState.totalDistance,
-                      pace: TrackService.formatPace(_trackState.totalDistance, _trackState.elapsedTime),
-                      elapsedTime: _trackState.elapsedTime,
-                      startTime: _trackState.startTime,
-                      avgSpeed: _trackState.avgSpeed,
-                      calories: _trackState.calories,
-                      steps: _trackState.steps,
-                      elevation: _trackState.elevationGain,
+                      totalDistance: AppData.trackState.totalDistance,
+                      pace: TrackService.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
+                      elapsedTime: AppData.trackState.elapsedTime,
+                      startTime: AppData.trackState.startTime,
+                      avgSpeed: AppData.trackState.avgSpeed,
+                      calories: AppData.trackState.calories,
+                      steps: AppData.trackState.steps,
+                      elevation:AppData.trackState.elevationGain,
                     ),
                   ),
                 ),
@@ -306,7 +297,7 @@ class TrackScreenState extends State<TrackScreen> {
                 right: 0,
                 child: Container(
                   width: double.infinity,
-                  height: _trackState.trackingState == TrackingState.running || _trackState.trackingState == TrackingState.paused
+                  height: AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
                       ? 76.0
                       : 60.0,
                   decoration: BoxDecoration(color: Colors.white),
@@ -315,7 +306,7 @@ class TrackScreenState extends State<TrackScreen> {
                       left: AppUiConstants.paddingTextFields,
                       right: AppUiConstants.paddingTextFields,
                       top: AppUiConstants.paddingTextFields,
-                      bottom: _trackState.trackingState == TrackingState.running || _trackState.trackingState == TrackingState.paused
+                      bottom: AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
                           ? 16
                           : 0,
                     ),
@@ -331,8 +322,8 @@ class TrackScreenState extends State<TrackScreen> {
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
-            if (_followUser && _trackState.currentPosition != null) {
-              _mapController.move(_trackState.currentPosition!, _mapController.camera.zoom);
+            if (_followUser && AppData.trackState.currentPosition != null) {
+              _mapController.move(AppData.trackState.currentPosition!, _mapController.camera.zoom);
             }
           });
         },

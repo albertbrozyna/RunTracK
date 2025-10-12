@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../common/enums/tracking_state.dart';
+import '../../../common/utils/app_data.dart';
 import '../../profile/models/settings.dart';
 
 class TrackState extends ChangeNotifier {
@@ -18,6 +19,7 @@ class TrackState extends ChangeNotifier {
   List<LatLng> trackedPath;
   double totalDistance;
   Duration accumulatedTime = Duration.zero;
+  DateTime startOfTheActivity;  // Time when activity starts
   DateTime startTime;
   Duration elapsedTime;
   Timer? autoSaveTimer; // Timer to save a data to a local storage
@@ -28,6 +30,7 @@ class TrackState extends ChangeNotifier {
   double currentSpeedValue; // km/h
   double elevationGain; // m
   int steps;
+  double pace; // min/km
   bool activitySaved = false; // State is saved to firestore?
   // TODO make auto save disabled in settings by user
 
@@ -45,7 +48,7 @@ class TrackState extends ChangeNotifier {
   );
 
   TrackState({
-    required this.mapController,
+    this.mapController,
     List<LatLng>? trackedPath,
     double? totalDistance,
     TrackingState? trackingState,
@@ -56,6 +59,7 @@ class TrackState extends ChangeNotifier {
     double? currentSpeedValue, // km/h
     double? elevationGain, // m
     int? steps,
+    double? pace,
     this.currentPosition,
   }) : trackedPath = trackedPath ?? [],
        trackingState = trackingState ?? TrackingState.stopped,
@@ -66,7 +70,10 @@ class TrackState extends ChangeNotifier {
        avgSpeed = avgSpeed ?? 0.0,
        currentSpeedValue = currentSpeedValue ?? 0.0,
        elevationGain = elevationGain ?? 0.0,
-       steps = steps ?? 0;
+       steps = steps ?? 0,
+        pace = pace ?? 0.0,
+        startOfTheActivity = DateTime.now();
+
 
   @override
   void dispose() {
@@ -142,7 +149,11 @@ class TrackState extends ChangeNotifier {
             ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600)
             : 0.0;
         steps = (totalDistance / 0.78).round(); // Steps
+
+        pace = (avgSpeed > 0) ? (60 / avgSpeed) : 0.0; // min/km
       }
+
+
 
       lastPositionTime = DateTime.now();
 
@@ -150,7 +161,7 @@ class TrackState extends ChangeNotifier {
       trackedPath.add(latLng);
 
       // Move map to follow current location
-      if (trackingState == TrackingState.running && followUser) {
+      if (trackingState == TrackingState.running && followUser && mapController != null ) {
         mapController?.move(latLng, mapController!.camera.zoom);
       }
       notifyListeners();
@@ -165,6 +176,7 @@ class TrackState extends ChangeNotifier {
     elapsedTime = Duration.zero;
     accumulatedTime = Duration.zero;
     startTime = DateTime.now();
+    startOfTheActivity = DateTime.now();
     trackingState = TrackingState.running;
     calories = 0.0;
     avgSpeed = 0.0;
@@ -187,7 +199,8 @@ class TrackState extends ChangeNotifier {
       positionStream?.cancel();
       _createPositionStream();
     }
-    startTime = DateTime.now();
+
+    startTime = DateTime.now().subtract(accumulatedTime);
     // Restart timer
     _startTimer();
     {
@@ -235,7 +248,9 @@ class TrackState extends ChangeNotifier {
   /// Start saving a state to a file
   void _startAutoSave() {
     autoSaveTimer?.cancel();
-    autoSaveTimer = Timer.periodic(Duration(seconds: AppSettings.saveIntervalTime), (_) => saveToFile());
+    if(AppSettings.saveIntervalTime > 0){
+      autoSaveTimer = Timer.periodic(Duration(seconds: AppSettings.saveIntervalTime), (_) => saveToFile());
+    }
   }
 
 
@@ -259,7 +274,7 @@ class TrackState extends ChangeNotifier {
     };
   }
 
-  static Future<TrackState?> loadFromFile(MapController? controller) async {
+  static Future<TrackState?> loadFromFile() async {
     try {
       final dir = await getApplicationDocumentsDirectory(); // App documents
       final file = File('${dir.path}/track_state.json');
@@ -270,7 +285,7 @@ class TrackState extends ChangeNotifier {
         final data = jsonDecode(jsonStr);
 
         return TrackState(
-          mapController: controller,
+          mapController: null,
           trackedPath: (data['trackedPath'] as List)
               .map((e) => LatLng(e['lat'], e['lng']))
               .toList(),
@@ -320,4 +335,19 @@ class TrackState extends ChangeNotifier {
       print("Error: $e");
     }
   }
+
+  /// Initialize track state
+  static Future<void> initializeTrackState() async {
+    TrackState? lastState = await TrackState.loadFromFile();
+    AppData.trackState = lastState ?? TrackState();
+
+    if(AppData.trackState.trackingState == TrackingState.running){
+      AppData.trackState.trackingState = TrackingState.paused;
+    }
+
+    // Set current position null, to avoid calculating distance
+    AppData.trackState.currentPosition = null;
+  }
+
+
 }

@@ -16,8 +16,7 @@ class ActivityChoose extends StatefulWidget {
 
   ActivityChooseState createState() => ActivityChooseState();
 
-  const ActivityChoose({Key? key, required this.currentActivity})
-    : super(key: key);
+  const ActivityChoose({super.key, required this.currentActivity});
 }
 
 class ActivityChooseState extends State<ActivityChoose> {
@@ -194,19 +193,18 @@ class ActivityChooseState extends State<ActivityChoose> {
 
         floatingActionButton: !addingEnabled
             ? FloatingActionButton(
-                child: Icon(
-                  Icons.add_rounded,
-                  color: Colors.white,
-                  size: 30,
-                  weight: 2000,
-                  fontWeight: FontWeight.bold,
-                ),
                 backgroundColor: AppColors.primary,
                 onPressed: () => {
                   setState(() {
                     addingEnabled = !addingEnabled;
                   }),
                 },
+                child: Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 30,
+                  weight: 2000,
+                ),
               )
             : null,
         body: GestureDetector(

@@ -9,34 +9,24 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/track/models/track_state.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
-import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:intl/intl.dart';
+import '../widgets/stat_card.dart';
 import 'activity_choose.dart';
 import 'package:run_track/common/enums/visibility.dart' as vb;
+import 'package:run_track/services/preferences_service.dart';
+import 'package:run_track/theme/preference_names.dart';
 
 class ActivitySummary extends StatefulWidget {
-  final List<LatLng> trackedPath;
-  final double totalDistance;
-  final Duration elapsedTime;
-  final String activityType;
-  final DateTime? startTime;
-  final TrackState? trackState;
-
+  final Activity activityData;
 
   const ActivitySummary({
     super.key,
-    required this.trackedPath,
-    required this.totalDistance,
-    required this.elapsedTime,
-    required this.activityType,
-    required this.startTime,
-    this.trackState
+    required this.activityData,
   });
 
   @override
@@ -44,12 +34,13 @@ class ActivitySummary extends StatefulWidget {
 }
 
 class _ActivitySummaryState extends State<ActivitySummary> {
-  // This var tells us if activity is saved
-  bool activitySaved = false;
+  bool activitySaved = false;   // This var tells us if activity is saved
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
+  Activity? activity; // activity data
+  bool readOnly = false;
 
   // TODO idea save last visibility as preferences
   vb.Visibility _visibility = vb.Visibility.me;
@@ -62,19 +53,56 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   void initState() {
     super.initState();
     // Formatted startTime of the activity
-    final formattedDate = widget.startTime != null
-        ? DateFormat('yyyy-MM-dd HH:mm').format(widget.startTime!)
+    final formattedDate = widget.activityData.startTime != null
+        ? DateFormat('yyyy-MM-dd HH:mm').format(widget.activityData.startTime!)
         : '';
     setState(() {
-      activityController.text = widget.activityType;
-      titleController.text = '${widget.activityType} $formattedDate';
+      activityController.text = widget.activityData.activityType ?? "Unknown";
+      titleController.text = '${activityController.text} $formattedDate';
     });
+
+    // Check if it is our activity or we are only showing it
+    if(widget.activityData.uid != AppData.currentUser?.uid){
+      readOnly = true;
+    }
   }
+
+  /// Set last visibility used by user
+  Future<void>setLastVisibility() async{
+    String? visibilityS = await PreferencesService.loadString(PreferenceNames.lastVisibility);
+
+    if(visibilityS != null && visibilityS.isNotEmpty){
+      if(visibilityS == 'me'){
+        setState(() {
+          _visibility = vb.Visibility.me;
+        });
+      }else if(visibilityS == 'friends'){
+        setState(() {
+          _visibility = vb.Visibility.friends;
+        });
+      }else if(visibilityS == 'everyone'){
+        setState(() {
+          _visibility = vb.Visibility.everyone;
+        });
+      }
+    }
+  }
+
+  Future<void>saveLastVisibility() async{
+    PreferencesService.saveString(PreferenceNames.lastVisibility, _visibility.toString());
+  }
+
+
+  /// Init async data
+  Future<void> initAsync() async{
+    setLastVisibility();
+  }
+
 
   Future<void> handleSaveActivity() async {
     // Photos from activity
     List<String> uploadedUrls = [];
-    if(AppData.images){ // If images are available
+    if(AppData.images){ // If images are enabled in app
       for (var image in _pickedImages) {
         final ref = FirebaseStorage.instance.ref().child(
           'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
@@ -87,25 +115,23 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     // Activity data
     Activity userActivity = Activity(
-      uid: AppData.currentUser!.uid,
-      activityType: widget.activityType,
+      uid: widget.activityData.uid,
+      activityType: widget.activityData.activityType,
       description: descriptionController.text.trim(),
       title: titleController.text.trim(),
-      totalDistance: widget.totalDistance,
-      elapsedTime: widget.elapsedTime.inSeconds.toInt(),
+      totalDistance: widget.activityData.totalDistance,
+      elapsedTime: widget.activityData.elapsedTime,
       visibility: _visibility,
-      startTime: widget.startTime,
-      trackedPath: widget.trackedPath,
+      startTime: widget.activityData.startTime,
+      trackedPath: widget.activityData.trackedPath,
       photos: uploadedUrls
     );
 
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
-      if(widget.trackState != null){
-        widget.trackState?.deleteFile(); // Delete a file from local store if it is saved
-      }
-
+      AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
+      saveLastVisibility(); /// Save last visibility to local prefs
       setState(() {
         activitySaved = true;
       });
@@ -148,9 +174,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
-                    if(widget.trackState != null){
-                      widget.trackState?.deleteFile(); // Delete a file from local store if user wants to exit
-                    }
+                      AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
 
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
@@ -193,7 +217,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       canPop: false,
     onPopInvokedWithResult: (bool didPop,String? result)async {
       if(!didPop){
-        if (!activitySaved) {
+        if (!readOnly && !activitySaved) {
             leavePage(context);
         }else{
           Navigator.pop(context,null);
@@ -237,6 +261,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Title
                   TextField(
+                    readOnly: readOnly,
                     controller: titleController,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
@@ -257,6 +282,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Description
                   TextField(
+                    readOnly: readOnly,
                     maxLines: 3,
                     controller: descriptionController,
                     decoration: InputDecoration(
@@ -322,12 +348,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             ),
                           ),
                           child: DropdownMenu(
-                            textStyle: TextStyle(color: Colors.white),
+                            enabled: !readOnly,
+                            initialSelection: _visibility,
                             label: Text(
                               "Visibility",
                               style: TextStyle(color: Colors.white),
                             ),
-                            initialSelection: _visibility,
+                            textStyle: TextStyle(color: Colors.white),
                             inputDecorationTheme: InputDecorationTheme(
                               filled: true,
                               fillColor: Colors.white.withValues(alpha: 0.1),
@@ -360,16 +387,18 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             ),
 
                             menuStyle: MenuStyle(
-                              backgroundColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.8)),
-                              alignment: Alignment.center,
-
-
+                              backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
+                              alignment: Alignment.bottomLeft,
                             ),
                             dropdownMenuEntries:
                                 <DropdownMenuEntry<vb.Visibility>>[
                                   DropdownMenuEntry(
                                     value: vb.Visibility.me,
                                     label: "Only Me",
+                                    // style: ButtonStyle(
+                                    //   backgroundColor:
+                                    // ),
+
                                   ),
                                   DropdownMenuEntry(
                                     value: vb.Visibility.friends,
@@ -387,96 +416,43 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                   SizedBox(height: 8),
                   IntrinsicHeight(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
+
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                        child: Row(
+                          spacing: 6,
+                        children: [
                         // Time
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(top: 12,bottom: 12),
-                            margin: EdgeInsets.only(right: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white24, width: 1),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  ActivityService.formatElapsedTime(widget.elapsedTime),
-                                  style: AppTextStyles.heading.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  "Time",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Distance
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.only(top: 12,bottom: 12),
-                            margin: EdgeInsets.only(left: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white24, width: 1),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.route, color: Colors.white, size: 28),
-                                SizedBox(height: 5),
-                                Text(
-                                  "${widget.totalDistance.toStringAsFixed(2)} km",
-                                  style: AppTextStyles.heading.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  "Distance",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                          if(widget.activityData.elapsedTime != null)
+                            StatCard(title: "Time", value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!), icon: Icon(Icons.timer)),
+                          if(widget.activityData.totalDistance != null)
+                            StatCard(title:"Distance",value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km', icon:Icon(Icons.social_distance)),
+                          if(widget.activityData.totalDistance != null)
+                            StatCard(title:"Pace",value: widget.activityData.pace.toString(),icon: Icon(Icons.man)),
+                          if(widget.activityData.calories != null)
+                            StatCard(title:"Calories",value: '${widget.activityData.calories?.toStringAsFixed(0)} kcal',icon:  Icon(Icons.local_fire_department)),
+                          if(widget.activityData.avgSpeed != null)
+                            StatCard(title:"Avg Speed",value: '${widget.activityData.avgSpeed?.toStringAsFixed(1)} km/h',icon: Icon(Icons.speed)),
+                          if(widget.activityData.steps != null)
+                            StatCard(title:"Steps",value: widget.activityData.steps.toString(), icon:Icon(Icons.directions_walk)),
+                          if(widget.activityData.elevationGain != null)
+                            StatCard(title:"Elevation",value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
+                      ]
+              ),
                     ),
                   ),
 
                   // Flutter map if there is a path
-                  if (widget.trackedPath.isNotEmpty)
+                  if (widget.activityData.trackedPath?.isNotEmpty ?? false)
                     Padding(
                       padding: const EdgeInsets.only(top: 10.0,bottom: 10.0),
                       child: ClipRRect(
                        borderRadius: BorderRadius.all(Radius.circular(12)),
                         child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.4,
+                          height: MediaQuery.of(context).size.height * 0.3,
                           child: FlutterMap(
                             options: MapOptions(
-                              initialCenter: widget.trackedPath.first,
+                              initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0,0),
                               initialZoom: 15.0,
                             ),
                             children: [
@@ -487,7 +463,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               PolylineLayer(
                                 polylines: [
                                   Polyline(
-                                    points: widget.trackedPath,
+                                    points: widget.activityData.trackedPath ?? [],
                                     color: Colors.blue,
                                     strokeWidth: 4.0,
 
@@ -497,14 +473,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               MarkerLayer(
                                 markers: [
                                   Marker(
-                                    point: widget.trackedPath.first,
+                                    point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                                     width: 40,
                                     height: 40,
                                     child: Icon(Icons.flag, color: Colors.green),
                                   ),
-                                  if(widget.trackedPath.length > 1)
-                                    Marker(
-                                      point: widget.trackedPath.last,
+                                  if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)                                     Marker(
+                                      point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
                                       width: 40,
                                       height: 40,
                                       child: Icon(Icons.stop, color: Colors.red),
@@ -518,16 +493,16 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Photos section
-                  AddPhotos(
-                    showSelectedPhots: true,
-                    onImagesSelected: (images) {
-                      _pickedImages = images;
-                    },
-                  ),
-
+                    AddPhotos(
+                      onlyShow: false,
+                      active: true,
+                      showSelectedPhotos: true,
+                      onImagesSelected: (images) {
+                        _pickedImages = images;
+                      },
+                    ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-                  // TODO Change color after saving activity
+                  if(!readOnly)
                     SizedBox(
                       width: double.infinity,
                       height: 50,

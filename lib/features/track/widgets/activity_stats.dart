@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import 'stat_card.dart';
 
 import '../../../services/activity_service.dart';
 
@@ -46,17 +46,17 @@ class RunStats extends StatelessWidget {
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   children: [
-                    _buildStatCard("Time", ActivityService.formatElapsedTime(elapsedTime), Icon(Icons.timer)),
-                    _buildStatCard("Distance", '${(totalDistance / 1000).toStringAsFixed(2)} km', Icon(Icons.social_distance)),
-                    _buildStatCard("Pace", pace, Icon(Icons.man)),
+                    StatCard(title: "Time", value: ActivityService.formatElapsedTime(elapsedTime), icon: Icon(Icons.timer)),
+                    StatCard(title:"Distance",value: '${(totalDistance / 1000).toStringAsFixed(2)} km', icon:Icon(Icons.social_distance)),
+                    StatCard(title:"Pace",value: pace,icon: Icon(Icons.man)),
                     if(calories != null)
-                      _buildStatCard("Calories", '${calories?.toStringAsFixed(0)} kcal', Icon(Icons.local_fire_department)),
+                      StatCard(title:"Calories",value: '${calories?.toStringAsFixed(0)} kcal',icon:  Icon(Icons.local_fire_department)),
                     if(avgSpeed != null)
-                      _buildStatCard("Avg Speed", '${avgSpeed?.toStringAsFixed(1)} km/h', Icon(Icons.speed)),
+                      StatCard(title:"Avg Speed",value: '${avgSpeed?.toStringAsFixed(1)} km/h',icon: Icon(Icons.speed)),
                     if(steps != null)
-                      _buildStatCard("Steps", steps.toString(), Icon(Icons.directions_walk)),
+                      StatCard(title:"Steps",value: steps.toString(), icon:Icon(Icons.directions_walk)),
                     if(elevation != null)
-                      _buildStatCard("Elevation", '${elevation?.toStringAsFixed(0)} m', Icon(Icons.terrain)),
+                      StatCard(title:"Elevation",value: '${elevation?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
                   ],
                 ),
               ],
@@ -68,23 +68,3 @@ class RunStats extends StatelessWidget {
   }
 }
 
-Widget _buildStatCard(String title, String value, Icon icon) {
-  return Container(
-    width: 100, // fixed width for uniformity
-    padding: EdgeInsets.all(12),
-    decoration: BoxDecoration(color: CupertinoColors.systemGrey6, borderRadius: BorderRadius.circular(8)),
-    child: Column(
-      children: [
-        icon,
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(title, style: TextStyle(fontSize: 14, color: Colors.grey)),
-            SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ],
-    ),
-  );
-}

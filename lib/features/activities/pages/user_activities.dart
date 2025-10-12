@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
@@ -7,7 +8,7 @@ import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
-import '../../../models/user.dart';
+import '../../../models/user.dart' as model;
 
 class ActivitiesPage extends StatefulWidget {
   _ActivitiesState createState() => _ActivitiesState();
@@ -17,7 +18,7 @@ class _ActivitiesState extends State<ActivitiesPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<User>? friendsActivities;
-  User? currentUser = AppData.currentUser;
+  model.User? currentUser = AppData.currentUser;
 
   @override
   void initState() {
@@ -73,7 +74,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                 Container(
                   child: FutureBuilder<List<Activity>?>(
                     future: ActivityService.fetchLatestUserActivities(
-                      currentUser!.uid,
+                      FirebaseAuth.instance.currentUser?.uid ?? "",
                       10,
                     ),
                     builder: (context, snapshot) {
@@ -105,7 +106,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                 Container(
                   child: FutureBuilder<List<Activity>?>(
                     future: ActivityService.fetchLastFriendsActivities(
-                      currentUser!.friendsUids!,
+                      currentUser!.friendsUids,
                       10,
                     ),
                     builder: (context, snapshot) {

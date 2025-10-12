@@ -9,11 +9,16 @@ import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 
+import 'common/enums/tracking_state.dart';
 import 'config/firebase_options.dart';
+import 'features/track/models/track_state.dart';
 
 void main() async {
   // It is needed for flutter to use a async in main
   WidgetsFlutterBinding.ensureInitialized();
+
+  await TrackState.initializeTrackState();  // Init track state
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

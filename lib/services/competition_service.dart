@@ -2,22 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:run_track/models/competition.dart';
 
 import '../common/enums/visibility.dart' as enums;
+import '../common/enums/visibility.dart';
 
 class CompetitionService {
 
   /// Convert Firestore data => Competition object
   static Competition fromMap(Map<String, dynamic> map) {
-    enums.Visibility? parseVisibility(String? str) {
-      if (str == null) return null;
-      switch (str) {
-        case 'me':
-          return enums.Visibility.me;
-        case 'friends':
-          return enums.Visibility.friends;
-        case 'everyone':
-          return enums.Visibility.everyone;
-      }
-    }
+
 
     return Competition(
       competitionId: map['competitionId'],
