@@ -5,28 +5,30 @@ import 'package:image_picker/image_picker.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 class AddPhotos extends StatefulWidget {
-  final bool showSelectedPhots;
+  final bool showSelectedPhotos;
   final Function(List<XFile>)? onImagesSelected;
-  bool active = true;
-
+  final bool active;
+  final bool onlyShow;  // Only show photos
+  @override
   _AddPhotosState createState() => _AddPhotosState();
 
-  AddPhotos({
-    Key? key,
-    required this.showSelectedPhots,
+  const AddPhotos({
+    super.key,
+    required this.showSelectedPhotos,
     required this.onImagesSelected,
+    required this.onlyShow,
     this.active = true,
-  }) : super(key: key);
+  });
 }
 
 class _AddPhotosState extends State<AddPhotos> {
-  final ImagePicker _picker = new ImagePicker();
-  List<XFile> _images = [];
+  final ImagePicker _picker = ImagePicker();
+  final List<XFile> _images = [];
 
   Future<void> pickImages() async {
-    final List<XFile>? selectedImages = await _picker.pickMultiImage();
+    final List<XFile> selectedImages = await _picker.pickMultiImage();
 
-    if (selectedImages != null && selectedImages.isNotEmpty) {
+    if (selectedImages.isNotEmpty) {
       setState(() {
         _images.addAll(selectedImages);
       });
@@ -39,47 +41,49 @@ class _AddPhotosState extends State<AddPhotos> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: widget.active ? pickImages : null,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  AppUiConstants.borderRadiusButtons,
+        if(widget.onlyShow) // If only show hide add photos button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            // Add photos button
+            child: ElevatedButton(
+              onPressed: widget.active ? pickImages : null,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppUiConstants.borderRadiusButtons,
+                  ),
                 ),
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
               ),
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-            ),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    widget.active ? Color(0xFF833AB4) : Colors.grey,
-                    widget.active ? Color(0xFFF77737) : Colors.grey,
-                    widget.active ? Color(0xFFE1306C) : Colors.grey,
-                  ],
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      widget.active ? Color(0xFF833AB4) : Colors.grey,
+                      widget.active ? Color(0xFFF77737) : Colors.grey,
+                      widget.active ? Color(0xFFE1306C) : Colors.grey,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Container(
-                alignment: Alignment.center,
-                child: const Text(
-                  "Add Photos",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Add Photos",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        if (widget.showSelectedPhots && _images.isNotEmpty)
+        if (widget.showSelectedPhotos && _images.isNotEmpty)
           Padding(
             padding: EdgeInsets.all(16.0),
             child: Wrap(

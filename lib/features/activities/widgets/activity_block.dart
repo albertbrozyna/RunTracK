@@ -114,12 +114,11 @@ class ActivityBlock extends StatelessWidget {
                         // TODO Think about it what if start time is null
                       ],
                     ),
-                    // Title + Stats Block
                     Container(
                       width: double.infinity,
                       padding: EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
-                        color: Colors.white, // białe tło
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -140,7 +139,7 @@ class ActivityBlock extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800], // ciemny tekst
+                                color: Colors.grey[800],
                               ),
                             ),
 

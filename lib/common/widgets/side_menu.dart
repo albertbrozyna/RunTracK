@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/common/utils/app_data.dart';
 
 import '../../features/profile/pages/profile_page.dart';
-import '../../features/profile/pages/settings.dart';
+import '../../features/profile/pages/settings_page.dart';
 
 class SideMenu extends StatelessWidget {
   void onLogOutPressed(BuildContext context) async {

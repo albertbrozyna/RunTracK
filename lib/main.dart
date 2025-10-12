@@ -6,13 +6,19 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/auth/start/widgets/additional_info_form.dart';
 import 'package:run_track/features/home/home_page.dart';
+import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 
+import 'common/enums/tracking_state.dart';
 import 'config/firebase_options.dart';
+import 'features/track/models/track_state.dart';
 
 void main() async {
   // It is needed for flutter to use a async in main
   WidgetsFlutterBinding.ensureInitialized();
+
+  await TrackState.initializeTrackState();  // Init track state
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -45,7 +51,7 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('pl'), // Polish (example)
       ],
-      home: StartPage(),
+      home: FirebaseAuth.instance.currentUser != null ? HomePage() : StartPage(),
       // home: StreamBuilder(stream: FirebaseAuth.instance.authStateChanges(), builder: (context,snapshot) {
       //   if(AppData.blockedLoginState = false){
       //

@@ -6,8 +6,6 @@ import '../common/enums/sign_in_status.dart';
 import '../models/sign_in_result.dart';
 
 
-
-
 class GoogleService {
   static final GoogleSignIn _googleSignIn = GoogleSignIn();
 
@@ -62,7 +60,7 @@ class GoogleService {
         );
       }
 
-      return SignInResult(status: SignInStatus.userDoesNotExists);
+      return SignInResult(status: SignInStatus.success);
     } on FirebaseAuthException catch (e) {
       return SignInResult(status: SignInStatus.failed, errorMessage: e.message);
     } catch (e) {

@@ -1,5 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/services/user_service.dart';
@@ -11,7 +9,7 @@ import 'dart:math';
 class ProfilePage extends StatefulWidget {
   final String? uid;
 
-  const ProfilePage({this.uid});
+  const ProfilePage({super.key, this.uid});
 
   @override
   State<StatefulWidget> createState() {
@@ -160,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                     UserService.signOutUser();
                     Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/home',(Route<dynamic> route) => false,
+                      '/start',(Route<dynamic> route) => false,
                     );
                   },
                   child: const Text("Logout"),
@@ -246,12 +244,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 // If this is not my profile, show button add friends
 
                 if(!myProfile)
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width / 1.5,
                     child: TextButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(Colors.red),
-                        side: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(Colors.red),
+                        side: WidgetStateProperty.all(
                           BorderSide(
                             color: Colors.white24,
                             width: 1,
@@ -513,42 +511,40 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 SizedBox(height: 10),
                 // Friend list
-                Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Friends: ${user?.friendsUids?.length ?? 0}",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white, fontSize: 15),
-                      ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Friends: ${user?.friendsUids.length ?? 0}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
 
-                      // TODO To test
-                      // Pick up to 6 random friends
-                      if ((user?.friendsUids?.isNotEmpty ?? false))
-                        Row(
-                          children: [
-                            ...getRandomFriends(user!.friendsUids!, 3).map(
-                              (friend) => Container(
-                                margin: EdgeInsets.symmetric(horizontal: 4),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  friend,
-                                  style: TextStyle(fontSize: 14),
-                                ),
+                    // TODO To test
+                    // Pick up to 6 random friends
+                    if ((user?.friendsUids.isNotEmpty ?? false))
+                      Row(
+                        children: [
+                          ...getRandomFriends(user!.friendsUids, 3).map(
+                            (friend) => Container(
+                              margin: EdgeInsets.symmetric(horizontal: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                friend,
+                                style: TextStyle(fontSize: 14),
                               ),
                             ),
-                          ],
-                        ),
-                    ],
-                  ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
 
                 // TODO
@@ -561,7 +557,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(height: 20),
 
                 if(!edit)
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width / 1.5,
                     child: TextButton(
                       style: ButtonStyle(
@@ -594,7 +590,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 // Delete profile button
                 if (edit)
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width / 1.5,
                     child: TextButton(
                       style: ButtonStyle(

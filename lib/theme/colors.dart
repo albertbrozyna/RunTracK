@@ -17,4 +17,13 @@ class AppColors {
   // TextFields
   static Color textFieldsBackground = Colors.white.withValues( alpha:  0.1);
 
+  // Stat cards
+  static Color statCardBackground = Colors.white.withValues( alpha:  0.9);
+
+  // Dropdown entries
+  static Color dropdownEntryBackground = Colors.white.withValues( alpha:  0.9);
+
+
+
+
 }

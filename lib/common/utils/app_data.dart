@@ -1,20 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/features/track/models/track_state.dart';
 
 import '../../models/user.dart';
 
 class AppData{
   static User? currentUser;
-  static bool blockedLoginState = false;
+  static bool googleLogin = false;
   static bool images = false; // Handling images
-
+  static final ValueNotifier<bool> isLoading = ValueNotifier(false);
   // Saved locally
-  String? lastActivityString;
+  static String? lastActivityString;
 
   // When no internet activities which we need to add
   List<String>activities = [];
 
   // List of current LatLng
-
+  static late TrackState trackState;
 
 
 }

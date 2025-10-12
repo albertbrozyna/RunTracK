@@ -1,7 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import 'stat_card.dart';
 
 import '../../../services/activity_service.dart';
 
@@ -9,27 +8,25 @@ class RunStats extends StatelessWidget {
   final double totalDistance;
   final String pace;
   final Duration elapsedTime;
+  final double? avgSpeed; // km/h
+  final int? steps;
+  final double? elevation;
+  final double? calories;
+  final DateTime? startTime;
 
-  const RunStats({
-    Key? key,
-    required this.totalDistance,
-    required this.pace,
-    required this.elapsedTime,
-  }) : super(key: key);
+
+  const RunStats({super.key, required this.totalDistance, required this.pace, required this.elapsedTime,this.avgSpeed,this.calories,this.steps,this.startTime,this.elevation});
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.12,
-      minChildSize: 0.12,
-      maxChildSize: 0.60,
+      initialChildSize: 0.14,
+      minChildSize: 0.14,
+      maxChildSize: 1,
       builder: (context, scrollController) => Container(
         width: 40,
         height: 5,
-        decoration: BoxDecoration(
-          color: Colors.grey[400],
-          borderRadius: BorderRadius.circular(10),
-        ),
+        decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)),
         margin: EdgeInsets.only(bottom: 10),
         child: SingleChildScrollView(
           controller: scrollController,
@@ -38,24 +35,28 @@ class RunStats extends StatelessWidget {
             child: Column(
               children: [
                 // Arrow up icon
-                Padding(padding: EdgeInsets.all(1),
-                child:    Icon(Icons.keyboard_arrow_up_rounded,  size: 30,))
-              ,
+                Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.keyboard_arrow_up_rounded, size: 36, color: Colors.white),
+                ),
                 GridView.count(
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
                   childAspectRatio: 1.7,
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   children: [
-                    _buildStatCard(
-                      "Time:",
-                      '${ActivityService.formatElapsedTime(elapsedTime)}',Icon(Icons.timer)
-                    ),
-                    // TODO change icon
-                    _buildStatCard(
-                      "Distance:",
-                      '${(totalDistance / 1000).toStringAsFixed(2)} km',Icon(Icons.social_distance)
-                    ),
-                    _buildStatCard("Pace:", '$pace',Icon(Icons.man))
+                    StatCard(title: "Time", value: ActivityService.formatElapsedTime(elapsedTime), icon: Icon(Icons.timer)),
+                    StatCard(title:"Distance",value: '${(totalDistance / 1000).toStringAsFixed(2)} km', icon:Icon(Icons.social_distance)),
+                    StatCard(title:"Pace",value: pace,icon: Icon(Icons.man)),
+                    if(calories != null)
+                      StatCard(title:"Calories",value: '${calories?.toStringAsFixed(0)} kcal',icon:  Icon(Icons.local_fire_department)),
+                    if(avgSpeed != null)
+                      StatCard(title:"Avg Speed",value: '${avgSpeed?.toStringAsFixed(1)} km/h',icon: Icon(Icons.speed)),
+                    if(steps != null)
+                      StatCard(title:"Steps",value: steps.toString(), icon:Icon(Icons.directions_walk)),
+                    if(elevation != null)
+                      StatCard(title:"Elevation",value: '${elevation?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
                   ],
                 ),
               ],
@@ -67,29 +68,3 @@ class RunStats extends StatelessWidget {
   }
 }
 
-Widget _buildStatCard(String title, String value,Icon icon) {
-  return Container(
-    width: 100, // fixed width for uniformity
-    padding: EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: CupertinoColors.systemGrey6,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      children: [
-        icon,
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(title, style: TextStyle(fontSize: 14, color: Colors.grey)),
-            SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ],
-    )
-  );
-}

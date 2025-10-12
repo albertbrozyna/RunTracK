@@ -2,7 +2,12 @@ import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/enums/visibility.dart';
 import 'package:run_track/models/activity.dart';
+import 'package:run_track/services/preferences_service.dart';
+import 'package:run_track/theme/preference_names.dart';
+
+import '../common/utils/app_data.dart';
 
 class ActivityService {
   /// Format elapsed time from duration to hh:mm:ss
@@ -33,14 +38,20 @@ class ActivityService {
       startTime: (map['startTime'] as Timestamp?)?.toDate(),
       title: map['title'],
       description: map['description'],
-      visibility: map['visibility'],
+      visibility: parseVisibility( map['visibility']) ?? Visibility.me,
       photos: List<String>.from(map['photos'] ?? []),
+      avgSpeed: map['avgSpeed']?.toDouble(),
+      calories: map['calories']?.toDouble(),
+      elevationGain: map['elevationGain']?.toDouble(),
+      steps: map['steps']?.toInt(),
+      pace: map['pace']?.toDouble(),
     );
   }
 
   /// Convert Activity object to Firestore map
   static Map<String, dynamic> toMap(Activity activity) {
     return {
+      'uid':activity.uid,
       'totalDistance': activity.totalDistance,
       'elapsedTime': activity.elapsedTime,
       'trackedPath': activity.trackedPath
@@ -53,8 +64,13 @@ class ActivityService {
           : null,
       'title': activity.title,
       'description': activity.description,
-      'visibility': activity.visibility ?? 'EVERYONE',
+      'visibility': activity.visibility.toString(),
       'photos': activity.photos,
+      'calories': activity.calories,
+      'avgSpeed': activity.avgSpeed,
+      'elevationGain': activity.elevationGain,
+      'steps': activity.steps,
+      'pace': activity.pace,
     };
   }
 
@@ -125,7 +141,7 @@ class ActivityService {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('activities')
-          .where("uid", isEqualTo: "me")
+          .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
@@ -141,42 +157,36 @@ class ActivityService {
     }
   }
 
-  Future<bool> saveActivity(Activity activity) async {
-    try{
-      final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
+  static Future<bool> saveActivity(Activity activity) async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('activities')
+          .doc(); // Generate id
       activity.activityId = docRef.id;
       await docRef.set(ActivityService.toMap(activity));
       return true;
-    }catch(e){
+    } catch (e) {
       print(e);
       return false;
     }
-
   }
 
+  /// Fetch last activity from local preferences
+  static Future<String> fetchLastActivityFromPrefs() async {
+    String? activityName = await PreferencesService.loadString(
+      PreferenceNames.lastUsedPreference,
+    );
+
+    final userActivities = AppData.currentUser?.activityNames;
+    // If saved and on the user list
+    if (activityName != null) {
+      return activityName;
+    }
+    // If not first activity or unknown
+    String defaultActivity = userActivities != null && userActivities.isNotEmpty
+        ? userActivities.first
+        : "Unknown";
+
+    return defaultActivity;
+  }
 }
-
-
-// // TODO to learn more about this
-// extension ActivityClone on Activity {
-// Activity clone() {
-// return Activity(
-// totalDistance: this.totalDistance,
-// elapsedTime: this.elapsedTime,
-// trackedPath: this.trackedPath != null
-// ? this.trackedPath!.map((p) => LatLng(p.latitude, p.longitude)).toList()
-//     : null,
-// activityType: this.activityType,
-// createdAt: this.createdAt != null
-// ? DateTime.fromMillisecondsSinceEpoch(this.createdAt!.millisecondsSinceEpoch)
-//     : null,
-// startTime: this.startTime != null
-// ? DateTime.fromMillisecondsSinceEpoch(this.startTime!.millisecondsSinceEpoch)
-//     : null,
-// title: this.title,
-// description: this.description,
-// visibility: this.visibility,
-// photos: List<String>.from(this.photos),
-// );
-// }
-// }
