@@ -112,7 +112,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                     },
                   ),
                 ),
-
+              // Friends
                 Container(
                   padding: EdgeInsets.only(top: 10), // Padding on top
                   child: FutureBuilder<List<Activity>?>(
@@ -145,6 +145,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                     },
                   ),
                 ),
+                // All last activities
                 Container(
                   padding: EdgeInsets.only(top: 10),
                   child: FutureBuilder<List<Activity>?>(
@@ -165,8 +166,8 @@ class _ActivitiesState extends State<ActivitiesPage>
                         itemBuilder: (context, index) {
                           final activity = activities[index];
                           return ActivityBlock(
-                            firstName: currentUser!.firstName,
-                            lastName: currentUser!.lastName,
+                            firstName: "",
+                            lastName: "",
                             activity: activity,
                           );
                         },

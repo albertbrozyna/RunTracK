@@ -6,9 +6,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 
+import '../../../services/user_service.dart';
 import '../../track/pages/activity_summary.dart';
 import '../../track/widgets/stat_card.dart';
-
 
 class ActivityBlock extends StatefulWidget {
   final String? profilePhotoUrl;
@@ -22,13 +22,7 @@ class ActivityBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const ActivityBlock({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-    required this.activity,
-    this.profilePhotoUrl,
-  });
+  const ActivityBlock({super.key, required this.firstName, required this.lastName, required this.activity, this.profilePhotoUrl});
 
   @override
   _ActivityBlockState createState() => _ActivityBlockState();
@@ -36,22 +30,59 @@ class ActivityBlock extends StatefulWidget {
 
 class _ActivityBlockState extends State<ActivityBlock> {
   late final ScrollController _scrollController = ScrollController();
+  String? firstname;
+  String? lastname;
+  String? profilePhotoUrl;
+
   bool readonly = true;
+
   @override
   void initState() {
     super.initState();
     initialize();
+    initializeAsync();
   }
 
-  void initialize(){
-    if(FirebaseAuth.instance.currentUser?.uid == widget.activity.uid){
+  void initialize() {
+    if (FirebaseAuth.instance.currentUser?.uid == widget.activity.uid) {
       readonly = false; // Allow to edit own activities
+    }
+    firstname = widget.firstName;
+    lastname = widget.lastName;
+    profilePhotoUrl = widget.profilePhotoUrl;
+  }
+
+  Future<void> initializeAsync() async {
+    if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
+      // If there is no name and last name fetch it from firestore
+      return UserService.fetchUserForActivity(widget.activity.uid)
+          .then((user) {
+            setState(() {
+              firstname = user?.firstName;
+              lastname = user?.lastName;
+              profilePhotoUrl = user?.profilePhotoUrl;
+            });
+          })
+          .catchError((error) {
+            print("Error fetching user data: $error");
+          });
     }
   }
 
-
+  /// On activity block tap
   void onTapBlock(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ActivitySummary(activityData: widget.activity,readonly: readonly)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivitySummary(
+          activityData: widget.activity,
+          readonly: readonly,
+          editMode: true,
+          firstName: widget.firstName,
+          lastName: widget.lastName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -95,7 +126,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "${widget.firstName} ${widget.lastName}",
+                          "$firstname $lastname",
                           textAlign: TextAlign.left,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                         ),
@@ -234,10 +265,10 @@ class _ActivityBlockState extends State<ActivityBlock> {
                               : LatLng(37.7749, -122.4194),
                           // default location
                           onTap: (tapPosition, point) {
-                              onTapBlock(context);
+                            onTapBlock(context);
                           },
                           initialZoom: 15.0,
-                          interactionOptions: InteractionOptions(flags: InteractiveFlag.all),
+                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
                         ),
                         children: [
                           TileLayer(
@@ -247,7 +278,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           PolylineLayer(
                             polylines: [
                               Polyline(
-                                points:widget.activity.trackedPath ?? [],
+                                points: widget.activity.trackedPath ?? [],
                                 // draw the path
                                 strokeWidth: 4.0,
                                 color: Colors.blue,

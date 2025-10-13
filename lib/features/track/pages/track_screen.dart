@@ -64,6 +64,7 @@ class TrackScreenState extends State<TrackScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
+          readonly: false,
           activityData: Activity(
             uid: AppData.currentUser!.uid,
             activityType: activityController.text.trim(),

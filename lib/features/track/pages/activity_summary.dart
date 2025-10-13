@@ -27,7 +27,11 @@ class ActivitySummary extends StatefulWidget {
   final String firstName;
   final String lastName;
   final bool readonly;
-  const ActivitySummary({super.key, required this.activityData, this.firstName = '', this.lastName = '',bool? readonly}) : readonly = readonly ?? true;
+  final bool editMode;
+
+  const ActivitySummary({super.key, required this.activityData, this.firstName = '', this.lastName = '', bool? readonly, bool? editMode})
+    : readonly = readonly ?? true,
+      editMode = editMode ?? false;
 
   @override
   _ActivitySummaryState createState() => _ActivitySummaryState();
@@ -39,8 +43,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController descriptionController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
-  late bool editMode = widget.activityData.uid.isNotEmpty ? true : false;  // If we are editing
-
+  late Activity passedActivity = widget.activityData;
   vb.Visibility _visibility = vb.Visibility.me;
 
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
@@ -59,10 +62,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       activityController.text = widget.activityData.activityType ?? "Unknown";
       titleController.text = '${activityController.text} $formattedDate';
     });
-
   }
 
-  void initialize(){
+  void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
@@ -70,23 +72,26 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
-  String getSaveButtonText(){
-    if(editMode){
+  String getSaveButtonText() {
+    if (widget.editMode) {
       return "Save changes";
-    }else if(!editMode && !activitySaved){
+    } else if (!widget.editMode && !activitySaved) {
       return "Save activity";
-    }else if(!editMode && activitySaved){
+    } else if (!widget.editMode && activitySaved) {
       return "Activity saved";
     }
     return "Unknown";
   }
 
   VoidCallback? getSaveButtonCallback() {
-    if (activitySaved && !editMode) {
-      return null;  // No action if activity saved after training
-    } else {
-      return () => handleSaveActivity();
+    if (activitySaved && !widget.editMode) {
+      return null; // No action if activity saved after training
+    } else if (!activitySaved && !widget.editMode) {
+      return handleSaveActivity;
+    } else if (widget.editMode) {
+      return handleEditActivity;
     }
+    return null;
   }
 
   /// Set last visibility used by user
@@ -126,12 +131,50 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       return;
     }
 
-  }
+    Activity userActivity = Activity(
+      activityId: widget.activityData.activityId,
+      uid: widget.activityData.uid,
+      activityType: activityController.text.trim(),
+      description: descriptionController.text.trim(),
+      title: titleController.text.trim(),
+      totalDistance: widget.activityData.totalDistance,
+      elapsedTime: widget.activityData.elapsedTime,
+      visibility: _visibility,
+      startTime: widget.activityData.startTime,
+      trackedPath: widget.activityData.trackedPath,
+      photos: widget.activityData.photos,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
+    );
 
+    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+      if (mounted) {
+        AppUtils.showMessage(context, 'No changes to save!');
+      }
+      return;
+    }
+
+    // Save activity to database
+    bool saved = await ActivityService.saveActivity(userActivity);
+    if (saved) {
+      passedActivity = userActivity;
+      if (mounted) {
+        AppUtils.showMessage(context, 'Changes saved successfully!');
+      }
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, 'Failed to save changes. Please try again.');
+      }
+    }
+  }
 
   /// Handle saving activity to database
   Future<void> handleSaveActivity() async {
-    if(widget.readonly){
+    if (widget.readonly) {
       return;
     }
     // Photos from activity
@@ -150,6 +193,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     // Activity data
     Activity userActivity = Activity(
+      activityId: "",
       uid: widget.activityData.uid,
       activityType: activityController.text.trim(),
       description: descriptionController.text.trim(),
@@ -160,6 +204,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       startTime: widget.activityData.startTime,
       trackedPath: widget.activityData.trackedPath,
       photos: uploadedUrls,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
     );
 
     // Save activity to database
@@ -167,6 +217,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     if (saved) {
       AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
       saveLastVisibility();
+      if (mounted) {
+        AppUtils.showMessage(context, 'Activity saved successfully!');
+      }
 
       /// Save last visibility to local prefs
       setState(() {
@@ -174,12 +227,79 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, 'Failed to save activity');
+        AppUtils.showMessage(context, 'Failed to save activity. Please try again.');
       }
     }
   }
 
-  /// Ask if we are sure if we want to leave a page without saving
+  void leavePageEdit(BuildContext context) {
+    Activity userActivity = Activity(
+      activityId: widget.activityData.activityId,
+      uid: widget.activityData.uid,
+      activityType: activityController.text.trim(),
+      description: descriptionController.text.trim(),
+      title: titleController.text.trim(),
+      totalDistance: widget.activityData.totalDistance,
+      elapsedTime: widget.activityData.elapsedTime,
+      visibility: _visibility,
+      startTime: widget.activityData.startTime,
+      trackedPath: widget.activityData.trackedPath,
+      photos: widget.activityData.photos,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
+    );
+
+    // If there is no changes, just pop
+    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Warning", textAlign: TextAlign.center),
+          content: const Text(
+            "You have unsaved changes\n\n"
+            "If you leave now, your changes will be lost.\n\n"
+            "Are you sure you want to leave?",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Two times to close dialog and screen
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Yes"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ask if we are sure if we want to leave a page without saving when saving activity for the first time
   void leavePage(BuildContext context) {
     showDialog(
       context: context,
@@ -245,8 +365,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, String? result) async {
         if (!didPop) {
-          if (!widget.readonly && !activitySaved) {
+          if (!widget.readonly && !activitySaved && !widget.editMode) {
             leavePage(context);
+          } else if (widget.editMode) {
+            leavePageEdit(context);
           } else {
             Navigator.pop(context, null);
           }
@@ -338,7 +460,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             suffixIcon: Padding(
                               padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
                               child: IconButton(
-                                onPressed: () => onTapActivity(),
+                                onPressed: widget.readonly ? null : () => onTapActivity(),
                                 icon: Icon(Icons.list, color: Colors.white),
                               ),
                             ),
@@ -453,45 +575,41 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
                       child: ClipRRect(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        child: InkWell(
-                          onTap: () => onTapMap(context),
-                          child: SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.3,
-                            child: FlutterMap(
-                              options: MapOptions(
-                                initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
-                                initialZoom: 15.0,
-                                interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                              initialZoom: 15.0,
+                              interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                              onTap: (tapPosition, point) => {onTapMap(context)},
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.example.runtrack',
                               ),
-                              children: [
-                                TileLayer(
-                                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                  userAgentPackageName: 'com.example.runtrack',
-                                ),
-                                PolylineLayer(
-                                  polylines: [
-                                    Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0),
-                                  ],
-                                ),
-                                MarkerLayer(
-                                  markers: [
+                              PolylineLayer(
+                                polylines: [Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(Icons.flag, color: Colors.green),
+                                  ),
+                                  if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
                                     Marker(
-                                      point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                                      point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
                                       width: 40,
                                       height: 40,
-                                      child: Icon(Icons.flag, color: Colors.green),
+                                      child: Icon(Icons.stop, color: Colors.red),
                                     ),
-                                    if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
-                                      Marker(
-                                        point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
-                                        width: 40,
-                                        height: 40,
-                                        child: Icon(Icons.stop, color: Colors.red),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -513,7 +631,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       height: 50,
                       child: CustomButton(
                         text: getSaveButtonText(),
-                        onPressed: getSaveButtonCallback,
+                        onPressed: getSaveButtonCallback(),
                         gradientColors: [
                           activitySaved ? Colors.grey : Color(0xFFFFB74D),
                           activitySaved ? Colors.grey : Color(0xFFFF9800),
