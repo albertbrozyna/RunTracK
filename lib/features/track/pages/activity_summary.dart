@@ -53,12 +53,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     super.initState();
     initialize();
     // Formatted startTime of the activity
-    final formattedDate = widget.activityData.startTime != null
-        ? DateFormat('yyyy-MM-dd HH:mm').format(widget.activityData.startTime!)
-        : '';
+
     setState(() {
       activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text = '${activityController.text} $formattedDate';
+      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
+      descriptionController.text = widget.activityData.description ?? "";
+      _visibility = widget.activityData.visibility;
     });
   }
 

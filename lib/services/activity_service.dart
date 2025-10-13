@@ -1,6 +1,7 @@
 import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/visibility.dart';
 import 'package:run_track/models/activity.dart';
@@ -79,7 +80,10 @@ class ActivityService {
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
-      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data())).toList();
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data()))
+          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
+          .toList();
 
       return activities;
     } catch (e) {
@@ -105,7 +109,10 @@ class ActivityService {
           .limit(limit)
           .get();
 
-      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data())).toList();
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data()))
+          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid)
+          .toList();
 
       lastActivities.addAll(activities);
 

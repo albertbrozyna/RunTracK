@@ -77,8 +77,6 @@ class TrackScreenState extends State<TrackScreen> {
             totalDistance: AppData.trackState.totalDistance,
             startTime: AppData.trackState.startOfTheActivity,
             createdAt: AppData.trackState.startOfTheActivity,
-            title: "",
-            description: "",
           ),
         ),
       ),
