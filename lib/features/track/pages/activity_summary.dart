@@ -45,9 +45,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
   vb.Visibility _visibility = vb.Visibility.me;
-
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
-
   List<XFile> _pickedImages = [];
 
   @override
@@ -391,7 +389,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             image: DecorationImage(
               image: AssetImage("assets/background-first.jpg"),
               fit: BoxFit.cover,
-
               colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
             ),
           ),
@@ -412,7 +409,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.white24, width: 1),
                       ),
-
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       label: Text("Title", style: TextStyle(color: Colors.white)),
                       labelStyle: TextStyle(fontSize: 18),
@@ -422,31 +418,34 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Description
-                  TextField(
-                    readOnly: widget.readonly,
-                    enabled: !widget.readonly,
-                    maxLines: 3,
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      // Normal border
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24, width: 1),
+                
+                  Visibility(
+                    visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
+                    child: TextField(
+                      readOnly: widget.readonly,
+                      enabled: !widget.readonly,
+                      maxLines: 3,
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        // Normal border
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white24, width: 1),
+                        ),
+                        label: Text("Description", style: TextStyle(color: Colors.white)),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
+                        filled: true,
                       ),
-                      label: Text("Description", style: TextStyle(color: Colors.white)),
-                      fillColor: Colors.white.withValues(alpha: 0.1),
-                      filled: true,
+                      style: TextStyle(color: Colors.white),
                     ),
-                    style: TextStyle(color: Colors.white),
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
                   // Activity type
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
+                          enabled: !widget.readonly,
                           style: TextStyle(color: Colors.white),
                           textAlign: TextAlign.left,
                           controller: activityController,

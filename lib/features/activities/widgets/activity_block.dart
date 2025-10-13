@@ -33,8 +33,8 @@ class _ActivityBlockState extends State<ActivityBlock> {
   String? firstname;
   String? lastname;
   String? profilePhotoUrl;
-
   bool readonly = true;
+  bool edit = false;
 
   @override
   void initState() {
@@ -46,6 +46,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
   void initialize() {
     if (FirebaseAuth.instance.currentUser?.uid == widget.activity.uid) {
       readonly = false; // Allow to edit own activities
+      edit = true;
     }
     firstname = widget.firstName;
     lastname = widget.lastName;
@@ -77,7 +78,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
         builder: (context) => ActivitySummary(
           activityData: widget.activity,
           readonly: readonly,
-          editMode: true,
+          editMode: edit,
           firstName: widget.firstName,
           lastName: widget.lastName,
         ),
@@ -244,10 +245,8 @@ class _ActivityBlockState extends State<ActivityBlock> {
                             ),
                           ),
                         ),
-
                         // Map with activity
                       ),
-
                       // Optional Description under stats
                     ],
                   ),
