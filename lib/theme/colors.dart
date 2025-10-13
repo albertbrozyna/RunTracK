@@ -24,6 +24,8 @@ class AppColors {
   static Color dropdownEntryBackground = Colors.white.withValues( alpha:  0.9);
 
 
+  // Activity block
+
 
 
 }

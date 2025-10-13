@@ -64,20 +64,21 @@ class TrackScreenState extends State<TrackScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
-          activityData: Activity(uid: AppData.currentUser!.uid,
-          activityType: activityController.text.trim(),
-          avgSpeed: AppData.trackState.avgSpeed,
-          calories: AppData.trackState.calories,
+          activityData: Activity(
+            uid: AppData.currentUser!.uid,
+            activityType: activityController.text.trim(),
+            avgSpeed: AppData.trackState.avgSpeed,
+            calories: AppData.trackState.calories,
             steps: AppData.trackState.steps,
-              elevationGain: AppData.trackState.elevationGain,
-              trackedPath: AppData.trackState.trackedPath,
-              elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
-              totalDistance: AppData.trackState.totalDistance,
-              startTime: AppData.trackState.startOfTheActivity,
-              createdAt: AppData.trackState.startOfTheActivity,
-              title: "",
-              description: "",
-           ),
+            elevationGain: AppData.trackState.elevationGain,
+            trackedPath: AppData.trackState.trackedPath,
+            elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
+            totalDistance: AppData.trackState.totalDistance,
+            startTime: AppData.trackState.startOfTheActivity,
+            createdAt: AppData.trackState.startOfTheActivity,
+            title: "",
+            description: "",
+          ),
         ),
       ),
     );
@@ -251,7 +252,8 @@ class TrackScreenState extends State<TrackScreen> {
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.runtrack',
                         ),
-                        if (AppData.trackState.trackedPath.isNotEmpty)
+                        if (AppData.trackState.trackedPath.isNotEmpty && (AppData.trackState.trackingState == TrackingState.paused ||
+                            AppData.trackState.trackingState == TrackingState.running))
                           PolylineLayer(
                             polylines: [Polyline(points: AppData.trackState.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
                           ),
@@ -285,7 +287,7 @@ class TrackScreenState extends State<TrackScreen> {
                       avgSpeed: AppData.trackState.avgSpeed,
                       calories: AppData.trackState.calories,
                       steps: AppData.trackState.steps,
-                      elevation:AppData.trackState.elevationGain,
+                      elevation: AppData.trackState.elevationGain,
                     ),
                   ),
                 ),
@@ -297,7 +299,8 @@ class TrackScreenState extends State<TrackScreen> {
                 right: 0,
                 child: Container(
                   width: double.infinity,
-                  height: AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
+                  height:
+                      AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
                       ? 76.0
                       : 60.0,
                   decoration: BoxDecoration(color: Colors.white),
@@ -306,7 +309,9 @@ class TrackScreenState extends State<TrackScreen> {
                       left: AppUiConstants.paddingTextFields,
                       right: AppUiConstants.paddingTextFields,
                       top: AppUiConstants.paddingTextFields,
-                      bottom: AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
+                      bottom:
+                          AppData.trackState.trackingState == TrackingState.running ||
+                              AppData.trackState.trackingState == TrackingState.paused
                           ? 16
                           : 0,
                     ),

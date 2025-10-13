@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
@@ -11,6 +10,9 @@ import '../../../models/activity.dart';
 import '../../../models/user.dart' as model;
 
 class ActivitiesPage extends StatefulWidget {
+  const ActivitiesPage({super.key});
+
+  @override
   _ActivitiesState createState() => _ActivitiesState();
 }
 
@@ -23,14 +25,19 @@ class _ActivitiesState extends State<ActivitiesPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     initialize();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
-  Future<void> initialize()  async{
+  void initialize(){
     if (!UserService.isUserLoggedIn()) {
-      await UserService.signOutUser();
+      UserService.signOutUser();
+      Navigator.of(context).pushNamedAndRemoveUntil('/start',(route) => false);
     }
+  }
+
+  Future<void> initializeAsync()  async{
+
   }
 
   @override
@@ -55,6 +62,8 @@ class _ActivitiesState extends State<ActivitiesPage>
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white.withAlpha(100),
               labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorColor: Colors.white,
               unselectedLabelStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -72,6 +81,7 @@ class _ActivitiesState extends State<ActivitiesPage>
               controller: _tabController,
               children: [
                 Container(
+                  padding: EdgeInsets.only(top: 10), // Padding on top
                   child: FutureBuilder<List<Activity>?>(
                     future: ActivityService.fetchLatestUserActivities(
                       FirebaseAuth.instance.currentUser?.uid ?? "",
@@ -104,6 +114,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                 ),
 
                 Container(
+                  padding: EdgeInsets.only(top: 10), // Padding on top
                   child: FutureBuilder<List<Activity>?>(
                     future: ActivityService.fetchLastFriendsActivities(
                       currentUser!.friendsUids,
@@ -135,6 +146,7 @@ class _ActivitiesState extends State<ActivitiesPage>
                   ),
                 ),
                 Container(
+                  padding: EdgeInsets.only(top: 10),
                   child: FutureBuilder<List<Activity>?>(
                     future: ActivityService.fetchLatestActivities(10),
                     builder: (context, snapshot) {

@@ -79,7 +79,7 @@ class ActivityService {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('activities')
-          .where("visibility", isEqualTo: "EVERYONE")
+          .where("visibility", isEqualTo: "everyone")
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
@@ -159,6 +159,17 @@ class ActivityService {
 
   static Future<bool> saveActivity(Activity activity) async {
     try {
+      if(activity.uid.isNotEmpty){  // Activity exists, edit it
+        final docRef = FirebaseFirestore.instance
+            .collection('activities')
+            .doc(activity.uid); // Fetch existing document
+        final docSnapshot = await docRef.get();
+        if(docSnapshot.exists){
+          await docRef.set(ActivityService.toMap(activity));
+          return true;
+        }
+      }
+      // New activity, save it
       final docRef = FirebaseFirestore.instance
           .collection('activities')
           .doc(); // Generate id
