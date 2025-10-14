@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/theme/ui_constants.dart';
@@ -6,7 +5,6 @@ import 'package:run_track/theme/ui_constants.dart';
 import '../../../../common/utils/app_constants.dart';
 import '../../../../common/widgets/custom_button.dart';
 import '../../../../theme/colors.dart';
-import '../../../../theme/ui_constants.dart';
 
 class AdditionalInfo extends StatefulWidget {
   _AdditionalInfoState createState() => _AdditionalInfoState();

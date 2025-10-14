@@ -90,6 +90,7 @@ class StartPageState extends State<StartPage> {
   }
 
   void handleLoginButton(BuildContext context) {
+    // TODO change it to name
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),

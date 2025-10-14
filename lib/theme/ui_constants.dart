@@ -70,4 +70,6 @@ class AppUiConstants {
     ),
   ];
 
+  // Flutter map
+  static const double innerPaddingRectangleBounds = 40;
 }

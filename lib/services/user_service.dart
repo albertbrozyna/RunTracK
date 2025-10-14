@@ -147,6 +147,38 @@ class UserService {
     return null;
   }
 
+  /// Fetch  user firstName LastName and profile photo uri data
+  static Future<model.User?> fetchUserForActivity(String uid) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data();
+      if (data != null) {
+        final firstName = data['firstName'] as String?;
+        final lastName = data['lastName'] as String?;
+        final gender = data['gender'] as String?;
+        final profilePhotoUrl = data['profilePhotoUrl'] as String?;
+
+        if(firstName == null || lastName == null){
+          return null;
+        }
+
+        return model.User(
+          uid: uid,
+          firstName: firstName,
+          lastName: lastName,
+          gender: gender,
+          profilePhotoUrl: profilePhotoUrl,
+        );
+      }
+    }
+    return null;
+  }
+
+
   /// Create a new user in firestore
   static Future<model.User?> addUser(model.User user) async {
     if (user.uid.isEmpty) {
@@ -228,8 +260,8 @@ class UserService {
         receiver.receivedInvitations.remove(senderUid);
       }
       // TODO The same as with invitations
-      receiver.friendsUids?.add(senderUid);
-      sender.friendsUids?.add(receiverUid);
+      receiver.friendsUids.add(senderUid);
+      sender.friendsUids.add(receiverUid);
       await UserService.updateUser(sender);
       await UserService.updateUser(receiver);
     } catch (e) {

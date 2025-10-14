@@ -9,6 +9,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/features/track/pages/map.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
@@ -23,64 +24,89 @@ import 'package:run_track/theme/preference_names.dart';
 
 class ActivitySummary extends StatefulWidget {
   final Activity activityData;
+  final String firstName;
+  final String lastName;
+  final bool readonly;
+  final bool editMode;
 
-  const ActivitySummary({
-    super.key,
-    required this.activityData,
-  });
+  const ActivitySummary({super.key, required this.activityData, this.firstName = '', this.lastName = '', bool? readonly, bool? editMode})
+    : readonly = readonly ?? true,
+      editMode = editMode ?? false;
 
   @override
   _ActivitySummaryState createState() => _ActivitySummaryState();
 }
 
 class _ActivitySummaryState extends State<ActivitySummary> {
-  bool activitySaved = false;   // This var tells us if activity is saved
+  bool activitySaved = false; // This var tells us if activity is saved
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
-  Activity? activity; // activity data
-  bool readOnly = false;
-
-  // TODO idea save last visibility as preferences
+  late Activity passedActivity = widget.activityData;
   vb.Visibility _visibility = vb.Visibility.me;
-
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
-
   List<XFile> _pickedImages = [];
+  MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
+    initialize();
     // Formatted startTime of the activity
-    final formattedDate = widget.activityData.startTime != null
-        ? DateFormat('yyyy-MM-dd HH:mm').format(widget.activityData.startTime!)
-        : '';
+
     setState(() {
       activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text = '${activityController.text} $formattedDate';
+      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
+      descriptionController.text = widget.activityData.description ?? "";
+      _visibility = widget.activityData.visibility;
     });
+  }
 
-    // Check if it is our activity or we are only showing it
-    if(widget.activityData.uid != AppData.currentUser?.uid){
-      readOnly = true;
+  void initialize() {
+    if (!UserService.isUserLoggedIn()) {
+      UserService.signOutUser();
+      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+      return;
     }
   }
 
+  String getSaveButtonText() {
+    if (widget.editMode) {
+      return "Save changes";
+    } else if (!widget.editMode && !activitySaved) {
+      return "Save activity";
+    } else if (!widget.editMode && activitySaved) {
+      return "Activity saved";
+    }
+    return "Unknown";
+  }
+
+  VoidCallback? getSaveButtonCallback() {
+    if (activitySaved && !widget.editMode) {
+      return null; // No action if activity saved after training
+    } else if (!activitySaved && !widget.editMode) {
+      return handleSaveActivity;
+    } else if (widget.editMode) {
+      return handleEditActivity;
+    }
+    return null;
+  }
+
   /// Set last visibility used by user
-  Future<void>setLastVisibility() async{
+  Future<void> setLastVisibility() async {
     String? visibilityS = await PreferencesService.loadString(PreferenceNames.lastVisibility);
 
-    if(visibilityS != null && visibilityS.isNotEmpty){
-      if(visibilityS == 'me'){
+    if (visibilityS != null && visibilityS.isNotEmpty) {
+      if (visibilityS == 'me') {
         setState(() {
           _visibility = vb.Visibility.me;
         });
-      }else if(visibilityS == 'friends'){
+      } else if (visibilityS == 'friends') {
         setState(() {
           _visibility = vb.Visibility.friends;
         });
-      }else if(visibilityS == 'everyone'){
+      } else if (visibilityS == 'everyone') {
         setState(() {
           _visibility = vb.Visibility.everyone;
         });
@@ -88,21 +114,72 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
-  Future<void>saveLastVisibility() async{
+  /// Save last visibility to preferences
+  Future<void> saveLastVisibility() async {
     PreferencesService.saveString(PreferenceNames.lastVisibility, _visibility.toString());
   }
 
-
   /// Init async data
-  Future<void> initAsync() async{
+  Future<void> initAsync() async {
     setLastVisibility();
   }
 
+  /// Handle edit activity to database
+  Future<void> handleEditActivity() async {
+    if (widget.readonly) {
+      return;
+    }
 
+    Activity userActivity = Activity(
+      activityId: widget.activityData.activityId,
+      uid: widget.activityData.uid,
+      activityType: activityController.text.trim(),
+      description: descriptionController.text.trim(),
+      title: titleController.text.trim(),
+      totalDistance: widget.activityData.totalDistance,
+      elapsedTime: widget.activityData.elapsedTime,
+      visibility: _visibility,
+      startTime: widget.activityData.startTime,
+      trackedPath: widget.activityData.trackedPath,
+      photos: widget.activityData.photos,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
+    );
+
+    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+      if (mounted) {
+        AppUtils.showMessage(context, 'No changes to save!');
+      }
+      return;
+    }
+
+    // Save activity to database
+    bool saved = await ActivityService.saveActivity(userActivity);
+    if (saved) {
+      passedActivity = userActivity;
+      if (mounted) {
+        AppUtils.showMessage(context, 'Changes saved successfully!');
+      }
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, 'Failed to save changes. Please try again.');
+      }
+    }
+  }
+
+  /// Handle saving activity to database
   Future<void> handleSaveActivity() async {
+    if (widget.readonly) {
+      return;
+    }
     // Photos from activity
     List<String> uploadedUrls = [];
-    if(AppData.images){ // If images are enabled in app
+    if (AppData.images) {
+      // If images are enabled in app
       for (var image in _pickedImages) {
         final ref = FirebaseStorage.instance.ref().child(
           'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
@@ -115,6 +192,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     // Activity data
     Activity userActivity = Activity(
+      activityId: "",
       uid: widget.activityData.uid,
       activityType: activityController.text.trim(),
       description: descriptionController.text.trim(),
@@ -124,39 +202,72 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       visibility: _visibility,
       startTime: widget.activityData.startTime,
       trackedPath: widget.activityData.trackedPath,
-      photos: uploadedUrls
+      photos: uploadedUrls,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
     );
 
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
       AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
-      saveLastVisibility(); /// Save last visibility to local prefs
+      saveLastVisibility();
+      if (mounted) {
+        AppUtils.showMessage(context, 'Activity saved successfully!');
+      }
+
+      /// Save last visibility to local prefs
       setState(() {
         activitySaved = true;
       });
     } else {
-      if(mounted){
-        AppUtils.showMessage(context, 'Failed to save activity');
+      if (mounted) {
+        AppUtils.showMessage(context, 'Failed to save activity. Please try again.');
       }
     }
   }
 
-  /// Ask if we are sure if we want to leave a page without saving
-  void leavePage(BuildContext context) {
+  void leavePageEdit(BuildContext context) {
+    Activity userActivity = Activity(
+      activityId: widget.activityData.activityId,
+      uid: widget.activityData.uid,
+      activityType: activityController.text.trim(),
+      description: descriptionController.text.trim(),
+      title: titleController.text.trim(),
+      totalDistance: widget.activityData.totalDistance,
+      elapsedTime: widget.activityData.elapsedTime,
+      visibility: _visibility,
+      startTime: widget.activityData.startTime,
+      trackedPath: widget.activityData.trackedPath,
+      photos: widget.activityData.photos,
+      pace: widget.activityData.pace,
+      avgSpeed: widget.activityData.avgSpeed,
+      calories: widget.activityData.calories,
+      elevationGain: widget.activityData.elevationGain,
+      createdAt: widget.activityData.createdAt,
+      steps: widget.activityData.steps,
+    );
+
+    // If there is no changes, just pop
+    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     showDialog(
       context: context,
-      barrierDismissible: true, // Close by tapping outside
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            "Warning",
-            textAlign: TextAlign.center,
-          ),
+          title: const Text("Warning", textAlign: TextAlign.center),
           content: const Text(
-            "You haven't saved this activity yet.\n\n"
-                "If you leave now, your activity will be lost.\n\n"
-                "Are you sure you want to leave?",
+            "You have unsaved changes\n\n"
+            "If you leave now, your changes will be lost.\n\n"
+            "Are you sure you want to leave?",
             textAlign: TextAlign.center,
           ),
           alignment: Alignment.center,
@@ -174,7 +285,49 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
-                      AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
+                    Navigator.of(context).pop(); // Two times to close dialog and screen
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Yes"),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ask if we are sure if we want to leave a page without saving when saving activity for the first time
+  void leavePage(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true, // Close by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Warning", textAlign: TextAlign.center),
+          content: const Text(
+            "You haven't saved this activity yet.\n\n"
+            "If you leave now, your activity will be lost.\n\n"
+            "Are you sure you want to leave?",
+            textAlign: TextAlign.center,
+          ),
+          alignment: Alignment.center,
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel"),
+                ),
+                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
 
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
@@ -189,15 +342,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     );
   }
 
+  void onTapMap(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => TrackMap(activity: widget.activityData)));
+  }
 
   /// Method invoked when user wants to select change activity
   void onTapActivity() async {
     final selectedActivity = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            ActivityChoose(currentActivity: activityController.text.trim()),
-      ),
+      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
     );
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
@@ -207,33 +360,25 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
   @override
   Widget build(BuildContext context) {
-    if(!UserService.isUserLoggedIn()){
-    UserService.signOutUser();
-    Navigator.of(context).pushNamedAndRemoveUntil('/start',(route) => false);
-    }
-
-
     return PopScope(
       canPop: false,
-    onPopInvokedWithResult: (bool didPop,String? result)async {
-      if(!didPop){
-        if (!readOnly && !activitySaved) {
+      onPopInvokedWithResult: (bool didPop, String? result) async {
+        if (!didPop) {
+          if (!widget.readonly && !activitySaved && !widget.editMode) {
             leavePage(context);
-        }else{
-          Navigator.pop(context,null);
+          } else if (widget.editMode) {
+            leavePageEdit(context);
+          } else {
+            Navigator.pop(context, null);
+          }
         }
-      }
-    },
+      },
       child: Scaffold(
         backgroundColor: AppColors.white,
         appBar: AppBar(
           title: Text(
             "Activity summary",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 1,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
           ),
           centerTitle: true,
           backgroundColor: AppColors.primary,
@@ -245,11 +390,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             image: DecorationImage(
               image: AssetImage("assets/background-first.jpg"),
               fit: BoxFit.cover,
-
-              colorFilter: ColorFilter.mode(
-                Colors.black.withValues(alpha: 0.25),
-                BlendMode.darken,
-              ),
+              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
             ),
           ),
           child: Padding(
@@ -257,11 +398,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Title
                   TextField(
-                    readOnly: readOnly,
+                    readOnly: widget.readonly,
+                    enabled: !widget.readonly,
                     controller: titleController,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
@@ -269,10 +410,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Colors.white24, width: 1),
                       ),
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       label: Text("Title", style: TextStyle(color: Colors.white)),
                       labelStyle: TextStyle(fontSize: 18),
                       filled: true,
@@ -281,33 +419,33 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Description
-                  TextField(
-                    readOnly: readOnly,
-                    maxLines: 3,
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      // Normal border
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24, width: 1),
+                  Visibility(
+                    visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
+                    child: TextField(
+                      readOnly: widget.readonly,
+                      enabled: !widget.readonly,
+                      maxLines: 3,
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        // Normal border
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white24, width: 1),
+                        ),
+                        label: Text("Description", style: TextStyle(color: Colors.white)),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
+                        filled: true,
                       ),
-                      label: Text(
-                        "Description",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      fillColor: Colors.white.withValues(alpha: 0.1),
-                      filled: true,
+                      style: TextStyle(color: Colors.white),
                     ),
-                    style: TextStyle(color: Colors.white),
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
                   // Activity type
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
+                          enabled: !widget.readonly,
                           style: TextStyle(color: Colors.white),
                           textAlign: TextAlign.left,
                           controller: activityController,
@@ -315,21 +453,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           decoration: InputDecoration(
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
+                              borderSide: BorderSide(color: Colors.white24, width: 1),
                             ),
-                            label: Text(
-                              "Activity type",
-                              style: TextStyle(color: Colors.white),
-                            ),
+                            label: Text("Activity type", style: TextStyle(color: Colors.white)),
                             suffixIcon: Padding(
-                              padding: EdgeInsets.all(
-                                AppUiConstants.paddingTextFields,
-                              ),
+                              padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
                               child: IconButton(
-                                onPressed: () => onTapActivity(),
+                                onPressed: widget.readonly ? null : () => onTapActivity(),
                                 icon: Icon(Icons.list, color: Colors.white),
                               ),
                             ),
@@ -342,28 +472,18 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       // Visibility
                       Expanded(
                         child: Theme(
-                          data: Theme.of(context).copyWith(
-                            iconTheme: IconThemeData(
-                              color: Colors.white,
-                            ),
-                          ),
+                          data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
                           child: DropdownMenu(
-                            enabled: !readOnly,
+                            enabled: !widget.readonly,
                             initialSelection: _visibility,
-                            label: Text(
-                              "Visibility",
-                              style: TextStyle(color: Colors.white),
-                            ),
+                            label: Text("Visibility", style: TextStyle(color: Colors.white)),
                             textStyle: TextStyle(color: Colors.white),
                             inputDecorationTheme: InputDecorationTheme(
                               filled: true,
                               fillColor: Colors.white.withValues(alpha: 0.1),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.white24,
-                                  width: 1,
-                                ),
+                                borderSide: BorderSide(color: Colors.white24, width: 1),
                               ),
                             ),
                             width: double.infinity,
@@ -377,38 +497,25 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               });
                             },
                             // Icon
-                            trailingIcon: Icon(
-                              color: Colors.white,
-                              Icons.arrow_drop_down
-                            ),
-                            selectedTrailingIcon: Icon(
-                              color: Colors.white,
-                              Icons.arrow_drop_up
-                            ),
+                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
 
                             menuStyle: MenuStyle(
                               backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
                               alignment: Alignment.bottomLeft,
                             ),
-                            dropdownMenuEntries:
-                                <DropdownMenuEntry<vb.Visibility>>[
-                                  DropdownMenuEntry(
-                                    value: vb.Visibility.me,
-                                    label: "Only Me",
-                                    // style: ButtonStyle(
-                                    //   backgroundColor:
-                                    // ),
+                            dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
+                              DropdownMenuEntry(
+                                value: vb.Visibility.me,
+                                label: "Only Me",
 
-                                  ),
-                                  DropdownMenuEntry(
-                                    value: vb.Visibility.friends,
-                                    label: "Friends",
-                                  ),
-                                  DropdownMenuEntry(
-                                    value: vb.Visibility.everyone,
-                                    label: "Everyone",
-                                  ),
-                                ],
+                                // style: ButtonStyle(
+                                //   backgroundColor:
+                                // ),
+                              ),
+                              DropdownMenuEntry(value: vb.Visibility.friends, label: "Friends"),
+                              DropdownMenuEntry(value: vb.Visibility.everyone, label: "Everyone"),
+                            ],
                           ),
                         ),
                       ),
@@ -416,44 +523,67 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                   SizedBox(height: 8),
                   IntrinsicHeight(
-
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                        child: Row(
-                          spacing: 6,
+                      child: Row(
+                        spacing: 6,
                         children: [
-                        // Time
-                          if(widget.activityData.elapsedTime != null)
-                            StatCard(title: "Time", value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!), icon: Icon(Icons.timer)),
-                          if(widget.activityData.totalDistance != null)
-                            StatCard(title:"Distance",value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km', icon:Icon(Icons.social_distance)),
-                          if(widget.activityData.totalDistance != null)
-                            StatCard(title:"Pace",value: widget.activityData.pace.toString(),icon: Icon(Icons.man)),
-                          if(widget.activityData.calories != null)
-                            StatCard(title:"Calories",value: '${widget.activityData.calories?.toStringAsFixed(0)} kcal',icon:  Icon(Icons.local_fire_department)),
-                          if(widget.activityData.avgSpeed != null)
-                            StatCard(title:"Avg Speed",value: '${widget.activityData.avgSpeed?.toStringAsFixed(1)} km/h',icon: Icon(Icons.speed)),
-                          if(widget.activityData.steps != null)
-                            StatCard(title:"Steps",value: widget.activityData.steps.toString(), icon:Icon(Icons.directions_walk)),
-                          if(widget.activityData.elevationGain != null)
-                            StatCard(title:"Elevation",value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
-                      ]
-              ),
+                          // Time
+                          if (widget.activityData.elapsedTime != null)
+                            StatCard(
+                              title: "Time",
+                              value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!),
+                              icon: Icon(Icons.timer),
+                            ),
+                          if (widget.activityData.totalDistance != null)
+                            StatCard(
+                              title: "Distance",
+                              value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
+                              icon: Icon(Icons.social_distance),
+                            ),
+                          if (widget.activityData.totalDistance != null)
+                            StatCard(title: "Pace", value: widget.activityData.pace.toString(), icon: Icon(Icons.man)),
+                          if (widget.activityData.calories != null)
+                            StatCard(
+                              title: "Calories",
+                              value: '${widget.activityData.calories?.toStringAsFixed(0)} kcal',
+                              icon: Icon(Icons.local_fire_department),
+                            ),
+                          if (widget.activityData.avgSpeed != null)
+                            StatCard(
+                              title: "Avg Speed",
+                              value: '${widget.activityData.avgSpeed?.toStringAsFixed(1)} km/h',
+                              icon: Icon(Icons.speed),
+                            ),
+                          if (widget.activityData.steps != null)
+                            StatCard(title: "Steps", value: widget.activityData.steps.toString(), icon: Icon(Icons.directions_walk)),
+                          if (widget.activityData.elevationGain != null)
+                            StatCard(
+                              title: "Elevation",
+                              value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',
+                              icon: Icon(Icons.terrain),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
 
                   // Flutter map if there is a path
                   if (widget.activityData.trackedPath?.isNotEmpty ?? false)
                     Padding(
-                      padding: const EdgeInsets.only(top: 10.0,bottom: 10.0),
+                      padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
                       child: ClipRRect(
-                       borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
                         child: SizedBox(
                           height: MediaQuery.of(context).size.height * 0.3,
                           child: FlutterMap(
+                            mapController: _mapController,
                             options: MapOptions(
-                              initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0,0),
+                              initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                               initialZoom: 15.0,
+                              onMapReady: () => AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController),
+                              interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                              onTap: (tapPosition, point) => {onTapMap(context)},
                             ),
                             children: [
                               TileLayer(
@@ -461,14 +591,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                 userAgentPackageName: 'com.example.runtrack',
                               ),
                               PolylineLayer(
-                                polylines: [
-                                  Polyline(
-                                    points: widget.activityData.trackedPath ?? [],
-                                    color: Colors.blue,
-                                    strokeWidth: 4.0,
-
-                                  ),
-                                ],
+                                polylines: [Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
                               ),
                               MarkerLayer(
                                 markers: [
@@ -478,7 +601,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                     height: 40,
                                     child: Icon(Icons.flag, color: Colors.green),
                                   ),
-                                  if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)                                     Marker(
+                                  if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
+                                    Marker(
                                       point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
                                       width: 40,
                                       height: 40,
@@ -493,28 +617,26 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Photos section
-                    AddPhotos(
-                      onlyShow: false,
-                      active: true,
-                      showSelectedPhotos: true,
-                      onImagesSelected: (images) {
-                        _pickedImages = images;
-                      },
-                    ),
+                  AddPhotos(
+                    onlyShow: false,
+                    active: true,
+                    showSelectedPhotos: true,
+                    onImagesSelected: (images) {
+                      _pickedImages = images;
+                    },
+                  ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  if(!readOnly)
+                  if (!widget.readonly)
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: CustomButton(
-                        text: activitySaved ? "Activity saved" : "Save activity",
-                        onPressed: activitySaved
-                            ? null
-                            : () => handleSaveActivity(),
+                        text: getSaveButtonText(),
+                        onPressed: getSaveButtonCallback(),
                         gradientColors: [
-                          activitySaved ? Colors.grey :Color(0xFFFFB74D),
-                          activitySaved ? Colors.grey :Color(0xFFFF9800),
-                          activitySaved ? Colors.grey :Color(0xFFF57C00),
+                          activitySaved ? Colors.grey : Color(0xFFFFB74D),
+                          activitySaved ? Colors.grey : Color(0xFFFF9800),
+                          activitySaved ? Colors.grey : Color(0xFFF57C00),
                         ],
                       ),
                     ),
