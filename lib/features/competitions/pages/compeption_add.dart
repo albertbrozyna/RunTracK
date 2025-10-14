@@ -48,7 +48,6 @@ class _AddCompetition extends State<AddCompetition> {
       description: _descriptionController.text.trim(),
       startDate: startDate,
       endDate: endDate,
-      competitionType: activityController.text.trim(),
       visibility: _visibility,
     );
   }
@@ -76,7 +75,6 @@ class _AddCompetition extends State<AddCompetition> {
           image: DecorationImage(
             image: AssetImage("assets/background-first.jpg"),
             fit: BoxFit.cover,
-
             colorFilter: ColorFilter.mode(
               Colors.black.withValues(alpha: 0.25),
               BlendMode.darken,
@@ -148,7 +146,7 @@ class _AddCompetition extends State<AddCompetition> {
                             ),
                           ),
                           label: Text(
-                            "Activity type",
+                            "Activities types",
                             style: TextStyle(color: Colors.white),
                           ),
                           suffixIcon: Padding(

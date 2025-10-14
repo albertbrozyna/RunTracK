@@ -14,42 +14,22 @@ class CompetitionBlock extends StatelessWidget {
   final String lastName;
   final Competition competition;
 
-  const CompetitionBlock({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-    required this.competition,
-    this.profilePhotoUrl,
-  });
+  const CompetitionBlock({super.key, required this.competition, String? firstName, String? lastName, this.profilePhotoUrl})
+    : firstName = firstName ?? "",
+      lastName = lastName ?? "";
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Padding(
-        padding: const EdgeInsets.only(
-          left: 16.0,
-          right: 16.0,
-          top: 8.0,
-          bottom: 8.0,
-        ),
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
         child: Container(
           decoration: BoxDecoration(
             color: Color(0xFFFFA726).withOpacity(0.9),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Colors.white24,
-              width: 1,
-              style: BorderStyle.solid,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4.0,
-                spreadRadius: 2.0,
-                offset: Offset(2, 2),
-              ),
-            ],
+            border: Border.all(color: Colors.white24, width: 1, style: BorderStyle.solid),
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4.0, spreadRadius: 2.0, offset: Offset(2, 2))],
           ),
           child: Padding(
             padding: const EdgeInsets.all(4.0),
@@ -57,11 +37,7 @@ class CompetitionBlock extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.white24,
-                  width: 1,
-                  style: BorderStyle.solid,
-                ),
+                border: Border.all(color: Colors.white24, width: 1, style: BorderStyle.solid),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -81,8 +57,7 @@ class CompetitionBlock extends StatelessWidget {
                             radius: 18,
                             backgroundImage: profilePhotoUrl != null
                                 ? NetworkImage(profilePhotoUrl!)
-                                : AssetImage('assets/DefaultProfilePhoto.png')
-                                      as ImageProvider,
+                                : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
                           ),
                         ),
                         SizedBox(width: 10),
@@ -95,19 +70,11 @@ class CompetitionBlock extends StatelessWidget {
                             Text(
                               "$firstName $lastName",
                               textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                             ),
                             Text(
                               "CreatedAt: Time: ${DateFormat('dd-MM-yyyy hh:mm').format(competition.createdAt ?? DateTime.now())}",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
                             ),
                           ],
                         ),
@@ -123,42 +90,24 @@ class CompetitionBlock extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white, // białe tło
                         borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Title on top
-                          if (competition.name != null &&
-                              competition.name!.isNotEmpty)
+                          if (competition.name != null && competition.name!.isNotEmpty)
                             Text(
                               competition.name!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                             ),
 
                           SizedBox(height: 4),
 
-                          if (competition.description != null &&
-                              competition.description!.isNotEmpty)
+                          if (competition.description != null && competition.description!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                competition.description!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
+                              child: Text(competition.description!, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
                             ),
 
                           // Time and Distance row
@@ -168,19 +117,9 @@ class CompetitionBlock extends StatelessWidget {
                               // Time
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    size: 22,
-                                    color: Colors.grey[600],
-                                  ),
+                                  Icon(Icons.access_time, size: 22, color: Colors.grey[600]),
                                   SizedBox(width: 4),
-                                  Text(
-                                    competition.startDate.toString(),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
+                                  Text(competition.startDate.toString(), style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                                 ],
                               ),
                               SizedBox(width: 16),
@@ -188,19 +127,9 @@ class CompetitionBlock extends StatelessWidget {
                               // Distance
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.map,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
+                                  Icon(Icons.map, size: 16, color: Colors.grey[600]),
                                   SizedBox(width: 4),
-                                  Text(
-                                    "Text",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
+                                  Text("Text", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
                                 ],
                               ),
                             ],

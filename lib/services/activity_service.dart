@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/visibility.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
@@ -246,7 +247,7 @@ class ActivityService {
     }
   }
 
-  /// Save activity to database
+  /// Save activity to database or update if activity id is not empty
   static Future<bool> saveActivity(Activity activity) async {
     try {
       if (activity.activityId.isNotEmpty) {
@@ -299,45 +300,9 @@ class ActivityService {
         a1.elevationGain == a2.elevationGain &&
         a1.steps == a2.steps &&
         a1.pace == a2.pace &&
-        pathEquals(a1.trackedPath, a2.trackedPath) &&
-        listsEqual(a1.photos, a2.photos);
+        AppUtils.pathEquals(a1.trackedPath, a2.trackedPath) &&
+        AppUtils.listsEqual(a1.photos, a2.photos);
   }
 
-  /// Compare paths
-  static bool pathEquals(List<LatLng>? p1, List<LatLng>? p2) {
-    if (p1 == null && p2 == null) {
-      return true;
-    }
-    if (p1 == null || p2 == null) {
-      return false;
-    }
-    if (p1.length != p2.length) {
-      return false;
-    }
-    for (int i = 0; i < p1.length; i++) {
-      if (p1[i].latitude != p2[i].latitude || p1[i].longitude != p2[i].longitude) {
-        return false;
-      }
-    }
-    return true;
-  }
 
-  /// Comp any lists
-  static bool listsEqual(List<String>? l1, List<String>? l2) {
-    if (l1 == null && l2 == null) {
-      return true;
-    }
-    if (l1 == null || l2 == null) {
-      return false;
-    }
-    if (l1.length != l2.length) {
-      return false;
-    }
-    for (int i = 0; i < l1.length; ++i) {
-      if (l1[i] != l2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
 }

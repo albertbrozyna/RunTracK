@@ -1,32 +1,42 @@
-import 'package:flutter/cupertino.dart';
+import 'package:latlong2/latlong.dart';
 import '../common/enums/visibility.dart' as enums;
 
 class Competition{
-  String? competitionId; // Competition id // Done
-  String organizerUid; // Event organizer user // Done
-  DateTime? startDate;  // Start of the event // done
-  DateTime? endDate; // End of the event // done
+  String competitionId; // Competition id
+  String organizerUid; // Event organizer user
+  String name; // Name of competition
+  String? description; // Description of competition
+  DateTime? startDate;  // Start of the event
+  DateTime? endDate; // End of the event
+  DateTime? registrationDeadline; // Deadline to register for the event
   final DateTime? createdAt; // Date of creation
-  String name; // Done
-  String? description; // Done
   List<String>?participantsUids;
   List<String>?invitedParticipantsUids;
-  enums.Visibility visibility; // Done
-  String? competitionType; // Activity type of competition // Done
-  List<String>?resultsUids;  // List of winners
+  enums.Visibility visibility; // Visibility of competition
+  Map<String,double>? results;  // result of run
+  double? distanceKm;
+  List<String>? allowedActivityTypes; // Allowed activity types of competition
+
+  String? locationName; // Location name
+  LatLng ?location; // Location
 
   Competition({
+    this.competitionId = '',
     required this.organizerUid,
     required this.name,
     required this.visibility,
     this.createdAt,
-    this.competitionId,
     this.startDate,
     this.endDate,
+    this.registrationDeadline,
     this.participantsUids,
     this.invitedParticipantsUids,
-    this.resultsUids,
     this.description,
-    this.competitionType
+    this.distanceKm,
+    this.allowedActivityTypes,
+    this.results,
+    this.locationName,
+    this.location,
+
   });
 }

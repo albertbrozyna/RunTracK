@@ -23,7 +23,9 @@ class ActivityBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const ActivityBlock({super.key, required this.firstName, required this.lastName, required this.activity, this.profilePhotoUrl});
+  const ActivityBlock({super.key, required this.activity,String? firstName, String? lastName,  this.profilePhotoUrl}):
+  firstName = firstName ?? "",
+  lastName = lastName ?? "";
 
   @override
   _ActivityBlockState createState() => _ActivityBlockState();
@@ -160,9 +162,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           widget.activity.title!,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                         ),
-
                       SizedBox(height: 4),
-
                       // Stats on the left and map on the right
                       Container(
                         width: double.infinity,

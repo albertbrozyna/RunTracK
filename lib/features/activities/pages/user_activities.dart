@@ -46,6 +46,10 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
 
   final int _limit = 10; // Activities per page
 
+  // Reset last page at start
+
+
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -67,6 +71,10 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
       UserService.signOutUser();
       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
     }
+    // Reset pages
+    ActivityService.lastFetchedDocumentMyActivities = null;
+    ActivityService.lastFetchedDocumentFriendsActivities = null;
+    ActivityService.lastFetchedDocumentAllActivities = null;
     // Load activities on start
     _loadMyActivities();
     _loadFriendsActivities();

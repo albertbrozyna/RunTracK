@@ -29,6 +29,65 @@ class AppUtils {
     controller.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(AppUiConstants.innerPaddingRectangleBounds)));
   }
 
+  /// Compare paths
+  static bool pathEquals(List<LatLng>? p1, List<LatLng>? p2) {
+    if (p1 == null && p2 == null) {
+      return true;
+    }
+    if (p1 == null || p2 == null) {
+      return false;
+    }
+    if (p1.length != p2.length) {
+      return false;
+    }
+    for (int i = 0; i < p1.length; i++) {
+      if (p1[i].latitude != p2[i].latitude || p1[i].longitude != p2[i].longitude) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Comp any lists
+  static bool listsEqual(List<String>? l1, List<String>? l2) {
+    if (l1 == null && l2 == null) {
+      return true;
+    }
+    if (l1 == null || l2 == null) {
+      return false;
+    }
+    if (l1.length != l2.length) {
+      return false;
+    }
+    for (int i = 0; i < l1.length; ++i) {
+      if (l1[i] != l2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool mapsEqual(Map<String, double>? map1, Map<String, double>? map2) {
+    if (map1 == null && map2 == null) {
+      return true;
+    }
+    if (map1 == null || map2 == null) {
+      return false;
+    }
+    if (map1.length != map2.length) {
+      return false;
+    }
+    for (final key in map1.keys) {
+      if (!map2.containsKey(key)) {
+        return false;
+      }
+      if (map1[key] != map2[key]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Returns a predefined list of fitness activities
   static List<String> getDefaultActivities() {
     return [
