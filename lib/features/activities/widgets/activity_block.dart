@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 
+import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
 import '../../track/pages/activity_summary.dart';
 import '../../track/widgets/stat_card.dart';
@@ -35,6 +36,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
   String? profilePhotoUrl;
   bool readonly = true;
   bool edit = false;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -258,11 +260,13 @@ class _ActivityBlockState extends State<ActivityBlock> {
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.2,
                       child: FlutterMap(
+                        mapController: _mapController,
                         options: MapOptions(
                           initialCenter: widget.activity.trackedPath != null && widget.activity.trackedPath!.isNotEmpty
                               ? widget.activity.trackedPath!.first
                               : LatLng(37.7749, -122.4194),
                           // default location
+                          onMapReady: () => AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController),
                           onTap: (tapPosition, point) {
                             onTapBlock(context);
                           },

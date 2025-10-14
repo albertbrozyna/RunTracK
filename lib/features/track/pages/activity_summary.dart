@@ -47,6 +47,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   vb.Visibility _visibility = vb.Visibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   List<XFile> _pickedImages = [];
+  MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -418,7 +419,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Description
-                
                   Visibility(
                     visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
                     child: TextField(
@@ -577,9 +577,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         child: SizedBox(
                           height: MediaQuery.of(context).size.height * 0.3,
                           child: FlutterMap(
+                            mapController: _mapController,
                             options: MapOptions(
                               initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                               initialZoom: 15.0,
+                              onMapReady: () => AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController),
                               interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
                               onTap: (tapPosition, point) => {onTapMap(context)},
                             ),

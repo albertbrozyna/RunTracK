@@ -229,9 +229,15 @@ class TrackState extends ChangeNotifier {
   /// Stop tracking
   void stopTracking() {
     // TODO TO DELETE
-    if (trackedPath.isEmpty) {
-      trackedPath.add(LatLng(56, 56));
-    }
+      trackedPath.addAll([
+        LatLng(51.7592, 19.4560),
+        LatLng(51.7611, 19.4585),
+        LatLng(51.7635, 19.4500),
+        LatLng(51.7680, 19.4850),
+        LatLng(51.7750, 19.4880),
+        LatLng(51.7592, 19.4560),
+      ]);
+
     trackingState = TrackingState.stopped;
     positionStream?.cancel();
     positionStream = null;
@@ -348,6 +354,4 @@ class TrackState extends ChangeNotifier {
     // Set current position null, to avoid calculating distance
     AppData.trackState.currentPosition = null;
   }
-
-
 }

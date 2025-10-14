@@ -11,6 +11,10 @@ import 'package:run_track/theme/preference_names.dart';
 import '../common/utils/app_data.dart';
 
 class ActivityService {
+  static DocumentSnapshot? lastFetchedDocumentMyActivities;
+  static DocumentSnapshot? lastFetchedDocumentFriendsActivities;
+  static DocumentSnapshot? lastFetchedDocumentAllActivities;
+
   /// Format elapsed time from duration to hh:mm:ss
   static String formatElapsedTime(Duration duration) {
     return formatElapsedTimeFromSeconds(duration.inSeconds);
@@ -148,6 +152,101 @@ class ActivityService {
     }
   }
 
+  /// Fetch last page of user activities
+  static Future<List<Activity>> fetchLatestActivitiesPage(int limit, DocumentSnapshot? lastDocument) async {
+    try {
+      Query queryActivities = FirebaseFirestore.instance
+          .collection('activities')
+          .where("visibility", isEqualTo: "Visibility.everyone")
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryActivities = queryActivities.startAfterDocument(lastDocument);
+      }
+
+      final querySnapshot = await queryActivities.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentAllActivities = querySnapshot.docs.last;
+      }
+
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data() as Map<String, dynamic>))
+          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
+          .toList();
+      return activities;
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
+  }
+
+  /// Fetch pages of friends activities
+  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, List<String> friendsUids) async {
+    if (friendsUids.isEmpty) {
+      return [];
+    }
+
+    try {
+      Query queryActivities = FirebaseFirestore.instance
+          .collection('activities')
+          .where("uid", whereIn: friendsUids)
+          .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryActivities = queryActivities.startAfterDocument(lastDocument);
+      }
+
+      final querySnapshot = await queryActivities.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentFriendsActivities = querySnapshot.docs.last;
+      }
+
+      final activities = querySnapshot.docs
+          .map((doc) => ActivityService.fromMap(doc.data() as Map<String, dynamic>))
+          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
+          .toList();
+      return activities;
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
+  }
+
+  /// Fetch my latest activities by pages
+  static Future<List<Activity>> fetchMyLatestActivitiesPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
+    try {
+      Query queryActivities = FirebaseFirestore.instance
+          .collection('activities')
+          .where("uid", isEqualTo: uid.trim())
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryActivities = queryActivities.startAfterDocument(lastDocument);
+      }
+
+      final querySnapshot = await queryActivities.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentMyActivities = querySnapshot.docs.last;
+      }
+
+      final activities = querySnapshot.docs.map((doc) => ActivityService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+
+      return activities;
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching latest activities: $e");
+      return [];
+    }
+  }
+
+  /// Save activity to database
   static Future<bool> saveActivity(Activity activity) async {
     try {
       if (activity.activityId.isNotEmpty) {
