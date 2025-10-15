@@ -50,9 +50,9 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       border: OutlineInputBorder(
                         borderRadius: AppUiConstants.borderRadiusTextFields,
                       ),
-                      enabledBorder: AppUiConstants.enabledBorderTextfields,
-                      focusedBorder: AppUiConstants.focusedBorderTextfields,
-                      errorBorder: AppUiConstants.errorBorderTextfields,
+                      enabledBorder: AppUiConstants.enabledBorderTextFields,
+                      focusedBorder: AppUiConstants.focusedBorderTextFields,
+                      errorBorder: AppUiConstants.errorBorderTextFields,
                       contentPadding: AppUiConstants.contentPaddingTextFields,
                     ),
                     onTap: () async {
@@ -82,9 +82,9 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       border: OutlineInputBorder(
                         borderRadius: AppUiConstants.borderRadiusTextFields,
                       ),
-                      enabledBorder: AppUiConstants.enabledBorderTextfields,
-                      focusedBorder: AppUiConstants.focusedBorderTextfields,
-                      errorBorder: AppUiConstants.errorBorderTextfields,
+                      enabledBorder: AppUiConstants.enabledBorderTextFields,
+                      focusedBorder: AppUiConstants.focusedBorderTextFields,
+                      errorBorder: AppUiConstants.errorBorderTextFields,
                       contentPadding: AppUiConstants.contentPaddingTextFields,
                     ),
                     items: AppConstants.genders.map((String gender) {

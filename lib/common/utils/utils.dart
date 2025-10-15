@@ -6,6 +6,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+extension StringCapitalize on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1).toLowerCase();
+  }
+}
+
 class AppUtils {
   // Show message using scaffold
   static void showMessage(BuildContext context, String message, {bool isError = false}) {
@@ -88,51 +95,83 @@ class AppUtils {
     return true;
   }
 
-  /// Returns a predefined list of fitness activities
-  static List<String> getDefaultActivities() {
-    return [
-      "Running",
-      "Jogging",
-      "Walking",
-      "Cycling",
-      "Mountain Biking",
-      "Hiking",
-      "Swimming",
-      "Rowing",
-      "Kayaking",
-      "Canoeing",
-      "Surfing",
-      "Stand-up Paddleboarding",
-      "Jump Rope",
-      "Elliptical Training",
-      "Stair Climbing",
-      "CrossFit",
-      "HIIT",
-      "Strength Training",
-      "Weightlifting",
-      "Bodyweight Training",
-      "Pilates",
-      "Yoga",
-      "Dance",
-      "Zumba",
-      "Boxing",
-      "Kickboxing",
-      "Basketball",
-      "Football (Soccer)",
-      "Volleyball",
-      "Tennis",
-      "Table Tennis",
-      "Badminton",
-      "Baseball",
-      "Softball",
-      "Rugby",
-      "Cricket",
-      "Golf",
-      "Rock Climbing",
-      "Skiing",
-      "Snowboarding",
-      "Ice Skating",
-      "Skateboarding",
-    ];
-  }
+
+
+static Future<DateTime?> pickDate
+
+(BuildContext context, DateTime firstDate, DateTime lastDate, TextEditingController? dateController) async
+{
+
+final DateTime? picked = await
+showDatePicker
+(
+context: context, initialDate: DateTime.now(), firstDate: firstDate, lastDate: lastDate);
+
+if (picked == null) {
+return null;
+}
+TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+
+if (pickedTime == null) {
+return null;
+}
+DateTime fullDateTime = DateTime(picked.year, picked.month, picked.day, pickedTime.hour, pickedTime.minute);
+
+// (Optional) Format for display
+String formattedDateTime = "${fullDateTime.day}/${fullDateTime.month}/${fullDateTime.year} ${pickedTime.format(context)}";
+
+// Set to controller
+if (dateController != null) {
+dateController.text = formattedDateTime;
+}
+return fullDateTime ?? DateTime.now();
+}
+
+/// Returns a predefined list of fitness activities
+static List<String> getDefaultActivities() {
+return [
+"Running",
+"Jogging",
+"Walking",
+"Cycling",
+"Mountain Biking",
+"Hiking",
+"Swimming",
+"Rowing",
+"Kayaking",
+"Canoeing",
+"Surfing",
+"Stand-up Paddleboarding",
+"Jump Rope",
+"Elliptical Training",
+"Stair Climbing",
+"CrossFit",
+"HIIT",
+"Strength Training",
+"Weightlifting",
+"Bodyweight Training",
+"Pilates",
+"Yoga",
+"Dance",
+"Zumba",
+"Boxing",
+"Kickboxing",
+"Basketball",
+"Football (Soccer)",
+"Volleyball",
+"Tennis",
+"Table Tennis",
+"Badminton",
+"Baseball",
+"Softball",
+"Rugby",
+"Cricket",
+"Golf",
+"Rock Climbing",
+"Skiing",
+"Snowboarding",
+"Ice Skating",
+"Skateboarding",
+];
+}
 }

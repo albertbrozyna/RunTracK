@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/constans/firestore_names.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/activity_service.dart';
@@ -14,20 +15,40 @@ class CompetitionService {
   static DocumentSnapshot? lastFetchedDocumentFriendsCompetitions;
   static DocumentSnapshot? lastFetchedDocumentAllCompetitions;
 
+  /// Pare competition goal from string to enum
+  static CompetitionGoal? parseCompetitionGoal(String goal) {
+    if(goal.isEmpty){
+      return null;
+    }
+
+    if(goal == CompetitionGoal.distance.toString()){
+      return CompetitionGoal.distance;
+    }
+    if(goal == CompetitionGoal.time.toString()){
+      return CompetitionGoal.time;
+    }
+    if(goal == CompetitionGoal.steps.toString()){
+      return CompetitionGoal.steps;
+    }
+    return null;
+  }
+
   static Competition fromMap(Map<String, dynamic> map) {
     return Competition(
       competitionId: map['competitionId'],
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
+      competitionGoal: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
       visibility: parseVisibility(map['visibility']) ?? enums.Visibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
       endDate: map['endDate'] != null ? (map['endDate'] as Timestamp).toDate() : null,
       registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
+      maxTimeToCompleteActivity: map['maxTimeToCompleteActivity'],
       participantsUids: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
       invitedParticipantsUids: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
       distanceKm: map['distanceKm'] != null ? (map['distanceKm'] as num).toDouble() : null,
-      allowedActivityTypes: map['allowedActivityTypes'] != null ? List<String>.from(map['allowedActivityTypes']) : [],
+     activityType: map['activityType'],
       results: map['results'] != null
           ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
           : {},
@@ -44,15 +65,18 @@ class CompetitionService {
       'competitionId': competition.competitionId,
       'organizerUid': competition.organizerUid,
       'name': competition.name,
+      'competitionGoal':competition.competitionGoal.toString(),
       'description': competition.description,
       'visibility': competition.visibility.toString(),
       'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
       'endDate': competition.endDate != null ? Timestamp.fromDate(competition.endDate!) : null,
       'registrationDeadline': competition.registrationDeadline != null ? Timestamp.fromDate(competition.registrationDeadline!) : null,
+      'maxTimeToCompleteActivity': competition.maxTimeToCompleteActivity,
+      'createdAt': Timestamp.fromDate(DateTime.now()),
       'participantsUids': competition.participantsUids ?? [],
       'invitedParticipantsUids': competition.invitedParticipantsUids ?? [],
       'distanceKm': competition.distanceKm,
-      'allowedActivityTypes': competition.allowedActivityTypes ?? [],
+      'activityType': competition.activityType,
       'results': competition.results ?? {},
       'locationName': competition.locationName,
       'latitude': competition.location?.latitude,
@@ -246,7 +270,7 @@ class CompetitionService {
     }
   }
 
-
+  // TODO ADD ALL FIELDS FROM COMPETITION
   /// Compare two competitions and check if they are equal
   static bool competitionsEqual(Competition c1, Competition c2) {
     return c1.competitionId == c2.competitionId &&
@@ -257,8 +281,9 @@ class CompetitionService {
         c1.startDate == c2.startDate &&
         c1.endDate == c2.endDate &&
         c1.registrationDeadline == c2.registrationDeadline &&
+        c1.maxTimeToCompleteActivity == c2.maxTimeToCompleteActivity &&
         c1.distanceKm == c2.distanceKm &&
-        AppUtils.listsEqual(c1.allowedActivityTypes, c2.allowedActivityTypes) &&
+        c1.activityType == c2.activityType &&
         AppUtils.listsEqual(c1.participantsUids, c2.participantsUids) &&
         AppUtils.listsEqual(c1.invitedParticipantsUids, c2.invitedParticipantsUids) &&
         AppUtils.mapsEqual(c1.results, c2.results) &&

@@ -296,13 +296,14 @@ class UserService {
     String gender,
     DateTime dateOfBirth,
   ) async {
+
     model.User? user = await UserService.addUser(
       model.User(
         uid: uid,
-        firstName: firstname.trim(),
-        lastName: lastname.trim(),
-        email: email.trim(),
-        gender: gender.trim(),
+        firstName: firstname.trim().toLowerCase().capitalize(),
+        lastName: lastname.trim().toLowerCase().capitalize(),
+        email: email.trim().toLowerCase(),
+        gender: gender.trim().toLowerCase(),
         dateOfBirth: dateOfBirth,
         profilePhotoUrl: "",
         activityNames: AppUtils.getDefaultActivities(),

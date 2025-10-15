@@ -26,12 +26,20 @@ class AppUiConstants {
   );
 
   // Buttons
-
   static const double horizontalSpacingButtons = 16.0;
   static const double verticalSpacingButtons = 16.0;
 
 
-  static const OutlineInputBorder focusedBorderTextfields = OutlineInputBorder(
+  // Text fields borders
+  static const OutlineInputBorder borderTextFields = OutlineInputBorder(
+      borderRadius: AppUiConstants.borderRadiusTextFields,
+      borderSide: BorderSide(
+          color: Colors.white70,
+          width: 1
+      )
+  );
+
+  static const OutlineInputBorder focusedBorderTextFields = OutlineInputBorder(
     borderRadius: AppUiConstants.borderRadiusTextFields,
       borderSide: BorderSide(
           color: Colors.white24,
@@ -39,19 +47,36 @@ class AppUiConstants {
       )
   );
 
-  static const OutlineInputBorder enabledBorderTextfields = OutlineInputBorder(
+  static const OutlineInputBorder enabledBorderTextFields = OutlineInputBorder(
     borderRadius: AppUiConstants.borderRadiusTextFields,
     borderSide: BorderSide(
       color: Colors.white70,
       width: 1
     )
   );
-  static const OutlineInputBorder errorBorderTextfields = OutlineInputBorder(
+  static const OutlineInputBorder errorBorderTextFields = OutlineInputBorder(
       borderRadius: AppUiConstants.borderRadiusTextFields,
       borderSide: BorderSide(
           color: Colors.red,
           width: 1
       )
+  );
+  static const OutlineInputBorder focusedErrorBorderTextFields = OutlineInputBorder(
+      borderRadius: AppUiConstants.borderRadiusTextFields,
+      borderSide: BorderSide(
+          color: Colors.red,
+          width: 1
+      )
+  );
+
+  static TextStyle labelStyleTextFields = TextStyle(
+    color: Colors.white,
+    fontSize: 18,
+  );
+
+  static TextStyle textStyleTextFields = TextStyle(
+    color: Colors.white,
+    fontSize: 18,
   );
 
   // Forms by form i understand a Container with Column a text fields
@@ -69,6 +94,11 @@ class AppUiConstants {
       offset: Offset(0, 4), // Position of the shadow
     ),
   ];
+
+  static final BoxBorder boxBorder = Border.all(
+      color: Colors.white70,
+      width: 1,
+  );
 
   // Flutter map
   static const double innerPaddingRectangleBounds = 40;

@@ -180,8 +180,8 @@ class _LoginPageState extends State<LoginPage> {
                                     Radius.circular(12),
                                   ),
                                 ),
-                                enabledBorder: AppUiConstants.enabledBorderTextfields,
-                                focusedBorder: AppUiConstants.focusedBorderTextfields,
+                                enabledBorder: AppUiConstants.enabledBorderTextFields,
+                                focusedBorder: AppUiConstants.focusedBorderTextFields,
                               ),
                             ),
                             SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -190,8 +190,8 @@ class _LoginPageState extends State<LoginPage> {
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _isPasswordHidden,
                               decoration: InputDecoration(
-                                enabledBorder: AppUiConstants.enabledBorderTextfields,
-                                focusedBorder: AppUiConstants.focusedBorderTextfields,
+                                enabledBorder: AppUiConstants.enabledBorderTextFields,
+                                focusedBorder: AppUiConstants.focusedBorderTextFields,
                                 labelText: "Password",
                                 prefixIcon: Icon(Icons.password),
                                 suffixIcon: IconButton(

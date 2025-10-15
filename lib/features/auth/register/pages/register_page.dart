@@ -336,8 +336,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 borderRadius:
                                     AppUiConstants.borderRadiusTextFields,
                               ),
-                              enabledBorder: AppUiConstants.enabledBorderTextfields,
-                              focusedBorder: AppUiConstants.focusedBorderTextfields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
                               contentPadding:
                                   AppUiConstants.contentPaddingTextFields,
                             ),
@@ -369,9 +369,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                     AppUiConstants.borderRadiusTextFields,
                               ),
                               enabledBorder:
-                                  AppUiConstants.enabledBorderTextfields,
+                                  AppUiConstants.enabledBorderTextFields,
                               focusedBorder:
-                                  AppUiConstants.focusedBorderTextfields,
+                                  AppUiConstants.focusedBorderTextFields,
                               contentPadding:
                                   AppUiConstants.contentPaddingTextFields,
                             ),
@@ -407,9 +407,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                     AppUiConstants.borderRadiusTextFields,
                               ),
                               enabledBorder:
-                                  AppUiConstants.enabledBorderTextfields,
+                                  AppUiConstants.enabledBorderTextFields,
                               focusedBorder:
-                                  AppUiConstants.focusedBorderTextfields,
+                                  AppUiConstants.focusedBorderTextFields,
                               contentPadding:
                                   AppUiConstants.contentPaddingTextFields,
                             ),
