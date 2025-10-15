@@ -4,11 +4,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
+import 'package:run_track/constans/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
 class UserService {
+  static lastFetchedDocumentParticipants = null;
+  static lastFetchedDocumentFriendsActivities = null;
+
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser != null &&
@@ -133,6 +137,9 @@ class UserService {
 
   /// Fetch one user data
   static Future<model.User?> fetchUser(String uid) async {
+    if(uid.isEmpty){
+      return null;
+    }
     final docSnapshot = await FirebaseFirestore.instance
         .collection("users")
         .doc(uid)
@@ -176,6 +183,39 @@ class UserService {
       }
     }
     return null;
+  }
+
+  /// Fetch list of users
+  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, List<String> usersUid) async {
+    if (usersUid.isEmpty) {
+      return [];
+    }
+
+    try {
+      Query queryActivities = FirebaseFirestore.instance
+          .collection(FirestoreCollections.users)
+          .where("uid", whereIn: usersUid)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryActivities = queryActivities.startAfterDocument(lastDocument);
+      }
+
+      final querySnapshot = await queryActivities.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentFriendsActivities = querySnapshot.docs.last;
+      }
+
+      final activities = querySnapshot.docs
+          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
+          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
+          .toList();
+      return activities;
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
   }
 
 

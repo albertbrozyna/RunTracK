@@ -9,6 +9,7 @@ import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/competition_service.dart';
 import 'package:run_track/theme/colors.dart';
 
+import '../../../common/enums/competition_role.dart';
 import '../../../common/utils/app_data.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart';
@@ -170,11 +171,11 @@ class _CompetitionsState extends State<CompetitionsPage>
     });
   }
 
-
+  /// On pressed add competition button
   void onPressedAddCompetition(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddCompetition()),
+      MaterialPageRoute(builder: (context) => AddCompetition(role: CompetitionRole.owner,)),
     );
   }
 

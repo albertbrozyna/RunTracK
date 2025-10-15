@@ -43,7 +43,7 @@ class ActivityService {
       startTime: (map['startTime'] as Timestamp?)?.toDate(),
       title: map['title'],
       description: map['description'],
-      visibility: parseVisibility(map['visibility']) ?? Visibility.me,
+      visibility: parseVisibility(map['visibility']) ?? ComVisibility.me,
       photos: List<String>.from(map['photos'] ?? []),
       avgSpeed: map['avgSpeed']?.toDouble(),
       calories: map['calories']?.toDouble(),

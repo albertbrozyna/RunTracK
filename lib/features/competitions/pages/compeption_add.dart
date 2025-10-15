@@ -16,27 +16,15 @@ import '../../../theme/colors.dart';
 import '../../../theme/preference_names.dart';
 import '../../../theme/ui_constants.dart';
 import 'package:flutter/services.dart';
-
-
-enum EnterMode{
-  add,
-  edit,
-  view,
-  ableToSign,
-  notAbleToSign,
-}
-
-enum CompetitionRole {
-  owner, // Ower
-  participant, // You participate in competition
-  viewer, // You can see it but not participate
-  canJoin, // you can join in activity
-  invited, // invited but not yet joined
-}
+import '../../../common/enums/competition_role.dart';
 
 class AddCompetition extends StatefulWidget {
+  final CompetitionRole role;
+  final Competition? competitionData;
+  const AddCompetition({super.key, required this.role,this.competitionData});
+
   @override
-  _AddCompetition createState() {
+  State<AddCompetition> createState() {
     return _AddCompetition();
   }
 }
@@ -50,11 +38,16 @@ class _AddCompetition extends State<AddCompetition> {
   final TextEditingController _registrationDeadline = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityHours = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityMinutes = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   TextEditingController activityController = TextEditingController();
-  CompetitionRole competitionRole = CompetitionRole.viewer;
   bool competitionAdded = false;
-  enums.Visibility _visibility = enums.Visibility.me;
+  enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool edit = true; // Can we edit a competition?
+
+
+  Competition? competition;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -80,22 +73,47 @@ class _AddCompetition extends State<AddCompetition> {
       Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.startPage, (route) => false);
       return;
     }
-    // Set name of organizer
-
-
-
+    // Assign a competition
+    competition = widget.competitionData;
+    if(competition != null){  // Set all fields
+      _nameController.text = competition!.name ?? "";
+      _descriptionController.text = competition!.description ?? "";
+      _startDateController.text = competition!.startDate?.toString() ?? "";
+      _endDateController.text = competition!.endDate.toString() ?? "";
+      _registrationDeadline.text = competition!.registrationDeadline?.toString() ?? "";
+      _maxTimeToCompleteActivityHours.text = competition!.maxTimeToCompleteActivityHours.toString();
+      _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
+      activityController.text = competition!.activityType ?? "";
+      _visibility = competition!.visibility;
+    }
 
   }
 
   Future<void> initializeAsync() async {
-    setState(() async {
-      await setLastActivityType();
-    });
+    // Set name of user
+    if (widget.role == CompetitionRole.owner) {
+      _firstNameController.text = AppData.currentUser?.firstName ?? "";
+      _lastNameController.text = AppData.currentUser?.lastName ?? "";
+    } else if (widget.role == CompetitionRole.participant ||
+        widget.role == CompetitionRole.invited ||
+        widget.role == CompetitionRole.viewer ||
+        widget.role == CompetitionRole.canJoin) {
+      final user = await UserService.fetchUser(competition?.organizerUid ?? "");
+      if (user != null) {
+        _firstNameController.text = user.firstName;
+        _lastNameController.text = user.lastName;
+      }
+    }
+
+    await setLastActivityType();
+    setState(() {});
   }
+
 
   /// Set last competition used in adding
   Future<void> setLastActivityType() async {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
+
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
       if(AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false){
@@ -188,10 +206,9 @@ class _AddCompetition extends State<AddCompetition> {
     if (end.isBefore(start)) {
       return 'End date must be after start date';
     }
-    if (start!.add(Duration(hours: 2)).isAfter(end)) {
-      return 'Registration deadline must be at least 1 hour from now';
+    if (start.add(Duration(hours: 2)).isAfter(end)) {
+      return 'Competition cannot be shorter that 2 hours';
     }
-    return 'Competition cannot be shorter that 2 hours';
 
     return null;
   }
@@ -345,7 +362,6 @@ class _AddCompetition extends State<AddCompetition> {
                     ),
                   ),
 
-                  //UserProfileTile(firstName: AppData.currentUser?.firstName ?? "", lastName: AppData.currentUser?.lastName ?? ""),
                   // Name of competition
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   TextFormField(
@@ -435,7 +451,7 @@ class _AddCompetition extends State<AddCompetition> {
                               fillColor: AppColors.textFieldsBackground,
                             ),
 
-                            onSelected: (enums.Visibility? visibility) {
+                            onSelected: (enums.ComVisibility? visibility) {
                               // Selecting visibility
                               setState(() {
                                 if (visibility != null) {
@@ -449,9 +465,9 @@ class _AddCompetition extends State<AddCompetition> {
                               backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
                               alignment: Alignment.center,
                             ),
-                            dropdownMenuEntries: <DropdownMenuEntry<enums.Visibility>>[
+                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
                               DropdownMenuEntry(
-                                value: enums.Visibility.me,
+                                value: enums.ComVisibility.me,
                                 label: "Only Me",
                                 style: ButtonStyle(
                                   foregroundColor: WidgetStatePropertyAll(Colors.white),
@@ -459,7 +475,7 @@ class _AddCompetition extends State<AddCompetition> {
                                 ),
                               ),
                               DropdownMenuEntry(
-                                value: enums.Visibility.friends,
+                                value: enums.ComVisibility.friends,
                                 label: "Friends",
                                 style: ButtonStyle(
                                   foregroundColor: WidgetStatePropertyAll(Colors.white),
@@ -467,7 +483,7 @@ class _AddCompetition extends State<AddCompetition> {
                                 ),
                               ),
                               DropdownMenuEntry(
-                                value: enums.Visibility.everyone,
+                                value: enums.ComVisibility.everyone,
                                 label: "Everyone",
                                 style: ButtonStyle(
                                   foregroundColor: WidgetStatePropertyAll(Colors.white),

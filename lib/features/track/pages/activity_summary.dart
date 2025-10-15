@@ -44,7 +44,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
-  vb.Visibility _visibility = vb.Visibility.me;
+  vb.ComVisibility _visibility = vb.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   List<XFile> _pickedImages = [];
   MapController _mapController = MapController();
@@ -100,15 +100,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     if (visibilityS != null && visibilityS.isNotEmpty) {
       if (visibilityS == 'me') {
         setState(() {
-          _visibility = vb.Visibility.me;
+          _visibility = vb.ComVisibility.me;
         });
       } else if (visibilityS == 'friends') {
         setState(() {
-          _visibility = vb.Visibility.friends;
+          _visibility = vb.ComVisibility.friends;
         });
       } else if (visibilityS == 'everyone') {
         setState(() {
-          _visibility = vb.Visibility.everyone;
+          _visibility = vb.ComVisibility.everyone;
         });
       }
     }
@@ -489,7 +489,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             width: double.infinity,
                             textAlign: TextAlign.left,
                             // Selecting visibility
-                            onSelected: (vb.Visibility? visibility) {
+                            onSelected: (vb.ComVisibility? visibility) {
                               setState(() {
                                 if (visibility != null) {
                                   _visibility = visibility;
@@ -504,17 +504,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
                               alignment: Alignment.bottomLeft,
                             ),
-                            dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
+                            dropdownMenuEntries: <DropdownMenuEntry<vb.ComVisibility>>[
                               DropdownMenuEntry(
-                                value: vb.Visibility.me,
+                                value: vb.ComVisibility.me,
                                 label: "Only Me",
 
                                 // style: ButtonStyle(
                                 //   backgroundColor:
                                 // ),
                               ),
-                              DropdownMenuEntry(value: vb.Visibility.friends, label: "Friends"),
-                              DropdownMenuEntry(value: vb.Visibility.everyone, label: "Everyone"),
+                              DropdownMenuEntry(value: vb.ComVisibility.friends, label: "Friends"),
+                              DropdownMenuEntry(value: vb.ComVisibility.everyone, label: "Everyone"),
                             ],
                           ),
                         ),

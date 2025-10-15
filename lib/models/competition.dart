@@ -10,13 +10,12 @@ class Competition{
   DateTime? startDate;  // Start of the event
   DateTime? endDate; // End of the event
   DateTime? registrationDeadline; // Deadline to register for the event
-  int? maxTimeToCompleteActivity; // Max time to complete activity
-  // int? maxTimeToCompleteActivityHours; // Max time to complete activity
-  // int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
+  int? maxTimeToCompleteActivityHours; // Max time to complete activity
+  int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
   final DateTime? createdAt; // Date of creation
   List<String>?participantsUids;
   List<String>?invitedParticipantsUids;
-  enums.Visibility visibility; // Visibility of competition
+  enums.ComVisibility visibility; // Visibility of competition
   Map<String,double>? results;  // result of run
   double? distanceKm;
   String? activityType; // Allowed activity types of competition
@@ -34,7 +33,8 @@ class Competition{
     this.startDate,
     this.endDate,
     this.registrationDeadline,
-    this.maxTimeToCompleteActivity,
+    this.maxTimeToCompleteActivityHours,
+    this.maxTimeToCompleteActivityMinutes,
     this.participantsUids,
     this.invitedParticipantsUids,
     this.description,

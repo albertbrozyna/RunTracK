@@ -39,12 +39,13 @@ class CompetitionService {
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
       competitionGoal: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
-      visibility: parseVisibility(map['visibility']) ?? enums.Visibility.me,
+      visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
       endDate: map['endDate'] != null ? (map['endDate'] as Timestamp).toDate() : null,
       registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
-      maxTimeToCompleteActivity: map['maxTimeToCompleteActivity'],
+      maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
+      maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
       participantsUids: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
       invitedParticipantsUids: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
       distanceKm: map['distanceKm'] != null ? (map['distanceKm'] as num).toDouble() : null,
@@ -71,7 +72,8 @@ class CompetitionService {
       'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
       'endDate': competition.endDate != null ? Timestamp.fromDate(competition.endDate!) : null,
       'registrationDeadline': competition.registrationDeadline != null ? Timestamp.fromDate(competition.registrationDeadline!) : null,
-      'maxTimeToCompleteActivity': competition.maxTimeToCompleteActivity,
+      'maxTimeToCompleteActivityHours': competition.maxTimeToCompleteActivityHours,
+      'maxTimeToCompleteActivityMinutes': competition.maxTimeToCompleteActivityMinutes,
       'createdAt': Timestamp.fromDate(DateTime.now()),
       'participantsUids': competition.participantsUids ?? [],
       'invitedParticipantsUids': competition.invitedParticipantsUids ?? [],
@@ -281,7 +283,8 @@ class CompetitionService {
         c1.startDate == c2.startDate &&
         c1.endDate == c2.endDate &&
         c1.registrationDeadline == c2.registrationDeadline &&
-        c1.maxTimeToCompleteActivity == c2.maxTimeToCompleteActivity &&
+        c1.maxTimeToCompleteActivityHours == c2.maxTimeToCompleteActivityHours &&
+        c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
         c1.distanceKm == c2.distanceKm &&
         c1.activityType == c2.activityType &&
         AppUtils.listsEqual(c1.participantsUids, c2.participantsUids) &&

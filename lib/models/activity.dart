@@ -13,7 +13,7 @@ class Activity {
   final DateTime? startTime;
   String? title;
   String? description;
-  enums.Visibility visibility;
+  enums.ComVisibility visibility;
   List<String> photos;
 
   double? calories;
@@ -32,7 +32,7 @@ class Activity {
     this.startTime,
     this.title,
     this.description,
-    this.visibility = enums.Visibility.me,
+    this.visibility = enums.ComVisibility.me,
     this.photos = const [],
     this.createdAt,
     this.calories,
