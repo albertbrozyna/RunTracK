@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/widgets/user_profile_tile.dart';
 import 'package:run_track/models/user.dart';
 
 import '../../../services/user_service.dart';
@@ -19,6 +21,7 @@ class ParticipantsList extends StatefulWidget{
 class _ParticipantsListState extends State<ParticipantsList>{
   final List<User> _users = [];
 
+  DocumentSnapshot? lastDocument;
   final ScrollController _scrollController = ScrollController();
   final int _limit = 20; // Friends per page
   bool _hasMore = true;
@@ -28,7 +31,7 @@ class _ParticipantsListState extends State<ParticipantsList>{
   void initState() {
     super.initState();
     initialize();
-
+    _loadUsers();
   }
 
   void initialize() {
@@ -49,18 +52,18 @@ class _ParticipantsListState extends State<ParticipantsList>{
       _isLoading = true;
     });
 
-    final activities = await ActivityService.fetchMyLatestActivitiesPage(
-      FirebaseAuth.instance.currentUser?.uid ?? "",
-      _limit,
-      _lastPageMyActivities,
+    final activities = await UserService.fetchUsers(
+      uids: usersUids,
+      lastDocument: lastDocument,
+      limit: _limit,
     );
 
     setState(() {
-      _myActivities.addAll(activities);
-      _lastPageMyActivities = activities.isNotEmpty ? ActivityService.lastFetchedDocumentMyActivities : null;
-      _isLoadingMy = false;
+      _users.addAll(activities);
+      lastDocument = activities.isNotEmpty ? UserService.lastFetchedDocumentParticipants : null;
+      _isLoading = false;
       if (activities.length < _limit) {
-        _hasMoreMy = false;
+        _hasMore = false;
       }
     });
   }
@@ -77,11 +80,21 @@ class _ParticipantsListState extends State<ParticipantsList>{
         centerTitle: true,
         backgroundColor: AppColors.primary,
       ),
-      body: Container(
-
-
+      body:   Container(
+        padding: EdgeInsets.only(top: 10),
+        child: _users.isEmpty ? Center(child: Text("No participants found")) : ListView.builder(
+          controller: _scrollController,
+          itemCount: _users.length + (_hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == _users.length) {
+              return Center(child: CircularProgressIndicator());
+            }
+            final user = _users[index];
+            return UserProfileTile(key: ValueKey(user.uid), firstName: user.firstName, lastName: user.lastName);
+          },
+        ),
       ),
-    )
+    );
   }
 
 }

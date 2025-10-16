@@ -50,9 +50,10 @@ class CompetitionService {
       invitedParticipantsUids: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
       distanceKm: map['distanceKm'] != null ? (map['distanceKm'] as num).toDouble() : null,
      activityType: map['activityType'],
-      results: map['results'] != null
-          ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
-          : {},
+      // TODO
+      //results: map['results'] != null
+         // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
+          //: {},
       locationName: map['locationName'],
       location: (map['latitude'] != null && map['longitude'] != null)
           ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
@@ -289,7 +290,8 @@ class CompetitionService {
         c1.activityType == c2.activityType &&
         AppUtils.listsEqual(c1.participantsUids, c2.participantsUids) &&
         AppUtils.listsEqual(c1.invitedParticipantsUids, c2.invitedParticipantsUids) &&
-        AppUtils.mapsEqual(c1.results, c2.results) &&
+        // TODO
+        //AppUtils.mapsEqual(c1.results, c2.results) &&
         c1.locationName == c2.locationName &&
         c1.location?.latitude == c2.location?.latitude &&
         c1.location?.longitude == c2.location?.longitude;

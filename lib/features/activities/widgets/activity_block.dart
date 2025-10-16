@@ -60,7 +60,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
   Future<void> initializeAsync() async {
     if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
       // If there is no name and last name fetch it from firestore
-      return UserService.fetchUserForActivity(widget.activity.uid)
+      return UserService.fetchUserForBlock(widget.activity.uid)
           .then((user) {
             setState(() {
               firstname = user?.firstName;

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,15 +9,80 @@ import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/theme/colors.dart';
 
-class CompetitionBlock extends StatelessWidget {
-  final String? profilePhotoUrl; // Profile photo url
+import '../../../common/enums/competition_role.dart';
+import '../../../services/user_service.dart';
+
+class CompetitionBlock extends StatefulWidget{
   final String firstName;
   final String lastName;
+  final String? profilePhotoUrl;
   final Competition competition;
 
-  const CompetitionBlock({super.key, required this.competition, String? firstName, String? lastName, this.profilePhotoUrl})
-    : firstName = firstName ?? "",
-      lastName = lastName ?? "";
+  const CompetitionBlock({super.key, required this.competition, String? firstName, String? lastName, String? profilePhotoUrl})
+      : firstName = firstName ?? "",
+        lastName = lastName ?? "",
+        profilePhotoUrl = profilePhotoUrl ?? "";
+
+  State<CompetitionBlock>_createState() => _CompetitionBlockState();
+}
+
+
+
+class _CompetitionBlockState extends State<CompetitionBlock> {
+  CompetitionRole role = CompetitionRole.viewer;
+
+
+  @override
+  void initState() {
+    super.initState();
+    initialize();
+    initializeAsync();
+  }
+
+  void initialize() {
+    if (FirebaseAuth.instance.currentUser?.uid == widget.competition.organizerUid) {
+      role == CompetitionRole.owner;
+    }
+
+
+    firstname = widget.firstName;
+    lastname = widget.lastName;
+    profilePhotoUrl = widget.profilePhotoUrl;
+  }
+
+  Future<void> initializeAsync() async {
+    if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
+      // If there is no name and last name fetch it from firestore
+      return UserService.fetchUserForBlock(widget.activity.uid)
+          .then((user) {
+        setState(() {
+          firstname = user?.firstName;
+          lastname = user?.lastName;
+          profilePhotoUrl = user?.profilePhotoUrl;
+        });
+      })
+          .catchError((error) {
+        print("Error fetching user data: $error");
+      });
+    }
+  }
+
+  /// On activity block tap
+  void onTapBlock(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivitySummary(
+          activityData: widget.activity,
+          readonly: readonly,
+          editMode: edit,
+          firstName: widget.firstName,
+          lastName: widget.lastName,
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {

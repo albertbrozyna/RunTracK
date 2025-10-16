@@ -10,8 +10,7 @@ import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
 class UserService {
-  static lastFetchedDocumentParticipants = null;
-  static lastFetchedDocumentFriendsActivities = null;
+  static DocumentSnapshot? lastFetchedDocumentParticipants;
 
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
@@ -155,7 +154,7 @@ class UserService {
   }
 
   /// Fetch  user firstName LastName and profile photo uri data
-  static Future<model.User?> fetchUserForActivity(String uid) async {
+  static Future<model.User?> fetchUserForBlock(String uid) async {
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -186,32 +185,30 @@ class UserService {
   }
 
   /// Fetch list of users
-  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, List<String> usersUid) async {
-    if (usersUid.isEmpty) {
+  static Future<List<model.User>> fetchUsers({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
+    if (uids.isEmpty) {
       return [];
     }
 
     try {
-      Query queryActivities = FirebaseFirestore.instance
+      Query queryUsers = FirebaseFirestore.instance
           .collection(FirestoreCollections.users)
-          .where("uid", whereIn: usersUid)
+          .where("uid", whereIn: uids)
           .limit(limit);
 
       if (lastDocument != null) {
-        queryActivities = queryActivities.startAfterDocument(lastDocument);
+        queryUsers =  queryUsers.startAfterDocument(lastDocument);
       }
-
-      final querySnapshot = await queryActivities.get();
+      final querySnapshot = await queryUsers.get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentFriendsActivities = querySnapshot.docs.last;
+        lastFetchedDocumentParticipants = querySnapshot.docs.last;
       }
 
-      final activities = querySnapshot.docs
+      final users = querySnapshot.docs
           .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
-          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
           .toList();
-      return activities;
+      return users;
     } catch (e) {
       print("Error: $e");
       return [];
