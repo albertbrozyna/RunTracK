@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/colors.dart';
+
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -15,10 +17,11 @@ class BottomNavBar extends StatelessWidget {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.gray,
       backgroundColor: Colors.white,
       onTap: onTap,
       items: [
-        // TODO Icons here
         BottomNavigationBarItem(icon: Icon(Icons.timer_outlined), label: "Track activity"),
         BottomNavigationBarItem(
           icon: Icon(Icons.history_outlined),

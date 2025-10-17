@@ -36,7 +36,7 @@ class ProfileBlock extends StatelessWidget {
                     "${user?.firstName ?? "Unknown"} ${user?.lastName ?? ""}",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text("Friends: ${user?.friendsUids?.length ?? 0}"),
+                  Text("Friends: ${user?.friendsUid?.length ?? 0}"),
                 ],
               ),
             ],

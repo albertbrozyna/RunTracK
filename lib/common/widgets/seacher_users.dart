@@ -22,6 +22,10 @@ class UserSearcher extends SearchDelegate<List<String>?> {
     if(listUsers.contains(uid)){
       return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
     }
+    // TODO FIND A MORE SUITABLE ICON
+    if(invitedUsers.contains(uid)){
+      return Icon(Icons.mail_outline, color: Colors.green); // Participate in or is on our friend list
+    }
 
     return Icon(Icons.person_add);
   }

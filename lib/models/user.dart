@@ -4,7 +4,8 @@ class User {
   String uid;
   String firstName;
   String lastName;
-  List<String>? activityNames;  // Activity names
+  String fullName;
+  List<String>? activityNames; // Activity names
   String? email;
   String? profilePhotoUrl; // Profile photo url
   DateTime? dateOfBirth;
@@ -19,9 +20,11 @@ class User {
   int hoursOfActivity;
 
   // Social functions
-  List<String> friendsUids;
-  List<String> pendingInvitations; // Sent invitations to users
-  List<String> receivedInvitations; // Received invitations to users
+  List<String> friendsUid;
+  List<String> pendingInvitationsToFriends; // Sent invitations to users
+  List<String> receivedInvitationsToFriends; // Received invitations to users
+  List<String> receivedInvitationsToCompetitions; // Competitions uid
+  List<String> participatedCompetitions; // Participated competitions
 
   User({
     required this.uid,
@@ -36,11 +39,16 @@ class User {
     this.kilometers = 0,
     this.burnedCalories = 0,
     this.hoursOfActivity = 0,
-    List<String>? friendsUids,
-    List<String>? pendingInvitations,
-    List<String>? receivedInvitations,
-  }) : pendingInvitations = pendingInvitations ?? [],
-       receivedInvitations = receivedInvitations ?? [],
-       friendsUids = friendsUids ?? [],
+    List<String>? friendsUid,
+    List<String>? pendingInvitationsToFriends,
+    List<String>? receivedInvitationsToFriends,
+    List<String>? receivedInvitationForCompetitions,
+    List<String>? participatedCompetitions,
+  }) : fullName = '${firstName.trim().toLowerCase()} ${lastName.trim().toLowerCase()}',
+       pendingInvitationsToFriends = pendingInvitationsToFriends ?? [],
+       receivedInvitationsToFriends = receivedInvitationsToFriends ?? [],
+       receivedInvitationsToCompetitions = receivedInvitationsToFriends ?? [],
+       participatedCompetitions = participatedCompetitions ?? [],
+       friendsUid = friendsUid ?? [],
        userDefaultLocation = defaultLocation ?? LatLng(0.0, 0.0);
 }

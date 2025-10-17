@@ -50,8 +50,8 @@ class UserService {
       activityNames: sourceUser.activityNames != null
           ? List.from(sourceUser.activityNames!)
           : null,
-      friendsUids: sourceUser.friendsUids != null
-          ? List.from(sourceUser.friendsUids!)
+      friendsUid: sourceUser.friendsUid != null
+          ? List.from(sourceUser.friendsUid!)
           : null,
       email: sourceUser.email,
       profilePhotoUrl: sourceUser.profilePhotoUrl,
@@ -96,13 +96,17 @@ class UserService {
       'uid': user.uid,
       'firstName': user.firstName,
       'lastName': user.lastName,
+      'fullName' : user.fullName,
       'email': user.email,
       'activityNames': user.activityNames ?? [],
       'dateOfBirth': user.dateOfBirth != null
           ? Timestamp.fromDate(user.dateOfBirth!)
           : null,
       'gender': user.gender,
-      'friendsUids': user.friendsUids,
+      'friendsUid': user.friendsUid,
+      'pendingInvitationsToFriends' : user.pendingInvitationsToFriends,
+      'receivedInvitationsToFriends' : user.receivedInvitationsToFriends,
+      'receivedInvitationsToCompetitions' : user.receivedInvitationsToCompetitions,
       'profilePhotoUrl': user.profilePhotoUrl,
       'userDefaultLocation': {
         'latitude': user.userDefaultLocation.latitude,
@@ -121,7 +125,11 @@ class UserService {
       lastName: map['lastName'] ?? '',
       email: map['email'],
       activityNames: List<String>.from(map['activityNames'] ?? []),
-      friendsUids: List<String>.from(map['friendsUids'] ?? []),
+      friendsUid: List<String>.from(map['friendsUids'] ?? []),
+      pendingInvitationsToFriends: map['pendingInvitationsToFriends'],
+      receivedInvitationsToFriends: map['receivedInvitationsToFriends'],
+      receivedInvitationForCompetitions: map['receivedInvitationForCompetitions'],
+      participatedCompetitions: map['participatedCompetitions'],
       profilePhotoUrl: map['profilePhotoUrl'],
       defaultLocation: location != null
           ? LatLng(
@@ -132,6 +140,7 @@ class UserService {
       dateOfBirth: map['dateOfBirth'] != null
           ? (map['dateOfBirth'] as Timestamp).toDate()
           : null,
+
       gender: map['gender'],
       kilometers: map['kilometers'] ?? 0,
       burnedCalories: map['burnedCalories'] ?? 0,
@@ -226,28 +235,12 @@ class UserService {
     if(query.isEmpty){
       return [];
     }
-    QuerySnapshot<Map<String, dynamic>> docSnapshot;
-    String firstName = "";
-    String lastName = "";
-    if(query.trim().contains(" ")){
-      final List<String> names = query.trim().toLowerCase().split(" ");
-      firstName = names[0];
-      lastName = names[1];
-
-      docSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('firstName', isGreaterThanOrEqualTo: firstName)
-          .where('firstName', isLessThanOrEqualTo: '$firstName\uf8ff')
-          .where('lastName',isGreaterThanOrEqualTo: lastName)
-          .where('lastName', isLessThanOrEqualTo: '$lastName\uf8ff')
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('fullName', isGreaterThanOrEqualTo: query)
+        .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
         .get();
-    }else{
-      docSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('firstName', isGreaterThanOrEqualTo: query)
-          .where('firstName', isLessThanOrEqualTo: '$query\uf8ff')
-          .get();
-    }
+
     if (docSnapshot.docs.isEmpty) {
       return [];
     }
@@ -359,8 +352,8 @@ class UserService {
       if (sender == null || receiver == null) {
         return false;
       }
-      sender.pendingInvitations.add(receiverUid);
-      receiver.receivedInvitations.add(senderUid);
+      sender.pendingInvitationsToFriends.add(receiverUid);
+      receiver.receivedInvitationsToFriends.add(senderUid);
       await UserService.updateUser(sender);
       await UserService.updateUser(receiver);
     } catch (e) {
@@ -380,15 +373,15 @@ class UserService {
       if (sender == null || receiver == null) {
         return false;
       }
-      if (sender.pendingInvitations.contains(receiverUid)) {
-        sender.pendingInvitations.remove(receiverUid);
+      if (sender.pendingInvitationsToFriends.contains(receiverUid)) {
+        sender.pendingInvitationsToFriends.remove(receiverUid);
       }
-      if (receiver.receivedInvitations.contains(senderUid)) {
-        receiver.receivedInvitations.remove(senderUid);
+      if (receiver.receivedInvitationsToFriends.contains(senderUid)) {
+        receiver.receivedInvitationsToFriends.remove(senderUid);
       }
       // TODO The same as with invitations
-      receiver.friendsUids.add(senderUid);
-      sender.friendsUids.add(receiverUid);
+      receiver.friendsUid.add(senderUid);
+      sender.friendsUid.add(receiverUid);
       await UserService.updateUser(sender);
       await UserService.updateUser(receiver);
     } catch (e) {
@@ -434,7 +427,7 @@ class UserService {
         dateOfBirth: dateOfBirth,
         profilePhotoUrl: "",
         activityNames: AppUtils.getDefaultActivities(),
-        friendsUids: [],
+        friendsUid: [],
       ),
     );
 

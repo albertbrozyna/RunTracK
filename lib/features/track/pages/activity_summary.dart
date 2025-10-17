@@ -633,11 +633,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       child: CustomButton(
                         text: getSaveButtonText(),
                         onPressed: getSaveButtonCallback(),
-                        gradientColors: [
-                          activitySaved ? Colors.grey : Color(0xFFFFB74D),
-                          activitySaved ? Colors.grey : Color(0xFFFF9800),
-                          activitySaved ? Colors.grey : Color(0xFFF57C00),
-                        ],
+
                       ),
                     ),
                 ],

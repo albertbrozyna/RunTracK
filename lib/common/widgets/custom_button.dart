@@ -5,47 +5,39 @@ class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final Color backgroundColor;
-  final List<Color> gradientColors;
   final Color textColor;
   final double borderRadius;
   final double textSize;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.textSize = 16.0,
     this.borderRadius = 8.0,
-    this.backgroundColor = AppColors.primary,
-    this.gradientColors = const [Colors.white30, Colors.transparent],
+    this.backgroundColor = AppColors.secondary,
     this.textColor = AppColors.textPrimary,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: textColor,fontSize: textSize),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(backgroundColor),
+        foregroundColor: WidgetStateProperty.all(textColor),
+        elevation: WidgetStateProperty.all(0),
+        surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
         ),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: textColor, fontSize: textSize),
       ),
     );
   }

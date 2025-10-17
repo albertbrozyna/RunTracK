@@ -43,7 +43,8 @@ class _AddCompetition extends State<AddCompetition> {
   final TextEditingController _maxTimeToCompleteActivityHours = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityMinutes = TextEditingController();
   final TextEditingController _organizerController = TextEditingController();
-  TextEditingController activityController = TextEditingController();
+  final TextEditingController activityController = TextEditingController();
+  final TextEditingController meetingPlaceController = TextEditingController();
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool edit = true; // Can we edit a competition?
@@ -88,16 +89,25 @@ class _AddCompetition extends State<AddCompetition> {
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
       activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
-    }else{ // Create new empty competition
-      competition = Competition(organizerUid: AppData.currentUser!.uid, name: "", description: "", startDate: DateTime.now(), endDate: DateTime.now(),visibility: enums.ComVisibility.me,competitionGoal: CompetitionGoal.distance);
+    } else {
+      // Create new empty competition
+      competition = Competition(
+        organizerUid: AppData.currentUser!.uid,
+        name: "",
+        description: "",
+        startDate: DateTime.now(),
+        endDate: DateTime.now(),
+        visibility: enums.ComVisibility.me,
+        competitionGoal: CompetitionGoal.distance,
+      );
     }
   }
 
   Future<void> initializeAsync() async {
     // Set name of user
     if (widget.role == CompetitionRole.owner) {
-        _organizerController.text = AppData.currentUser?.firstName ?? "";
-        _organizerController.text += ' ${AppData.currentUser?.lastName ?? ""}';
+      _organizerController.text = AppData.currentUser?.firstName ?? "";
+      _organizerController.text += ' ${AppData.currentUser?.lastName ?? ""}';
     } else if (widget.role == CompetitionRole.participant ||
         widget.role == CompetitionRole.invited ||
         widget.role == CompetitionRole.viewer ||
@@ -130,33 +140,46 @@ class _AddCompetition extends State<AddCompetition> {
 
   // On tap/ on pressed functions
 
-    void onTapActivityType() async {
-      final selectedActivity = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
-      );
+  void onTapActivityType() async {
+    final selectedActivity = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
+    );
 
-      // If the user selected something, update the TextField
-      if (selectedActivity != null && selectedActivity.isNotEmpty) {
-        activityController.text = selectedActivity;
-        AppData.lastActivityString = selectedActivity;
-        // Save it to local preferences
-        PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
-      }
+    // If the user selected something, update the TextField
+    if (selectedActivity != null && selectedActivity.isNotEmpty) {
+      activityController.text = selectedActivity;
+      AppData.lastActivityString = selectedActivity;
+      // Save it to local preferences
+      PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
     }
+  }
 
-    void onPressedListParticipants(BuildContext context)async {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => UsersList(usersUid : competition?.participantsUid ?? [],usersUid2: competition?.invitedParticipantsUid ?? [],enterContext:  EnterContextUsersList.participantsModify),
-      ));
-      // TODO
-      if (result != null) { // Set invited participants
-        setState(() {
-          competition?.invitedParticipantsUid = result;
-        });
-      }
+  void onPressedListParticipants(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UsersList(
+          usersUid: competition?.participantsUid ?? [],
+          usersUid2: competition?.invitedParticipantsUid ?? [],
+          enterContext: EnterContextUsersList.participantsModify,
+        ),
+      ),
+    );
+    // TODO
+    if (result != null) {
+      // Set invited participants
+      setState(() {
+        competition?.invitedParticipantsUid = result;
+      });
     }
+  }
+
+  void onTapAddMeetingPlace(){
+
+
+
+  }
 
 
   // Validators
@@ -306,7 +329,7 @@ class _AddCompetition extends State<AddCompetition> {
       return;
     }
 
-      DateTime? startDate = _startDateController.text.isNotEmpty ? DateTime.tryParse(_startDateController.text.trim()) : null;
+    DateTime? startDate = _startDateController.text.isNotEmpty ? DateTime.tryParse(_startDateController.text.trim()) : null;
 
     DateTime? endDate = _endDateController.text.isNotEmpty ? DateTime.tryParse(_endDateController.text.trim()) : null;
 
@@ -349,7 +372,7 @@ class _AddCompetition extends State<AddCompetition> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields,),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Organizer
                   TextField(
                     controller: _organizerController,
@@ -377,9 +400,7 @@ class _AddCompetition extends State<AddCompetition> {
                               : AssetImage('assets/DefaultProfilePhoto.png'),
                         ),
                       ),
-                      prefixStyle: TextStyle(
-
-                      )
+                      prefixStyle: TextStyle(),
                     ),
                   ),
 
@@ -653,19 +674,41 @@ class _AddCompetition extends State<AddCompetition> {
                     ],
                   ),
 
-                  // Invited competitors
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
+                  // Meeting place
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextFormField(
+                      controller: _registrationDeadline,
+                      readOnly: true,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.add_location_alt, color: Colors.white),
+                        labelText: "Meeting place",
+                        labelStyle: AppUiConstants.labelStyleTextFields,
+                        enabledBorder: AppUiConstants.enabledBorderTextFields,
+                        focusedBorder: AppUiConstants.focusedBorderTextFields,
+                        errorBorder: AppUiConstants.errorBorderTextFields,
+                        focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
+                        filled: true,
+                        fillColor: AppColors.textFieldsBackground,
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () async {
+
+                      },
+                    ),
+                  ),
+
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
+                  // Invited competitors
+                  CustomButton(
+                    text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
+                    onPressed: () => onPressedListParticipants(context),
 
-                      CustomButton(
-                        text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
-                        onPressed: () => onPressedListParticipants(context),
-                          gradientColors: [
-                            competitionAdded ? Colors.red : Color(0xFFFFB74D),
-                            competitionAdded ? Colors.red : Color(0xFFFF9800),
-                            competitionAdded ? Colors.red : Color(0xFFF57C00),
-                          ],
-                        ),
+                  ),
 
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
                   SizedBox(
@@ -674,11 +717,7 @@ class _AddCompetition extends State<AddCompetition> {
                     child: CustomButton(
                       text: competitionAdded ? "Competition added" : "Add competition",
                       onPressed: competitionAdded ? null : () => handleSaveCompetition(),
-                      gradientColors: [
-                        competitionAdded ? Colors.red : Color(0xFFFFB74D),
-                        competitionAdded ? Colors.red : Color(0xFFFF9800),
-                        competitionAdded ? Colors.red : Color(0xFFF57C00),
-                      ],
+
                     ),
                   ),
                 ],

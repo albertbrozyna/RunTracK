@@ -48,7 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     initFields();
     randomFriends.addAll(
-      getRandomFriends(AppData.currentUser?.friendsUids ?? [], 6),
+      getRandomFriends(AppData.currentUser?.friendsUid ?? [], 6),
     );
   }
 
@@ -515,17 +515,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Friends: ${user?.friendsUids.length ?? 0}",
+                      "Friends: ${user?.friendsUid.length ?? 0}",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 15),
                     ),
 
                     // TODO To test
                     // Pick up to 6 random friends
-                    if ((user?.friendsUids.isNotEmpty ?? false))
+                    if ((user?.friendsUid.isNotEmpty ?? false))
                       Row(
                         children: [
-                          ...getRandomFriends(user!.friendsUids, 3).map(
+                          ...getRandomFriends(user!.friendsUid, 3).map(
                             (friend) => Container(
                               margin: EdgeInsets.symmetric(horizontal: 4),
                               padding: EdgeInsets.symmetric(

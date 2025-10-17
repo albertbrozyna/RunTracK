@@ -18,6 +18,7 @@ import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/common/enums/visibility.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
+import '../../../theme/colors.dart';
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -91,9 +92,9 @@ class TrackScreenState extends State<TrackScreen> {
           height: 50.0,
           width: double.infinity,
           child: CustomButton(
+            backgroundColor: AppColors.secondary,
             text: AppLocalizations.of(context)!.trackScreenStartTraining,
             onPressed: AppData.trackState.startTracking,
-            gradientColors: [const Color(0xFFFFA726), const Color(0xFFFF5722)],
           ),
         );
 
@@ -106,7 +107,6 @@ class TrackScreenState extends State<TrackScreen> {
               child: CustomButton(
                 text: "Stop",
                 onPressed: AppData.trackState.pauseTracking,
-                gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
               ),
             ),
           ],
@@ -124,7 +124,6 @@ class TrackScreenState extends State<TrackScreen> {
                     child: CustomButton(
                       text: "Resume",
                       onPressed: AppData.trackState.resumeTracking,
-                      gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
                     ),
                   ),
                 ),
@@ -154,7 +153,6 @@ class TrackScreenState extends State<TrackScreen> {
                           CustomButton(
                             text: "",
                             onPressed: () {}, // Normal tap disabled
-                            gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
                           ),
                           ValueListenableBuilder<double>(
                             valueListenable: _finishProgressNotifier,
@@ -164,7 +162,6 @@ class TrackScreenState extends State<TrackScreen> {
                                 child: LinearProgressIndicator(
                                   value: progress,
                                   minHeight: 50,
-                                  backgroundColor: Colors.transparent,
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.red.withValues(alpha: 0.6)),
                                 ),
                               );
@@ -209,7 +206,6 @@ class TrackScreenState extends State<TrackScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Custom fab location to set a fab
-      floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       body: AnimatedBuilder(
         animation: AppData.trackState,
         builder: (BuildContext context, _) {
@@ -322,7 +318,9 @@ class TrackScreenState extends State<TrackScreen> {
           );
         },
       ),
+      floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
@@ -331,7 +329,7 @@ class TrackScreenState extends State<TrackScreen> {
             }
           });
         },
-        child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed),
+        child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed,color: AppColors.white,),
       ),
     );
   }

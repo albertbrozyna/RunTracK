@@ -315,10 +315,6 @@ class ActivityChooseState extends State<ActivityChoose> {
                           text: "Add new activity",
                           onPressed: addNewActivity,
                           backgroundColor: AppColors.primary,
-                          gradientColors: [
-                            Color(0xFFFFA726), // Light Orange
-                            Color(0xFFFF5722),
-                          ],
                         ),
                       ),
                     ),

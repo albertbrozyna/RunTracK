@@ -97,27 +97,21 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopBar(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.primary,
       title: currentPageName(_selectedIndex),
-
       ),
       body: _pages[_selectedIndex],
-
       bottomNavigationBar: (_selectedIndex == 0)
           ? ValueListenableBuilder<bool>(
         valueListenable: isTrackingNotifier,
         builder: (context, isTracking, _) {
-          return isTracking
-              ? SizedBox.shrink()
-              : BottomNavBar(
+          return isTracking ? SizedBox.shrink() : BottomNavBar(
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
           );
         },
       )
-          : BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+          : BottomNavBar(currentIndex: _selectedIndex, onTap: _onItemTapped,
       ),
     );
   }

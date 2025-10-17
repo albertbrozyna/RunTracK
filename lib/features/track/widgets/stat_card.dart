@@ -34,7 +34,7 @@ class StatCard extends StatelessWidget {
       width: cardWidth,
       height: cardHeight,
       padding: EdgeInsets.all(innerPadding),
-      decoration: BoxDecoration(color: AppColors.statCardBackground, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,

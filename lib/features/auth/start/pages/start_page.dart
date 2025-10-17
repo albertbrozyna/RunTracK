@@ -213,11 +213,7 @@ class StartPageState extends State<StartPage> {
                 child: CustomButton(
                   text: "Login",
                   onPressed: () => handleLoginButton(context),
-                  gradientColors: [
-                    Color(0xFFFF6F00),
-                    Color(0xFFD9AA64),
-                    Color(0xFFD0CDCA),
-                  ],
+
                   textSize: 20,
                 ),
               ),
@@ -229,11 +225,7 @@ class StartPageState extends State<StartPage> {
                   text: "No account? Join our community",
                   onPressed: () => handleRegisterButton(context),
                   textSize: 20,
-                  gradientColors: [
-                    Color(0xFFFF8C00),
-                    Color(0xFFFFD180),
-                    Color(0xFF64B5F6),
-                  ],
+
                 ),
               ),
               SizedBox(height: 60),

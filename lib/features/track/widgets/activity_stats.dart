@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import '../../../theme/colors.dart';
 import 'stat_card.dart';
 
 import '../../../services/activity_service.dart';
@@ -26,12 +27,12 @@ class RunStats extends StatelessWidget {
       builder: (context, scrollController) => Container(
         width: 40,
         height: 5,
-        decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: AppColors.third),
         margin: EdgeInsets.only(bottom: 10),
         child: SingleChildScrollView(
           controller: scrollController,
           child: Padding(
-            padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
+            padding: EdgeInsets.only(left: AppUiConstants.paddingTextFields,right: AppUiConstants.paddingTextFields,bottom: AppUiConstants.paddingTextFields),
             child: Column(
               children: [
                 // Arrow up icon

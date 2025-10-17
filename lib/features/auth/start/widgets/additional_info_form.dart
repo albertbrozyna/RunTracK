@@ -122,11 +122,7 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                         }
                       },
                       textSize: 20,
-                      gradientColors: [
-                        Color(0xFFFF8C00),
-                        Color(0xFFFFD180),
-                        Color(0xFF64B5F6),
-                      ],
+
                     ),
                   ),
                 ],

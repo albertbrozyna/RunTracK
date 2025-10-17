@@ -138,7 +138,7 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
     final activities = await ActivityService.fetchLastFriendsActivitiesPage(
       _limit,
       _lastPageFriendsActivities,
-      currentUser?.friendsUids ?? [],
+      currentUser?.friendsUid ?? [],
     );
 
 

@@ -56,7 +56,7 @@ class _CompetitionsState extends State<CompetitionsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     initialize();
   }
 
@@ -133,7 +133,7 @@ class _CompetitionsState extends State<CompetitionsPage>
     final competitions = await CompetitionService.fetchLastFriendsCompetitionsPage(
       _limit,
       _lastPageFriendsCompetitions,
-      currentUser?.friendsUids ?? [],
+      currentUser?.friendsUid ?? [],
     );
 
 
@@ -223,6 +223,8 @@ class _CompetitionsState extends State<CompetitionsPage>
                   Tab(text: "My"),
                   Tab(text: "Friends"),
                   Tab(text: "All"),
+                  Tab(text: "Invites"),
+                  Tab(text: "Participating")
                 ],
               ),
             ),
@@ -279,6 +281,40 @@ class _CompetitionsState extends State<CompetitionsPage>
                       },
                     ),
                   ),
+
+                  // Invites
+                  Container(
+                    padding: EdgeInsets.only(top: 10),
+                    child: _allCompetitions.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
+                      controller: _scrollControllerAll,
+                      itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _allCompetitions.length) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        final competition = _allCompetitions[index];
+                        return CompetitionBlock(key: ValueKey(competition.competitionId), firstName: "", lastName: "", competition: competition);
+                      },
+                    ),
+                  ),
+
+                  // Participating currently
+                  Container(
+                    padding: EdgeInsets.only(top: 10),
+                    child: _allCompetitions.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
+                      controller: _scrollControllerAll,
+                      itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _allCompetitions.length) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        final competition = _allCompetitions[index];
+                        return CompetitionBlock(key: ValueKey(competition.competitionId), firstName: "", lastName: "", competition: competition);
+                      },
+                    ),
+                  ),
+
+
                 ],
               ),
             ),
