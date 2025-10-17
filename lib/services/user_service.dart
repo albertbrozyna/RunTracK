@@ -10,7 +10,8 @@ import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
 
 class UserService {
-  static DocumentSnapshot? lastFetchedDocumentParticipants;
+  static DocumentSnapshot? lastFetchedDocumentParticipants; // Participants in run competition
+  static DocumentSnapshot? lastFetchedDocumentInvitedParticipants; // Invited participants
 
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
@@ -66,6 +67,7 @@ class UserService {
     );
   }
 
+  /// Delete user from firestore
   static Future<bool> deleteUserFromFirestore() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -75,7 +77,7 @@ class UserService {
       }
       final uid = user.uid;
       // Delete a collection from a firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+      await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).delete();
 
       // Delete user from Firebase Auth
       await user.delete();
@@ -88,6 +90,7 @@ class UserService {
     }
   }
 
+  /// Map user to firestore collection
   static Map<String, dynamic> toMap(model.User user) {
     return {
       'uid': user.uid,
@@ -99,7 +102,7 @@ class UserService {
           ? Timestamp.fromDate(user.dateOfBirth!)
           : null,
       'gender': user.gender,
-      'friendsUids': user.friendsUids ?? [],
+      'friendsUids': user.friendsUids,
       'profilePhotoUrl': user.profilePhotoUrl,
       'userDefaultLocation': {
         'latitude': user.userDefaultLocation.latitude,
@@ -108,6 +111,8 @@ class UserService {
     };
   }
 
+
+  /// Create user from firestore collection
   static model.User fromMap(Map<String, dynamic> map) {
     final location = map['userDefaultLocation'];
     return model.User(
@@ -184,8 +189,93 @@ class UserService {
     return null;
   }
 
+  /// Fetch participants invited to run competition
+  static Future<List<model.User>> fetchInvitedParticipants({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
+    if (uids.isEmpty) {
+      return [];
+    }
+
+    try {
+      Query queryUsers = FirebaseFirestore.instance
+          .collection(FirestoreCollections.users)
+          .where("uid", whereIn: uids)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryUsers =  queryUsers.startAfterDocument(lastDocument);
+      }
+      final querySnapshot = await queryUsers.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentInvitedParticipants = querySnapshot.docs.last;
+      }
+
+      final users = querySnapshot.docs
+          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+      return users;
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
+  }
+
+
+  /// Search users in firestore
+  static Future<List<model.User>> searchUsers(String query) async {
+    if(query.isEmpty){
+      return [];
+    }
+    QuerySnapshot<Map<String, dynamic>> docSnapshot;
+    String firstName = "";
+    String lastName = "";
+    if(query.trim().contains(" ")){
+      final List<String> names = query.trim().toLowerCase().split(" ");
+      firstName = names[0];
+      lastName = names[1];
+
+      docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('firstName', isGreaterThanOrEqualTo: firstName)
+          .where('firstName', isLessThanOrEqualTo: '$firstName\uf8ff')
+          .where('lastName',isGreaterThanOrEqualTo: lastName)
+          .where('lastName', isLessThanOrEqualTo: '$lastName\uf8ff')
+        .get();
+    }else{
+      docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('firstName', isGreaterThanOrEqualTo: query)
+          .where('firstName', isLessThanOrEqualTo: '$query\uf8ff')
+          .get();
+    }
+    if (docSnapshot.docs.isEmpty) {
+      return [];
+    }
+
+    final List<model.User> users = docSnapshot.docs.map((doc) {
+      final data = doc.data();
+      final firstName = data['firstName'].toString();
+      final lastName = data['lastName'].toString();
+      final gender = data['gender'].toString();
+      final profilePhotoUrl = data['profilePhotoUrl'].toString();
+
+      return model.User(
+        uid: doc.id,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender ?? "",
+        profilePhotoUrl: profilePhotoUrl,
+      );
+    }).toList();
+
+    return users;
+  }
+
+
+
+
   /// Fetch list of users
-  static Future<List<model.User>> fetchUsers({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
+  static Future<List<model.User>> fetchParticipants({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
     if (uids.isEmpty) {
       return [];
     }
@@ -324,7 +414,7 @@ class UserService {
     }
   }
 
-  // Create user account in firestore
+  /// Create user account in firestore
   static Future<String> createUserInFirestore(
     String uid,
     String firstname,

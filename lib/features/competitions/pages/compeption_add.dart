@@ -1,14 +1,17 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/user_profile_tile.dart';
 import 'package:run_track/constans/app_routes.dart';
+import 'package:run_track/features/competitions/pages/participants.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/user_service.dart';
 
+import '../../../common/enums/enter_context_users_list.dart';
 import '../../../common/enums/visibility.dart' as enums;
 import '../../../common/utils/utils.dart';
 import '../../../services/preferences_service.dart';
@@ -21,7 +24,8 @@ import '../../../common/enums/competition_role.dart';
 class AddCompetition extends StatefulWidget {
   final CompetitionRole role;
   final Competition? competitionData;
-  const AddCompetition({super.key, required this.role,this.competitionData});
+
+  const AddCompetition({super.key, required this.role, this.competitionData});
 
   @override
   State<AddCompetition> createState() {
@@ -38,13 +42,11 @@ class _AddCompetition extends State<AddCompetition> {
   final TextEditingController _registrationDeadline = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityHours = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityMinutes = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _organizerController = TextEditingController();
   TextEditingController activityController = TextEditingController();
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool edit = true; // Can we edit a competition?
-
 
   Competition? competition;
 
@@ -75,7 +77,8 @@ class _AddCompetition extends State<AddCompetition> {
     }
     // Assign a competition
     competition = widget.competitionData;
-    if(competition != null){  // Set all fields
+    if (competition != null) {
+      // Set all fields
       _nameController.text = competition!.name ?? "";
       _descriptionController.text = competition!.description ?? "";
       _startDateController.text = competition!.startDate?.toString() ?? "";
@@ -85,23 +88,26 @@ class _AddCompetition extends State<AddCompetition> {
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
       activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
+    }else{ // Create new empty competition
+      competition = Competition(organizerUid: AppData.currentUser!.uid, name: "", description: "", startDate: DateTime.now(), endDate: DateTime.now(),visibility: enums.ComVisibility.me,competitionGoal: CompetitionGoal.distance);
     }
-
   }
 
   Future<void> initializeAsync() async {
     // Set name of user
     if (widget.role == CompetitionRole.owner) {
-      _firstNameController.text = AppData.currentUser?.firstName ?? "";
-      _lastNameController.text = AppData.currentUser?.lastName ?? "";
+        _organizerController.text = AppData.currentUser?.firstName ?? "";
+        _organizerController.text += ' ${AppData.currentUser?.lastName ?? ""}';
     } else if (widget.role == CompetitionRole.participant ||
         widget.role == CompetitionRole.invited ||
         widget.role == CompetitionRole.viewer ||
         widget.role == CompetitionRole.canJoin) {
       final user = await UserService.fetchUser(competition?.organizerUid ?? "");
       if (user != null) {
-        _firstNameController.text = user.firstName;
-        _lastNameController.text = user.lastName;
+        setState(() {
+          _organizerController.text = user.firstName;
+          _organizerController.text += ' ${user.lastName}';
+        });
       }
     }
 
@@ -109,14 +115,12 @@ class _AddCompetition extends State<AddCompetition> {
     setState(() {});
   }
 
-
   /// Set last competition used in adding
   Future<void> setLastActivityType() async {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
 
-
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
-      if(AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false){
+      if (AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
         activityController.text = lastCompetition;
         return;
       }
@@ -126,9 +130,7 @@ class _AddCompetition extends State<AddCompetition> {
 
   // On tap/ on pressed functions
 
-  void onTapActivityType() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())));
-    void onTapActivity() async {
+    void onTapActivityType() async {
       final selectedActivity = await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
@@ -142,7 +144,20 @@ class _AddCompetition extends State<AddCompetition> {
         PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
       }
     }
-  }
+
+    void onPressedListParticipants(BuildContext context)async {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => UsersList(usersUid : competition?.participantsUid ?? [],usersUid2: competition?.invitedParticipantsUid ?? [],enterContext:  EnterContextUsersList.participantsModify),
+      ));
+      // TODO
+      if (result != null) { // Set invited participants
+        setState(() {
+          competition?.invitedParticipantsUid = result;
+        });
+      }
+    }
+
 
   // Validators
   // Name of competition
@@ -178,7 +193,7 @@ class _AddCompetition extends State<AddCompetition> {
   // Start date
   String? validateStartDate(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Please pick a start date';
+      return 'Please pick a start date of competition';
     }
     if (DateTime.tryParse(value.trim()) == null) {
       return 'Invalid start date';
@@ -237,8 +252,8 @@ class _AddCompetition extends State<AddCompetition> {
     if (registrationDeadline == null) {
       return 'Invalid date';
     }
-    if (start.isAfter(registrationDeadline)) {
-      return 'Registration deadline must be after start date';
+    if (start.isBefore(registrationDeadline)) {
+      return 'Registration deadline must be before start date';
     }
     if (end.isBefore(registrationDeadline)) {
       return 'Registration deadline must be before end date';
@@ -260,7 +275,7 @@ class _AddCompetition extends State<AddCompetition> {
     if (int.tryParse(value.trim()) == null) {
       return 'Enter a valid number';
     }
-    if(int.tryParse(value.trim()) == 0){
+    if (int.tryParse(value.trim()) == 0) {
       return 'There must be at least one hour to complete activity';
     }
 
@@ -282,14 +297,16 @@ class _AddCompetition extends State<AddCompetition> {
     return null;
   }
 
-
   void handleSaveCompetition() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
       return;
     }
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    DateTime? startDate = _startDateController.text.isNotEmpty ? DateTime.tryParse(_startDateController.text.trim()) : null;
+      DateTime? startDate = _startDateController.text.isNotEmpty ? DateTime.tryParse(_startDateController.text.trim()) : null;
 
     DateTime? endDate = _endDateController.text.isNotEmpty ? DateTime.tryParse(_endDateController.text.trim()) : null;
 
@@ -332,33 +349,37 @@ class _AddCompetition extends State<AddCompetition> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields,),
                   // Organizer
-
                   TextField(
+                    controller: _organizerController,
                     textAlign: TextAlign.left,
                     readOnly: true,
                     enabled: false,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(20),
+                      border: AppUiConstants.borderTextFields,
                       enabledBorder: AppUiConstants.enabledBorderTextFields,
                       focusedBorder: AppUiConstants.focusedBorderTextFields,
                       errorBorder: AppUiConstants.errorBorderTextFields,
                       focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
                       label: Text("Organizer"),
+                      labelStyle: AppUiConstants.labelStyleTextFields,
                       filled: true,
                       fillColor: AppColors.textFieldsBackground,
-                      border: OutlineInputBorder(
-                        borderRadius: AppUiConstants.borderRadiusTextFields,
-                        borderSide: BorderSide(color: Colors.white, width: 1),
-                      ),
-                      prefixIcon: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(
-                          AppData.currentUser?.profilePhotoUrl ?? 'https://via.placeholder.com/150',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundImage: (AppData.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
+                              ? NetworkImage(AppData.currentUser!.profilePhotoUrl!)
+                              : AssetImage('assets/DefaultProfilePhoto.png'),
                         ),
                       ),
-                      hintText: '${AppData.currentUser?.firstName ?? ""} ${AppData.currentUser?.lastName ?? ""}',
-                      hintStyle: TextStyle(color: Colors.white70),
+                      prefixStyle: TextStyle(
+
+                      )
                     ),
                   ),
 
@@ -421,7 +442,7 @@ class _AddCompetition extends State<AddCompetition> {
                             suffixIcon: Padding(
                               padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
                               child: IconButton(
-                                onPressed: () => ActivityChoose(currentActivity: activityController.text.trim()),
+                                onPressed: () => onTapActivityType(),
                                 icon: Icon(Icons.list, color: Colors.white),
                               ),
                             ),
@@ -636,35 +657,15 @@ class _AddCompetition extends State<AddCompetition> {
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomButton(
-                          text: "Invite competitors",
-                          onPressed: null,
+                      CustomButton(
+                        text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
+                        onPressed: () => onPressedListParticipants(context),
                           gradientColors: [
                             competitionAdded ? Colors.red : Color(0xFFFFB74D),
                             competitionAdded ? Colors.red : Color(0xFFFF9800),
                             competitionAdded ? Colors.red : Color(0xFFF57C00),
                           ],
                         ),
-                      ),
-                      SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                      Expanded(
-                        child: CustomButton(
-                          text: "List of competitors",
-                          onPressed: null,
-                          gradientColors: [
-                            competitionAdded ? Colors.red : Color(0xFFFFB74D),
-                            competitionAdded ? Colors.red : Color(0xFFFF9800),
-                            competitionAdded ? Colors.red : Color(0xFFF57C00),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-
 
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
                   SizedBox(

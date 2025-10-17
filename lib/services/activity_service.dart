@@ -10,6 +10,7 @@ import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 
 import '../common/utils/app_data.dart';
+import '../constans/firestore_names.dart';
 
 class ActivityService {
   static DocumentSnapshot? lastFetchedDocumentMyActivities;
@@ -107,7 +108,7 @@ class ActivityService {
 
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", whereIn: friendsUids)
           .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
           .orderBy('createdAt', descending: true)
@@ -138,7 +139,7 @@ class ActivityService {
   static Future<List<Activity>> fetchLatestUserActivities(String uid, int limit) async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit)
@@ -157,7 +158,7 @@ class ActivityService {
   static Future<List<Activity>> fetchLatestActivitiesPage(int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("visibility", isEqualTo: "Visibility.everyone")
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -191,7 +192,7 @@ class ActivityService {
 
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", whereIn: friendsUids)
           .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
           .orderBy('createdAt', descending: true)
@@ -222,7 +223,7 @@ class ActivityService {
   static Future<List<Activity>> fetchMyLatestActivitiesPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -252,7 +253,7 @@ class ActivityService {
     try {
       if (activity.activityId.isNotEmpty) {
         // Activity exists, edit it
-        final docRef = FirebaseFirestore.instance.collection('activities').doc(activity.activityId); // Fetch existing document
+        final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.activities).doc(activity.activityId); // Fetch existing document
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
           await docRef.set(ActivityService.toMap(activity));
@@ -260,7 +261,7 @@ class ActivityService {
         }
       }
       // New activity, save it
-      final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
+      final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.activities).doc(); // Generate id
       activity.activityId = docRef.id;
       await docRef.set(ActivityService.toMap(activity));
       return true;

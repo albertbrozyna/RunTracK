@@ -20,8 +20,8 @@ class Competition {
   int? maxTimeToCompleteActivityHours; // Max time to complete activity
   int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
   final DateTime? createdAt; // Date of creation
-  List<String>? participantsUids;
-  List<String>? invitedParticipantsUids;
+  List<String> participantsUid;
+  List<String> invitedParticipantsUid;
   enums.ComVisibility visibility; // Visibility of competition
   Map<String, CompetitionResult>? results; // result of run
   double? distanceKm;
@@ -29,6 +29,7 @@ class Competition {
   String? locationName; // Location name
   LatLng? location; // Location
   CompetitionGoal competitionGoal;
+  List<String> photos;  // Photos from competitions
 
   Competition({
     this.competitionId = '',
@@ -42,13 +43,16 @@ class Competition {
     this.registrationDeadline,
     this.maxTimeToCompleteActivityHours,
     this.maxTimeToCompleteActivityMinutes,
-    this.participantsUids,
-    this.invitedParticipantsUids,
+    List<String>? participantsUid,
+    List<String>? invitedParticipantsUid,
     this.description,
     this.distanceKm,
     this.activityType,
     this.results,
     this.locationName,
     this.location,
-  });
+    List<String>? photos,
+  }) : photos = photos ?? [],
+  participantsUid = participantsUid ?? [],
+  invitedParticipantsUid = invitedParticipantsUid ?? [];
 }

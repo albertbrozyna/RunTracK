@@ -46,8 +46,8 @@ class CompetitionService {
       registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
       maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
-      participantsUids: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
-      invitedParticipantsUids: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
+      participantsUid: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
+      invitedParticipantsUid: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
       distanceKm: map['distanceKm'] != null ? (map['distanceKm'] as num).toDouble() : null,
      activityType: map['activityType'],
       // TODO
@@ -76,8 +76,8 @@ class CompetitionService {
       'maxTimeToCompleteActivityHours': competition.maxTimeToCompleteActivityHours,
       'maxTimeToCompleteActivityMinutes': competition.maxTimeToCompleteActivityMinutes,
       'createdAt': Timestamp.fromDate(DateTime.now()),
-      'participantsUids': competition.participantsUids ?? [],
-      'invitedParticipantsUids': competition.invitedParticipantsUids ?? [],
+      'participantsUids': competition.participantsUid ?? [],
+      'invitedParticipantsUids': competition.invitedParticipantsUid ?? [],
       'distanceKm': competition.distanceKm,
       'activityType': competition.activityType,
       'results': competition.results ?? {},
@@ -288,8 +288,8 @@ class CompetitionService {
         c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
         c1.distanceKm == c2.distanceKm &&
         c1.activityType == c2.activityType &&
-        AppUtils.listsEqual(c1.participantsUids, c2.participantsUids) &&
-        AppUtils.listsEqual(c1.invitedParticipantsUids, c2.invitedParticipantsUids) &&
+        AppUtils.listsEqual(c1.participantsUid, c2.participantsUid) &&
+        AppUtils.listsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&
         // TODO
         //AppUtils.mapsEqual(c1.results, c2.results) &&
         c1.locationName == c2.locationName &&
