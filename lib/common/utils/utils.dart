@@ -95,83 +95,79 @@ class AppUtils {
     return true;
   }
 
+  static Future<DateTime?> pickDate(
+    BuildContext context,
+    DateTime firstDate,
+    DateTime lastDate,
+    TextEditingController? dateController,
+  ) async {
+    final DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: firstDate, lastDate: lastDate);
 
+    if (picked == null) {
+      return null;
+    }
+    TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
 
-static Future<DateTime?> pickDate
+    if (pickedTime == null) {
+      return null;
+    }
+    DateTime fullDateTime = DateTime(picked.year, picked.month, picked.day, pickedTime.hour, pickedTime.minute);
 
-(BuildContext context, DateTime firstDate, DateTime lastDate, TextEditingController? dateController) async
-{
+    String formattedDateTime =
+        "${fullDateTime.year}-${fullDateTime.month.toString().padLeft(2, '0')}-${fullDateTime.day.toString().padLeft(2, '0')} "
+        "${fullDateTime.hour.toString().padLeft(2, '0')}:${fullDateTime.minute.toString().padLeft(2, '0')}";
 
-final DateTime? picked = await
-showDatePicker
-(
-context: context, initialDate: DateTime.now(), firstDate: firstDate, lastDate: lastDate);
+    if (dateController != null) {
+      dateController.text = formattedDateTime;
+    }
+    return fullDateTime;
+  }
 
-if (picked == null) {
-return null;
-}
-TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-
-if (pickedTime == null) {
-return null;
-}
-DateTime fullDateTime = DateTime(picked.year, picked.month, picked.day, pickedTime.hour, pickedTime.minute);
-
-// (Optional) Format for display
-String formattedDateTime = "${fullDateTime.day}/${fullDateTime.month}/${fullDateTime.year} ${pickedTime.format(context)}";
-
-// Set to controller
-if (dateController != null) {
-dateController.text = formattedDateTime;
-}
-return fullDateTime ?? DateTime.now();
-}
-
-/// Returns a predefined list of fitness activities
-static List<String> getDefaultActivities() {
-return [
-"Running",
-"Jogging",
-"Walking",
-"Cycling",
-"Mountain Biking",
-"Hiking",
-"Swimming",
-"Rowing",
-"Kayaking",
-"Canoeing",
-"Surfing",
-"Stand-up Paddleboarding",
-"Jump Rope",
-"Elliptical Training",
-"Stair Climbing",
-"CrossFit",
-"HIIT",
-"Strength Training",
-"Weightlifting",
-"Bodyweight Training",
-"Pilates",
-"Yoga",
-"Dance",
-"Zumba",
-"Boxing",
-"Kickboxing",
-"Basketball",
-"Football (Soccer)",
-"Volleyball",
-"Tennis",
-"Table Tennis",
-"Badminton",
-"Baseball",
-"Softball",
-"Rugby",
-"Cricket",
-"Golf",
-"Rock Climbing",
-"Skiing",
-"Snowboarding",
-"Ice Skating",
-"Skateboarding",
-];
-}
+  /// Returns a predefined list of fitness activities
+  static List<String> getDefaultActivities() {
+    return [
+      "Running",
+      "Jogging",
+      "Walking",
+      "Cycling",
+      "Mountain Biking",
+      "Hiking",
+      "Swimming",
+      "Rowing",
+      "Kayaking",
+      "Canoeing",
+      "Surfing",
+      "Stand-up Paddleboarding",
+      "Jump Rope",
+      "Elliptical Training",
+      "Stair Climbing",
+      "CrossFit",
+      "HIIT",
+      "Strength Training",
+      "Weightlifting",
+      "Bodyweight Training",
+      "Pilates",
+      "Yoga",
+      "Dance",
+      "Zumba",
+      "Boxing",
+      "Kickboxing",
+      "Basketball",
+      "Football (Soccer)",
+      "Volleyball",
+      "Tennis",
+      "Table Tennis",
+      "Badminton",
+      "Baseball",
+      "Softball",
+      "Rugby",
+      "Cricket",
+      "Golf",
+      "Rock Climbing",
+      "Skiing",
+      "Snowboarding",
+      "Ice Skating",
+      "Skateboarding",
+    ];
+  }
 }

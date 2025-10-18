@@ -1,12 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
-import 'package:run_track/common/utils/app_constants.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/user_profile_tile.dart';
 import 'package:run_track/constans/app_routes.dart';
 import 'package:run_track/features/competitions/pages/meeting_place.dart';
 import 'package:run_track/features/competitions/pages/participants.dart';
@@ -17,6 +13,7 @@ import 'package:run_track/services/user_service.dart';
 import '../../../common/enums/enter_context_users_list.dart';
 import '../../../common/enums/visibility.dart' as enums;
 import '../../../common/utils/utils.dart';
+import '../../../services/competition_service.dart';
 import '../../../services/preferences_service.dart';
 import '../../../theme/colors.dart';
 import '../../../theme/preference_names.dart';
@@ -24,20 +21,21 @@ import '../../../theme/ui_constants.dart';
 import 'package:flutter/services.dart';
 import '../../../common/enums/competition_role.dart';
 import 'package:geocoding/geocoding.dart';
-class AddCompetition extends StatefulWidget {
-  final CompetitionRole role;
+
+class CompetitionDetails extends StatefulWidget {
+  final CompetitionContext enterContext;
   final Competition? competitionData;
   final int initTab; // Tab index to set a start visibility
 
-  const AddCompetition({super.key, required this.role, this.competitionData,required this.initTab});
+  const CompetitionDetails({super.key, required this.enterContext, this.competitionData, required this.initTab});
 
   @override
-  State<AddCompetition> createState() {
+  State<CompetitionDetails> createState() {
     return _AddCompetition();
   }
 }
 
-class _AddCompetition extends State<AddCompetition> {
+class _AddCompetition extends State<CompetitionDetails> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -49,12 +47,13 @@ class _AddCompetition extends State<AddCompetition> {
   final TextEditingController _organizerController = TextEditingController();
   final TextEditingController _activityController = TextEditingController();
   final TextEditingController _meetingPlaceController = TextEditingController();
+  final TextEditingController _goalController = TextEditingController();
+  final TextEditingController _goalTypeController = TextEditingController();
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
+  CompetitionGoal _competitionGoal = CompetitionGoal.distance;
+  bool canPause = true;
   bool edit = true; // Can we edit a competition?
-
-
-
   Competition? competition;
 
   @override
@@ -82,11 +81,30 @@ class _AddCompetition extends State<AddCompetition> {
       Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.startPage, (route) => false);
       return;
     }
+
+    // Set visibility based on init tab
+    if (widget.enterContext == CompetitionContext.ownerCreate) {
+      if (widget.initTab == 0) {
+        setState(() {
+          _visibility = enums.ComVisibility.me;
+        });
+      } else if (widget.initTab == 1) {
+        setState(() {
+          _visibility = enums.ComVisibility.friends;
+        });
+      } else if (widget.initTab == 2) {
+        setState(() {
+          _visibility = enums.ComVisibility.everyone;
+        });
+      }
+    }
+
     // Assign a competition
     competition = widget.competitionData;
     if (competition != null) {
       // Set all fields
-      _nameController.text = competition!.name ?? "";
+
+      _organizerController.text = _nameController.text = competition!.name ?? "";
       _descriptionController.text = competition!.description ?? "";
       _startDateController.text = competition!.startDate?.toString() ?? "";
       _endDateController.text = competition!.endDate.toString() ?? "";
@@ -95,6 +113,14 @@ class _AddCompetition extends State<AddCompetition> {
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
       _activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
+
+      String? latStr = competition?.location?.latitude.toStringAsFixed(4);
+      String? lngStr = competition?.location?.longitude.toStringAsFixed(4);
+      if (competition!.locationName != null && competition!.location?.longitude != null && competition!.location?.latitude != null) {
+        _meetingPlaceController.text = "${competition?.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+      } else if (competition!.location?.longitude != null && competition!.location?.latitude != null) {
+        _meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
+      }
     } else {
       // Create new empty competition
       competition = Competition(
@@ -104,20 +130,22 @@ class _AddCompetition extends State<AddCompetition> {
         startDate: DateTime.now(),
         endDate: DateTime.now(),
         visibility: enums.ComVisibility.me,
-        competitionGoal: CompetitionGoal.distance,
+        competitionGoalType: CompetitionGoal.distance,
+        goal: 10
       );
     }
   }
 
   Future<void> initializeAsync() async {
     // Set name of user
-    if (widget.role == CompetitionRole.owner) {
+    if (widget.enterContext == CompetitionContext.ownerCreate || widget.enterContext == CompetitionContext.ownerModify) {
       _organizerController.text = AppData.currentUser?.firstName ?? "";
       _organizerController.text += ' ${AppData.currentUser?.lastName ?? ""}';
-    } else if (widget.role == CompetitionRole.participant ||
-        widget.role == CompetitionRole.invited ||
-        widget.role == CompetitionRole.viewer ||
-        widget.role == CompetitionRole.canJoin) {
+    } else if (widget.enterContext == CompetitionContext.participant ||
+        widget.enterContext == CompetitionContext.invited ||
+        widget.enterContext == CompetitionContext.participant ||
+        widget.enterContext == CompetitionContext.viewerAbleToJoin ||
+        widget.enterContext == CompetitionContext.viewerNotAbleToJoin) {
       final user = await UserService.fetchUser(competition?.organizerUid ?? "");
       if (user != null) {
         setState(() {
@@ -131,13 +159,40 @@ class _AddCompetition extends State<AddCompetition> {
     setState(() {});
   }
 
+  /// Get icon for goal input
+  Icon getIconForGoalInput(){
+    if (_competitionGoal == CompetitionGoal.distance) {
+      return Icon(Icons.directions_run,color: AppColors.white,);
+    }else if(_competitionGoal == CompetitionGoal.longestDistance) {
+      return Icon(Icons.run_circle_rounded, color: AppColors.white);
+    }
+    else if(_competitionGoal == CompetitionGoal.timedActivity){
+      return Icon(Icons.timer,color: AppColors.white,);
+    }else if(_competitionGoal == CompetitionGoal.steps){
+      return Icon(Icons.directions_walk,color: AppColors.white,);
+    }
+    return Icon(Icons.run_circle_outlined);
+  }
+
+  /// Get label text for goal input
+  String getLabelTextGoal() {
+    if ( _competitionGoal == CompetitionGoal.distance || _competitionGoal == CompetitionGoal.longestDistance) {
+      return "Distance in km";
+    } else if (_competitionGoal == CompetitionGoal.steps) {
+      return "Steps";
+    } else if (_competitionGoal == CompetitionGoal.timedActivity) {
+      return "Time in minutes";
+    }
+    return "Goal";
+  }
+
   /// Set last competition used in adding
   Future<void> setLastActivityType() async {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
       if (AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
-    _activityController.text = lastCompetition;
+        _activityController.text = lastCompetition;
         return;
       }
       _activityController.text = AppData.currentUser?.activityNames?.first ?? "Unknown";
@@ -172,7 +227,6 @@ class _AddCompetition extends State<AddCompetition> {
         ),
       ),
     );
-    // TODO
     if (result != null) {
       // Set invited participants
       setState(() {
@@ -181,6 +235,7 @@ class _AddCompetition extends State<AddCompetition> {
     }
   }
 
+  /// Add place where runners can meet
   Future<void> onTapAddMeetingPlace() async {
     LatLng? latLng;
     final location = competition?.location;
@@ -188,16 +243,9 @@ class _AddCompetition extends State<AddCompetition> {
     if (location?.latitude != null && location?.longitude != null) {
       latLng = LatLng(location!.latitude, location.longitude);
     }
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MeetingPlaceMap(
-          latLng: latLng
-        ),
-      ),
-    );
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => MeetingPlaceMap(latLng: latLng)));
 
-    if(result != null){
+    if (result != null) {
       competition?.location = result;
       String? latStr = competition?.location?.latitude.toStringAsFixed(4);
       String? lngStr = competition?.location?.longitude.toStringAsFixed(4);
@@ -211,18 +259,11 @@ class _AddCompetition extends State<AddCompetition> {
         setState(() {
           _meetingPlaceController.text = "${competition?.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
         });
-      }else{
-        _meetingPlaceController.text = "Lat: ${result.latitude}, Lng: ${result.longitude}";
+      } else {
+        _meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
       }
-
     }
-
-    // Select place name
-
-
-
   }
-
 
   // Validators
   // Name of competition
@@ -333,15 +374,52 @@ class _AddCompetition extends State<AddCompetition> {
   }
 
   // Max time to complete activity hours
+  String? validateGoal(String? value) {
+    if(_competitionGoal == CompetitionGoal.distance  || _competitionGoal == CompetitionGoal.longestDistance){
+      if (value == null || value.trim().isEmpty) {
+        return 'Please enter distance in km';
+      }
+      if (int.tryParse(value.trim()) == null) {
+        return 'Enter a valid number';
+      }
+
+      if(int.tryParse(value.trim())! <= 0){
+        return 'Distance must be positive and greater than 0';
+      }
+    }else if(_competitionGoal == CompetitionGoal.steps){
+      if (value == null || value.trim().isEmpty) {
+        return 'Please enter steps';
+      }
+      if (int.tryParse(value.trim()) == null) {
+        return 'Enter a valid number';
+      }
+      if(int.tryParse(value.trim())! <= 0){
+        return 'Steps must be positive and greater than 0';
+      }
+    }else if(_competitionGoal == CompetitionGoal.timedActivity){
+      if (value == null || value.trim().isEmpty) {
+        return 'Please enter time in minutes';
+      }
+      if (int.tryParse(value.trim()) == null) {
+        return 'Enter a valid number';
+      }
+      if(int.tryParse(value.trim())! <= 0){
+        return 'Time must be positive and greater than 0';
+      }
+    }
+
+    return null;
+  }
+
+  // Max time to complete activity hours
   String? validateHours(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter hours';
-    }
-    if (int.tryParse(value.trim()) == null) {
-      return 'Enter a valid number';
-    }
-    if (int.tryParse(value.trim()) == 0) {
-      return 'There must be at least one hour to complete activity';
+    if (value != null && value.trim().isNotEmpty) {
+      if (int.tryParse(value.trim()) == null) {
+        return 'Enter a valid number';
+      }
+      if (int.tryParse(value.trim()) == 0) {
+        return 'There must be at least one hour to complete activity';
+      }
     }
 
     return null;
@@ -349,20 +427,21 @@ class _AddCompetition extends State<AddCompetition> {
 
   // Max time to complete activity minutes
   String? validateMinutes(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter minutes';
+    if (value != null && value.trim().isNotEmpty) {
+      if (int.tryParse(value.trim()) == null) {
+        return 'Enter a valid number';
+      }
+      int minutes = int.parse(value.trim());
+      if (minutes < 0 || minutes > 59) {
+        return 'Minutes must be between 0 and 59';
+      }
     }
-    if (int.tryParse(value.trim()) == null) {
-      return 'Enter a valid number';
-    }
-    int minutes = int.parse(value.trim());
-    if (minutes < 0 || minutes > 59) {
-      return 'Minutes must be between 0 and 59';
-    }
+
     return null;
   }
 
-  void handleSaveCompetition() {
+  /// Save competition to database
+  void handleSaveCompetition() async {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
       return;
@@ -371,18 +450,41 @@ class _AddCompetition extends State<AddCompetition> {
       return;
     }
 
-    DateTime? startDate = _startDateController.text.isNotEmpty ? DateTime.tryParse(_startDateController.text.trim()) : null;
+    var compData = Competition(
+      competitionId: "",
+      organizerUid: AppData.currentUser!.uid,
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      visibility: _visibility,
+      startDate: DateTime.parse(_startDateController.text.trim()),
+      endDate: DateTime.parse(_endDateController.text.trim()),
+      registrationDeadline: DateTime.parse(_registrationDeadline.text.trim()),
+      maxTimeToCompleteActivityHours: int.tryParse(_maxTimeToCompleteActivityHours.text.trim()),
+      maxTimeToCompleteActivityMinutes: int.tryParse(_maxTimeToCompleteActivityMinutes.text.trim()),
+      activityType: _activityController.text.trim(),
+      invitedParticipantsUid: competition?.invitedParticipantsUid ?? [],
+      participantsUid: competition?.participantsUid ?? [],
+      competitionGoalType: _competitionGoal,
+      location: competition?.location,
+      locationName: competition?.locationName,
+      goal: _goalController.text.trim().isNotEmpty ? double.parse(_goalController.text.trim()) : 0,
+      createdAt: DateTime.now(),
+      photos: [],
+    );
 
-    DateTime? endDate = _endDateController.text.isNotEmpty ? DateTime.tryParse(_endDateController.text.trim()) : null;
+    bool result = await CompetitionService.saveCompetition(compData);
 
-    // var competition = Competition(
-    //   organizerUid: AppData.currentUser!.uid,
-    //   name: _nameController.text.trim(),
-    //   description: _descriptionController.text.trim(),
-    //   startDate: startDate,
-    //   endDate: endDate,
-    //   visibility: _visibility,
-    // );
+    if(result){
+      if(mounted){
+        AppUtils.showMessage(context, "Competition saved successfully");
+      }
+      competitionAdded = true;
+    }else{
+      if(mounted){
+        AppUtils.showMessage(context, "Error saving competition");
+      }
+    }
+
   }
 
   @override
@@ -406,10 +508,7 @@ class _AddCompetition extends State<AddCompetition> {
             image: DecorationImage(
               image: AssetImage("assets/appBg6.jpg"),
               fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.black.withValues(alpha: 0.25),
-                BlendMode.darken,
-              )
+              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
             ),
           ),
           child: Padding(
@@ -455,12 +554,16 @@ class _AddCompetition extends State<AddCompetition> {
                     controller: _nameController,
                     style: AppUiConstants.textStyleTextFields,
                     decoration: InputDecoration(
+                      hintText: "Name of competition",
+                      hintStyle: TextStyle(
+                        color: AppColors.textFieldsHints
+                      ),
                       border: AppUiConstants.borderTextFields,
                       enabledBorder: AppUiConstants.enabledBorderTextFields,
                       focusedBorder: AppUiConstants.focusedBorderTextFields,
                       errorBorder: AppUiConstants.errorBorderTextFields,
                       focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                      label: Text("Title"),
+                      label: Text("Name of competition"),
                       labelStyle: AppUiConstants.labelStyleTextFields,
                       filled: true,
                       fillColor: AppColors.textFieldsBackground,
@@ -473,6 +576,10 @@ class _AddCompetition extends State<AddCompetition> {
                     maxLines: 3,
                     controller: _descriptionController,
                     decoration: InputDecoration(
+                      hintText: "Describe your competition",
+                      hintStyle: TextStyle(
+                          color: AppColors.textFieldsHints
+                      ),
                       border: AppUiConstants.borderTextFields,
                       enabledBorder: AppUiConstants.enabledBorderTextFields,
                       focusedBorder: AppUiConstants.focusedBorderTextFields,
@@ -537,7 +644,6 @@ class _AddCompetition extends State<AddCompetition> {
                               filled: true,
                               fillColor: AppColors.textFieldsBackground,
                             ),
-
                             onSelected: (enums.ComVisibility? visibility) {
                               // Selecting visibility
                               setState(() {
@@ -635,7 +741,7 @@ class _AddCompetition extends State<AddCompetition> {
                   ),
 
                   // Registration deadline
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                   SizedBox(
                     width: double.infinity,
@@ -661,6 +767,112 @@ class _AddCompetition extends State<AddCompetition> {
                         await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _registrationDeadline);
                       },
                     ),
+                  ),
+
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields,),
+
+                  Row(
+                    children: [
+                      // Competition goal
+                      Expanded(
+                        child: Theme(
+                          data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
+                          child: DropdownMenu(
+                            maxLines: 1,
+                            width: double.infinity,
+                            textAlign: TextAlign.left,
+                            textStyle: AppUiConstants.textStyleTextFields,
+                            label: Text("Competition goal"),
+                            initialSelection: _competitionGoal,
+                            inputDecorationTheme: InputDecorationTheme(
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              filled: true,
+                              fillColor: AppColors.textFieldsBackground,
+                            ),
+                            onSelected: (value) => {
+                              // Selecting visibility
+                              setState(() {
+                                if (value != null) {
+                                  _competitionGoal = value;
+                                }
+                              })
+                            },
+                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+                            menuStyle: MenuStyle(
+                              backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
+                              alignment: Alignment.center,
+                            ),
+                            dropdownMenuEntries: <DropdownMenuEntry<CompetitionGoal>>[
+                              DropdownMenuEntry(
+                                value: CompetitionGoal.distance,
+                                label: "Distance in fastest time",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                                ),
+                              ),
+                              DropdownMenuEntry(
+                                value: CompetitionGoal.longestDistance,
+                                label: "Longest distance in fastest time",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                                ),
+                              ),
+                              DropdownMenuEntry(
+                                value: CompetitionGoal.timedActivity,
+                                label: "Time goal",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                                ),
+                              ),
+                              DropdownMenuEntry(
+                                value: CompetitionGoal.timedActivity,
+                                label: "Steps",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
+                      // Goal of competition
+                      Expanded(
+                        child: TextFormField(
+                          controller: _goalController,
+                          style: AppUiConstants.textStyleTextFields,
+                          textAlign: TextAlign.left,
+                          decoration: InputDecoration(
+                            labelText: getLabelTextGoal(),
+                            labelStyle: AppUiConstants.labelStyleTextFields,
+                            enabledBorder: AppUiConstants.enabledBorderTextFields,
+                            focusedBorder: AppUiConstants.focusedBorderTextFields,
+                            errorBorder: AppUiConstants.errorBorderTextFields,
+                            focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
+                            filled: true,
+                            fillColor: AppColors.textFieldsBackground,
+                            prefixIcon: Padding(
+                              padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
+                              child: IconButton(
+                                onPressed: () => onTapActivityType(),
+                                icon: getIconForGoalInput()
+                              ),
+                            ),
+                          ),
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            validator: validateGoal
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Hours to complete activity
@@ -711,6 +923,7 @@ class _AddCompetition extends State<AddCompetition> {
                                 filled: true,
                                 fillColor: AppColors.textFieldsBackground,
                               ),
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                               validator: validateMinutes,
                             ),
                           ),
@@ -749,7 +962,7 @@ class _AddCompetition extends State<AddCompetition> {
                     height: 40,
                     child: CustomButton(
                       text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
-                      onPressed: () => onPressedListParticipants(context),
+                      onPressed: () => (context),
                     ),
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),

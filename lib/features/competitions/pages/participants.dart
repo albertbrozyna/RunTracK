@@ -107,18 +107,17 @@ class _UsersListState extends State<UsersList>{
           "Participants",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
         ),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.search, color: Colors.white),
-        //     onPressed: () {
-        //         onPressedSearch();
-        //     },
-        //   ),
-        // ],
         centerTitle: true,
         backgroundColor: AppColors.primary,
       ),
       body:   Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/appBg6.jpg"),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
+          ),
+        ),
         padding: EdgeInsets.only(top: 10),
         child: _users.isEmpty ? Center(child: Text("No participants found")) : ListView.builder(
           controller: _scrollController,

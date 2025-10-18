@@ -24,8 +24,11 @@ class CompetitionService {
     if(goal == CompetitionGoal.distance.toString()){
       return CompetitionGoal.distance;
     }
-    if(goal == CompetitionGoal.time.toString()){
-      return CompetitionGoal.time;
+    if(goal == CompetitionGoal.timedActivity.toString()){
+      return CompetitionGoal.timedActivity;
+    }
+    if(goal == CompetitionGoal.longestDistance.toString()){
+      return CompetitionGoal.longestDistance;
     }
     if(goal == CompetitionGoal.steps.toString()){
       return CompetitionGoal.steps;
@@ -33,12 +36,14 @@ class CompetitionService {
     return null;
   }
 
+  // TODO HANDLE RESULTS AND PHOTOS
   static Competition fromMap(Map<String, dynamic> map) {
     return Competition(
       competitionId: map['competitionId'],
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
-      competitionGoal: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
+      competitionGoalType: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
+      goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0, // To num and then to double to avoid null
       visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
@@ -48,8 +53,7 @@ class CompetitionService {
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
       participantsUid: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
       invitedParticipantsUid: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
-      distanceKm: map['distanceKm'] != null ? (map['distanceKm'] as num).toDouble() : null,
-     activityType: map['activityType'],
+      activityType: map['activityType'],
       // TODO
       //results: map['results'] != null
          // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
@@ -67,7 +71,7 @@ class CompetitionService {
       'competitionId': competition.competitionId,
       'organizerUid': competition.organizerUid,
       'name': competition.name,
-      'competitionGoal':competition.competitionGoal.toString(),
+      'competitionGoal':competition.competitionGoalType.toString(),
       'description': competition.description,
       'visibility': competition.visibility.toString(),
       'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
@@ -78,7 +82,6 @@ class CompetitionService {
       'createdAt': Timestamp.fromDate(DateTime.now()),
       'participantsUids': competition.participantsUid ?? [],
       'invitedParticipantsUids': competition.invitedParticipantsUid ?? [],
-      'distanceKm': competition.distanceKm,
       'activityType': competition.activityType,
       'results': competition.results ?? {},
       'locationName': competition.locationName,
@@ -87,7 +90,7 @@ class CompetitionService {
     };
   }
 
-  Future<bool> saveCompetition(Competition competition) async {
+  static Future<bool> saveCompetition(Competition competition) async {
     try {
       if (competition.competitionId.isNotEmpty) {
         // Competition exists, edit it
@@ -186,7 +189,7 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("visibility", isEqualTo: "Visibility.everyone")
+          .where("visibility", isEqualTo: ComVisibility.everyone.toString())
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -220,8 +223,8 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("uid", whereIn: friendsUids)
-          .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
+          .where("organizerUid", whereIn: friendsUids)
+          .where("visibility", whereIn: [ComVisibility.everyone.toString(), ComVisibility.friends.toString()])
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -251,7 +254,7 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("uid", isEqualTo: uid.trim())
+          .where("organizerUid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -286,7 +289,6 @@ class CompetitionService {
         c1.registrationDeadline == c2.registrationDeadline &&
         c1.maxTimeToCompleteActivityHours == c2.maxTimeToCompleteActivityHours &&
         c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
-        c1.distanceKm == c2.distanceKm &&
         c1.activityType == c2.activityType &&
         AppUtils.listsEqual(c1.participantsUid, c2.participantsUid) &&
         AppUtils.listsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&

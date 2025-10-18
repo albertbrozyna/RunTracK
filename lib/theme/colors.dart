@@ -21,6 +21,7 @@ class AppColors {
   static Color textFieldsBorder = Colors.white24;
   static Color textFieldsLabel = Colors.white;
   static Color textFieldsText = Colors.white;
+  static Color textFieldsHints = Colors.white24;
 
   // Buttons
   // Stat cards

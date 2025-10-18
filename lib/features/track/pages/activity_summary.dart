@@ -15,10 +15,9 @@ import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import 'package:intl/intl.dart';
 import '../widgets/stat_card.dart';
 import 'activity_choose.dart';
-import 'package:run_track/common/enums/visibility.dart' as vb;
+import 'package:run_track/common/enums/visibility.dart' as enums;
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 
@@ -34,7 +33,7 @@ class ActivitySummary extends StatefulWidget {
       editMode = editMode ?? false;
 
   @override
-  _ActivitySummaryState createState() => _ActivitySummaryState();
+  State<ActivitySummary> createState() => _ActivitySummaryState();
 }
 
 class _ActivitySummaryState extends State<ActivitySummary> {
@@ -44,10 +43,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
-  vb.ComVisibility _visibility = vb.ComVisibility.me;
+  enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   List<XFile> _pickedImages = [];
-  MapController _mapController = MapController();
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -57,7 +56,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     setState(() {
       activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
+      titleController.text =
+          widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
       descriptionController.text = widget.activityData.description ?? "";
       _visibility = widget.activityData.visibility;
     });
@@ -98,17 +98,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     String? visibilityS = await PreferencesService.loadString(PreferenceNames.lastVisibility);
 
     if (visibilityS != null && visibilityS.isNotEmpty) {
-      if (visibilityS == 'me') {
+      if (visibilityS == enums.ComVisibility.me.toString()) {
         setState(() {
-          _visibility = vb.ComVisibility.me;
+          _visibility = enums.ComVisibility.me;
         });
-      } else if (visibilityS == 'friends') {
+      } else if (visibilityS == enums.ComVisibility.friends.toString()) {
         setState(() {
-          _visibility = vb.ComVisibility.friends;
+          _visibility = enums.ComVisibility.friends;
         });
-      } else if (visibilityS == 'everyone') {
+      } else if (visibilityS == enums.ComVisibility.everyone.toString()) {
         setState(() {
-          _visibility = vb.ComVisibility.everyone;
+          _visibility = enums.ComVisibility.everyone;
         });
       }
     }
@@ -489,7 +489,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             width: double.infinity,
                             textAlign: TextAlign.left,
                             // Selecting visibility
-                            onSelected: (vb.ComVisibility? visibility) {
+                            onSelected: (enums.ComVisibility? visibility) {
                               setState(() {
                                 if (visibility != null) {
                                   _visibility = visibility;
@@ -504,17 +504,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
                               alignment: Alignment.bottomLeft,
                             ),
-                            dropdownMenuEntries: <DropdownMenuEntry<vb.ComVisibility>>[
+                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
                               DropdownMenuEntry(
-                                value: vb.ComVisibility.me,
+                                value: enums.ComVisibility.me,
                                 label: "Only Me",
 
                                 // style: ButtonStyle(
                                 //   backgroundColor:
                                 // ),
                               ),
-                              DropdownMenuEntry(value: vb.ComVisibility.friends, label: "Friends"),
-                              DropdownMenuEntry(value: vb.ComVisibility.everyone, label: "Everyone"),
+                              DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
+                              DropdownMenuEntry(value: enums.ComVisibility.everyone, label: "Everyone"),
                             ],
                           ),
                         ),
@@ -626,15 +626,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     },
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  if (!widget.readonly)
+                  if (!widget.readonly || !activitySaved)
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: CustomButton(
-                        text: getSaveButtonText(),
-                        onPressed: getSaveButtonCallback(),
-
-                      ),
+                      child: CustomButton(text: getSaveButtonText(), onPressed: getSaveButtonCallback()),
                     ),
                 ],
               ),

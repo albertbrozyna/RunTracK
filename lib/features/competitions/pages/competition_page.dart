@@ -22,11 +22,9 @@ class CompetitionsPage extends StatefulWidget {
   _CompetitionsState createState() => _CompetitionsState();
 }
 
-class _CompetitionsState extends State<CompetitionsPage>
-    with SingleTickerProviderStateMixin {
+class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   User? currentUser = AppData.currentUser;
-
 
   final List<Competition> _myCompetitions = [];
   final List<Competition> _friendsCompetitions = [];
@@ -59,7 +57,7 @@ class _CompetitionsState extends State<CompetitionsPage>
     initialize();
   }
 
-  Future<void> initialize()  async{
+  Future<void> initialize() async {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
@@ -68,6 +66,12 @@ class _CompetitionsState extends State<CompetitionsPage>
     CompetitionService.lastFetchedDocumentMyCompetitions = null;
     CompetitionService.lastFetchedDocumentFriendsCompetitions = null;
     CompetitionService.lastFetchedDocumentAllCompetitions = null;
+
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) { // Rebuild when index is changing
+        setState(() {});
+      }
+    });
 
     _loadMyCompetitions();
     _loadFriendsCompetitions();
@@ -91,7 +95,6 @@ class _CompetitionsState extends State<CompetitionsPage>
         _loadAllCompetitions();
       }
     });
-
   }
 
   Future<void> initializeAsync() async {}
@@ -135,13 +138,12 @@ class _CompetitionsState extends State<CompetitionsPage>
       currentUser?.friendsUid ?? [],
     );
 
-
     setState(() {
       if (competitions.isEmpty) {
         _hasMoreFriends = false;
       } else {
         _friendsCompetitions.addAll(competitions);
-        _lastPageFriendsCompetitions =CompetitionService.lastFetchedDocumentFriendsCompetitions;
+        _lastPageFriendsCompetitions = CompetitionService.lastFetchedDocumentFriendsCompetitions;
         if (competitions.length < _limit) {
           _hasMoreFriends = false;
         }
@@ -151,7 +153,7 @@ class _CompetitionsState extends State<CompetitionsPage>
   }
 
   Future<void> _loadAllCompetitions() async {
-    if (_isLoadingAll == true|| _hasMoreAll == false) {
+    if (_isLoadingAll == true || _hasMoreAll == false) {
       return;
     }
     setState(() {
@@ -174,31 +176,32 @@ class _CompetitionsState extends State<CompetitionsPage>
   void onPressedAddCompetition(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddCompetition(role: CompetitionRole.owner,initTab: _tabController.index,)),
+      MaterialPageRoute(
+        builder: (context) => CompetitionDetails(enterContext: CompetitionContext.ownerCreate, initTab: _tabController.index),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: CustomFabLocation(xOffset: 20,yOffset: 70),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => onPressedAddCompetition(context),
-        backgroundColor: AppColors.primary,
-        shape: const CircleBorder(),
-        child: Icon(Icons.add_card, color: Colors.white),
-      ),
       backgroundColor: AppColors.primary,
-
+      floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 70),
+      floatingActionButton: Visibility(
+        visible: [0,1,2].contains(_tabController.index),  // Show add button only for my friends and all
+        child: FloatingActionButton(
+          onPressed: () => onPressedAddCompetition(context),
+          backgroundColor: AppColors.primary,
+          shape: const CircleBorder(),
+          child: Icon(Icons.add_card, color: Colors.white),
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage("assets/appBg6.jpg"),
             fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.25),
-              BlendMode.darken,
-            ),
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
           ),
         ),
         child: Column(
@@ -207,23 +210,17 @@ class _CompetitionsState extends State<CompetitionsPage>
               decoration: BoxDecoration(color: AppColors.primary),
               child: TabBar(
                 controller: _tabController,
+                isScrollable: true,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white.withAlpha(100),
-                labelStyle: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  backgroundColor: AppColors.primary,
-                ),
+                labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, backgroundColor: AppColors.primary),
                 tabs: [
                   Tab(text: "My"),
                   Tab(text: "Friends"),
                   Tab(text: "All"),
                   Tab(text: "Invites"),
-                  Tab(text: "Participating")
+                  Tab(text: "Participating"),
                 ],
               ),
             ),
@@ -233,87 +230,116 @@ class _CompetitionsState extends State<CompetitionsPage>
                 children: [
                   Container(
                     padding: EdgeInsets.only(top: 10),
-                    child: _myCompetitions.isEmpty ? Center(child: Text("No competitions found")) : ListView.builder(
-                      controller: _scrollControllerMy,
-                      itemCount: _myCompetitions.length + (_hasMoreMy ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _myCompetitions.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final competition = _myCompetitions[index];
-                        return CompetitionBlock(
-                          key: ValueKey(competition.competitionId),
-                          firstName: currentUser!.firstName,
-                          lastName: currentUser!.lastName,
-                          competition:  competition,
-                        );
-                      },
-                    ),
+                    child: _myCompetitions.isEmpty
+                        ? Center(child: Text("No competitions found"))
+                        : ListView.builder(
+                            controller: _scrollControllerMy,
+                            itemCount: _myCompetitions.length + (_hasMoreMy ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _myCompetitions.length) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              final competition = _myCompetitions[index];
+                              return CompetitionBlock(
+                                key: ValueKey(competition.competitionId),
+                                firstName: currentUser!.firstName,
+                                lastName: currentUser!.lastName,
+                                competition: competition,
+                                initIndex: 0,
+                              );
+                            },
+                          ),
                   ),
                   // Friends
                   Container(
                     padding: EdgeInsets.only(top: 10),
-                    child: _friendsCompetitions.isEmpty ? Center(child: Text("No competitions found")) : ListView.builder(
-                      controller: _scrollControllerFriends,
-                      itemCount: _friendsCompetitions.length + (_hasMoreFriends ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _friendsCompetitions.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final competition = _friendsCompetitions[index];
-                        return CompetitionBlock(key: ValueKey(competition.competitionId), competition: competition);
-                      },
-                    ),
+                    child: _friendsCompetitions.isEmpty
+                        ? Center(child: Text("No competitions found"))
+                        : ListView.builder(
+                            controller: _scrollControllerFriends,
+                            itemCount: _friendsCompetitions.length + (_hasMoreFriends ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _friendsCompetitions.length) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              final competition = _friendsCompetitions[index];
+                              return CompetitionBlock(key: ValueKey(competition.competitionId), competition: competition,
+                                initIndex: 1,
+                              );
+                            },
+                          ),
                   ),
                   // All last activities
                   Container(
                     padding: EdgeInsets.only(top: 10),
-                    child: _allCompetitions.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
-                      controller: _scrollControllerAll,
-                      itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _allCompetitions.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final competition = _allCompetitions[index];
-                        return CompetitionBlock(key: ValueKey(competition.competitionId), firstName: "", lastName: "", competition: competition);
-                      },
-                    ),
+                    child: _allCompetitions.isEmpty
+                        ? Center(child: Text("No activities found"))
+                        : ListView.builder(
+                            controller: _scrollControllerAll,
+                            itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _allCompetitions.length) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              final competition = _allCompetitions[index];
+                              return CompetitionBlock(
+                                key: ValueKey(competition.competitionId),
+                                firstName: "",
+                                lastName: "",
+                                competition: competition,
+                                initIndex: 2,
+                              );
+                            },
+                          ),
                   ),
 
                   // Invites
                   Container(
                     padding: EdgeInsets.only(top: 10),
-                    child: _allCompetitions.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
-                      controller: _scrollControllerAll,
-                      itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _allCompetitions.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final competition = _allCompetitions[index];
-                        return CompetitionBlock(key: ValueKey(competition.competitionId), firstName: "", lastName: "", competition: competition);
-                      },
-                    ),
+                    child: _allCompetitions.isEmpty
+                        ? Center(child: Text("No activities found"))
+                        : ListView.builder(
+                            controller: _scrollControllerAll,
+                            itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _allCompetitions.length) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              final competition = _allCompetitions[index];
+                              return CompetitionBlock(
+                                key: ValueKey(competition.competitionId),
+                                firstName: "",
+                                lastName: "",
+                                competition: competition,
+                                initIndex: 3,
+                              );
+                            },
+                          ),
                   ),
 
                   // Participating currently
                   Container(
                     padding: EdgeInsets.only(top: 10),
-                    child: _allCompetitions.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
-                      controller: _scrollControllerAll,
-                      itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _allCompetitions.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final competition = _allCompetitions[index];
-                        return CompetitionBlock(key: ValueKey(competition.competitionId), firstName: "", lastName: "", competition: competition);
-                      },
-                    ),
+                    child: _allCompetitions.isEmpty
+                        ? Center(child: Text("No activities found"))
+                        : ListView.builder(
+                            controller: _scrollControllerAll,
+                            itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _allCompetitions.length) {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                              final competition = _allCompetitions[index];
+                              return CompetitionBlock(
+                                key: ValueKey(competition.competitionId),
+                                firstName: "",
+                                lastName: "",
+                                competition: competition,
+                                initIndex: 4,
+                              );
+                            },
+                          ),
                   ),
-
-
                 ],
               ),
             ),

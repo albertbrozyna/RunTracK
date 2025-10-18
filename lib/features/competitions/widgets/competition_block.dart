@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/features/competitions/pages/compeption_add.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/activity_service.dart';
@@ -18,6 +19,7 @@ class CompetitionBlock extends StatefulWidget {
   final String lastName;
   final String? profilePhotoUrl;
   final Competition competition;
+  final int initIndex;
   final double titleFontSizeBlock = 14;
   final double valueFontSizeBlock = 14;
   final double innerPaddingBlock = 10;
@@ -25,7 +27,7 @@ class CompetitionBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const CompetitionBlock({super.key, required this.competition, String? firstName, String? lastName, String? profilePhotoUrl})
+  const CompetitionBlock({super.key, required this.competition,required this.initIndex, String? firstName, String? lastName, String? profilePhotoUrl})
     : firstName = firstName ?? "",
       lastName = lastName ?? "",
       profilePhotoUrl = profilePhotoUrl ?? "";
@@ -37,11 +39,11 @@ class CompetitionBlock extends StatefulWidget {
 }
 
 class _CompetitionBlockState extends State<CompetitionBlock> {
-  CompetitionRole role = CompetitionRole.viewer;
+  CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
   String firstName = "";
   String lastName = "";
   String profilePhotoUrl = "";
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -51,8 +53,20 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
   }
 
   void initialize() {
-    if (FirebaseAuth.instance.currentUser?.uid == widget.competition.organizerUid) {
-      role == CompetitionRole.owner;
+    if (widget.initIndex == 0) {  // My competitions
+        enterContext  == CompetitionContext.ownerModify;
+    }else if(widget.initIndex == 1 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)){
+        enterContext ==  CompetitionContext.viewerNotAbleToJoin;
+    }else if(widget.initIndex == 1 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)){
+      enterContext ==  CompetitionContext.viewerAbleToJoin;
+    }else if(widget.initIndex == 2 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)){
+      enterContext ==  CompetitionContext.viewerAbleToJoin;
+    }else if(widget.initIndex == 2 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)){
+      enterContext ==  CompetitionContext.viewerNotAbleToJoin;
+    }else if(widget.initIndex == 3 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)){
+      enterContext ==  CompetitionContext.participant;
+    }else if(widget.initIndex == 4 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)){
+      enterContext ==  CompetitionContext.invited;
     }
 
     firstName = widget.firstName;
@@ -76,21 +90,18 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
     }
   }
 
-  // TODO go to competition details
   /// On competition block tap
   void onTapBlock(BuildContext context) {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => ActivitySummary(
-    //       activityData: widget.activity,
-    //       readonly: readonly,
-    //       editMode: edit,
-    //       firstName: widget.firstName,
-    //       lastName: widget.lastName,
-    //     ),
-    //   ),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>CompetitionDetails(
+          enterContext: enterContext,
+          competitionData: widget.competition,
+          initTab: widget.initIndex,
+        ),
+      ),
+    );
   }
 
   @override
@@ -208,6 +219,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                                   ),
                                 if (widget.competition.maxTimeToCompleteActivityHours != null ||
                                     widget.competition.maxTimeToCompleteActivityMinutes != null)
+                                  // TODO
                                   StatCard(
                                     title: "Max time to complete activity",
                                     value:
@@ -223,10 +235,9 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                                     innerPadding: widget.innerPaddingBlock,
                                     cardWidth: widget.blockWidth,
                                   ),
-                                if (widget.competition.distanceKm != null)
                                   StatCard(
-                                    title: "Avg Speed",
-                                    value: '${widget.competition.distanceKm.toString()} km',
+                                    title: widget.competition.competitionGoalType.toString(),
+                                    value: '${widget.competition.goal.toString()} km',
                                     icon: Icon(Icons.speed, size: widget.iconSize),
                                     titleFontSize: widget.titleFontSizeBlock,
                                     valueFontSize: widget.valueFontSizeBlock,
