@@ -29,6 +29,7 @@ dependencies:
   google_sign_in: ^6.2.1 # Google sign in
   rxdart: ^0.27.7
   path_provider: ^2.1.2
+  geocoding: ^4.0.0
 
 dev_dependencies:
   flutter_test:
@@ -51,3 +52,9 @@ flutter:
     - assets/background-first.jpg
     - assets/DefaultProfilePhoto.png
     - assets/google-icon.png
+    - assets/appBg1.jpg
+    - assets/appBg2.jpg
+    - assets/appBg3.jpg
+    - assets/appBg4.jpg
+    - assets/appBg5.jpg
+    - assets/appBg6.jpg

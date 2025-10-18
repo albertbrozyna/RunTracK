@@ -199,7 +199,7 @@ class _RegisterPageState extends State<RegisterPage> {
         height: double.infinity,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
+            image: AssetImage("assets/appBg6.jpg"),
             fit: BoxFit.cover,
           ),
         ),
@@ -214,7 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.formBackgroundOverlay,
+                        color: AppColors.textFieldsBackground,
                         borderRadius: AppUiConstants.borderRadiusForm,
                         boxShadow: AppUiConstants.boxShadowForm,
                       ),
@@ -425,7 +425,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               text: "Register",
                               onPressed: handleRegister,
                               textSize: 20,
-
                             ),
                           ),
                         ],

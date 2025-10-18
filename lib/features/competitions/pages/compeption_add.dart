@@ -1,11 +1,14 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
+import 'package:run_track/common/utils/app_constants.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/user_profile_tile.dart';
 import 'package:run_track/constans/app_routes.dart';
+import 'package:run_track/features/competitions/pages/meeting_place.dart';
 import 'package:run_track/features/competitions/pages/participants.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/models/competition.dart';
@@ -20,12 +23,13 @@ import '../../../theme/preference_names.dart';
 import '../../../theme/ui_constants.dart';
 import 'package:flutter/services.dart';
 import '../../../common/enums/competition_role.dart';
-
+import 'package:geocoding/geocoding.dart';
 class AddCompetition extends StatefulWidget {
   final CompetitionRole role;
   final Competition? competitionData;
+  final int initTab; // Tab index to set a start visibility
 
-  const AddCompetition({super.key, required this.role, this.competitionData});
+  const AddCompetition({super.key, required this.role, this.competitionData,required this.initTab});
 
   @override
   State<AddCompetition> createState() {
@@ -43,11 +47,13 @@ class _AddCompetition extends State<AddCompetition> {
   final TextEditingController _maxTimeToCompleteActivityHours = TextEditingController();
   final TextEditingController _maxTimeToCompleteActivityMinutes = TextEditingController();
   final TextEditingController _organizerController = TextEditingController();
-  final TextEditingController activityController = TextEditingController();
-  final TextEditingController meetingPlaceController = TextEditingController();
+  final TextEditingController _activityController = TextEditingController();
+  final TextEditingController _meetingPlaceController = TextEditingController();
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool edit = true; // Can we edit a competition?
+
+
 
   Competition? competition;
 
@@ -87,7 +93,7 @@ class _AddCompetition extends State<AddCompetition> {
       _registrationDeadline.text = competition!.registrationDeadline?.toString() ?? "";
       _maxTimeToCompleteActivityHours.text = competition!.maxTimeToCompleteActivityHours.toString();
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
-      activityController.text = competition!.activityType ?? "";
+      _activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
     } else {
       // Create new empty competition
@@ -131,10 +137,10 @@ class _AddCompetition extends State<AddCompetition> {
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
       if (AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
-        activityController.text = lastCompetition;
+    _activityController.text = lastCompetition;
         return;
       }
-      activityController.text = AppData.currentUser?.activityNames?.first ?? "Unknown";
+      _activityController.text = AppData.currentUser?.activityNames?.first ?? "Unknown";
     }
   }
 
@@ -143,12 +149,12 @@ class _AddCompetition extends State<AddCompetition> {
   void onTapActivityType() async {
     final selectedActivity = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
+      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: _activityController.text.trim())),
     );
 
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
-      activityController.text = selectedActivity;
+      _activityController.text = selectedActivity;
       AppData.lastActivityString = selectedActivity;
       // Save it to local preferences
       PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
@@ -175,7 +181,43 @@ class _AddCompetition extends State<AddCompetition> {
     }
   }
 
-  void onTapAddMeetingPlace(){
+  Future<void> onTapAddMeetingPlace() async {
+    LatLng? latLng;
+    final location = competition?.location;
+
+    if (location?.latitude != null && location?.longitude != null) {
+      latLng = LatLng(location!.latitude, location.longitude);
+    }
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MeetingPlaceMap(
+          latLng: latLng
+        ),
+      ),
+    );
+
+    if(result != null){
+      competition?.location = result;
+      String? latStr = competition?.location?.latitude.toStringAsFixed(4);
+      String? lngStr = competition?.location?.longitude.toStringAsFixed(4);
+
+      final placeNames = await placemarkFromCoordinates(result.latitude, result.longitude);
+
+      if (placeNames.isNotEmpty) {
+        final place = placeNames.first;
+        competition?.locationName = "${place.locality ?? ''}, ${place.thoroughfare ?? ''}".trim();
+
+        setState(() {
+          _meetingPlaceController.text = "${competition?.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+        });
+      }else{
+        _meetingPlaceController.text = "Lat: ${result.latitude}, Lng: ${result.longitude}";
+      }
+
+    }
+
+    // Select place name
 
 
 
@@ -362,9 +404,12 @@ class _AddCompetition extends State<AddCompetition> {
           height: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("assets/background-first.jpg"),
+              image: AssetImage("assets/appBg6.jpg"),
               fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
+              colorFilter: ColorFilter.mode(
+                Colors.black.withValues(alpha: 0.25),
+                BlendMode.darken,
+              )
             ),
           ),
           child: Padding(
@@ -447,7 +492,7 @@ class _AddCompetition extends State<AddCompetition> {
                     children: [
                       Expanded(
                         child: TextFormField(
-                          controller: activityController,
+                          controller: _activityController,
                           style: AppUiConstants.textStyleTextFields,
                           textAlign: TextAlign.left,
                           readOnly: true,
@@ -673,15 +718,14 @@ class _AddCompetition extends State<AddCompetition> {
                       ),
                     ],
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
                   // Meeting place
                   SizedBox(
                     width: double.infinity,
                     child: TextFormField(
-                      controller: _registrationDeadline,
+                      controller: _meetingPlaceController,
                       readOnly: true,
+                      maxLines: 2,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         prefixIcon: Icon(Icons.add_location_alt, color: Colors.white),
@@ -694,22 +738,20 @@ class _AddCompetition extends State<AddCompetition> {
                         filled: true,
                         fillColor: AppColors.textFieldsBackground,
                       ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onTap: () async {
-
+                        onTapAddMeetingPlace();
                       },
                     ),
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
                   // Invited competitors
-                  CustomButton(
-                    text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
-                    onPressed: () => onPressedListParticipants(context),
-
+                  SizedBox(
+                    height: 40,
+                    child: CustomButton(
+                      text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
+                      onPressed: () => onPressedListParticipants(context),
+                    ),
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
                   SizedBox(
                     width: double.infinity,
@@ -717,7 +759,6 @@ class _AddCompetition extends State<AddCompetition> {
                     child: CustomButton(
                       text: competitionAdded ? "Competition added" : "Add competition",
                       onPressed: competitionAdded ? null : () => handleSaveCompetition(),
-
                     ),
                   ),
                 ],

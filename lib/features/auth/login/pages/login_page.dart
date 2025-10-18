@@ -116,11 +116,10 @@ class _LoginPageState extends State<LoginPage> {
         height: double.infinity,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
+            image: AssetImage("assets/appBg4.jpg"),
             fit: BoxFit.cover,
           ),
         ),
-
         child: Center(
           child: Transform.translate(
             offset: Offset(0, -50),
@@ -158,13 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           color: AppColors.textFieldsBackground,
                           borderRadius: AppUiConstants.borderRadiusForm,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
+                          boxShadow: AppUiConstants.boxShadowForm,
                         ),
                         child: Column(
                           children: [
@@ -175,11 +168,8 @@ class _LoginPageState extends State<LoginPage> {
                               decoration: InputDecoration(
                                 labelText: "Email",
                                 prefixIcon: Icon(Icons.email),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(12),
-                                  ),
-                                ),
+                                border: AppUiConstants.borderTextFields,
+                                errorBorder: AppUiConstants.errorBorderTextFields,
                                 enabledBorder: AppUiConstants.enabledBorderTextFields,
                                 focusedBorder: AppUiConstants.focusedBorderTextFields,
                               ),
@@ -190,10 +180,12 @@ class _LoginPageState extends State<LoginPage> {
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _isPasswordHidden,
                               decoration: InputDecoration(
-                                enabledBorder: AppUiConstants.enabledBorderTextFields,
-                                focusedBorder: AppUiConstants.focusedBorderTextFields,
                                 labelText: "Password",
                                 prefixIcon: Icon(Icons.password),
+                                border: AppUiConstants.borderTextFields,
+                                errorBorder: AppUiConstants.errorBorderTextFields,
+                                enabledBorder: AppUiConstants.enabledBorderTextFields,
+                                focusedBorder: AppUiConstants.focusedBorderTextFields,
                                 suffixIcon: IconButton(
                                   onPressed: () {
                                     setState(() {
@@ -204,11 +196,6 @@ class _LoginPageState extends State<LoginPage> {
                                     _isPasswordHidden
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                  ),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(12),
                                   ),
                                 ),
                               ),

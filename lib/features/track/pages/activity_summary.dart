@@ -388,7 +388,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           height: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("assets/background-first.jpg"),
+              image: AssetImage("assets/appBg2.jpg"),
               fit: BoxFit.cover,
               colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
             ),

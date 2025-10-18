@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/utils/app_constants.dart';
 
-import '../../../common/utils/app_data.dart';
-import '../../../common/utils/utils.dart';
-import '../../../models/activity.dart';
 import '../../../theme/colors.dart';
 
 class MeetingPlaceMap extends StatefulWidget {
-  LatLng? latLng;
+  final LatLng? latLng;
 
-  MeetingPlaceMap({super.key, this.latLng});
+  const MeetingPlaceMap({super.key, this.latLng});
 
   @override
   State<MeetingPlaceMap> createState() => _MeetingPlaceMapState();
@@ -19,53 +17,80 @@ class MeetingPlaceMap extends StatefulWidget {
 class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
   final MapController _mapController = MapController();
   LatLng? latLng;
-
+  bool edit = false;
 
   @override
   void initState() {
     super.initState();
+    initialize();
   }
 
-  void initialize(){
-    latLng = widget.latLng;
+  void initialize() {
+    setState(() {
+      latLng = widget.latLng;
+    });
   }
-
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Meeting place",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-      ),
-      body: FlutterMap(
-        mapController: _mapController,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => {
+        if (!didPop) {Navigator.pop(context, latLng)},
+      },
 
-        options: MapOptions(
-          // TODO ADD DEFAULT pol location
-          initialCenter: widget.latLng ?? AppData.currentUser?.userDefaultLocation ?? LatLng(0, 0),
-          initialZoom: 15.0,
-        ),
-        children: [
-          TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.runtrack'),
-
-          if (latLng != null)
-            MarkerLayer(
-              markers: [
-                Marker(
-                  // TODO THE SAME
-                  point: latLng ?? LatLng(0, 0),
-                  width: 40,
-                  height: 40,
-                  child: Icon(Icons.flag, color: Colors.green),
-                ),
-              ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            "Meeting place",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Icon(!edit ? Icons.edit_location_alt_outlined : Icons.check, color: !edit ? AppColors.white : AppColors.green),
             ),
-        ],
+          ],
+          centerTitle: true,
+          backgroundColor: AppColors.primary,
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            setState(() {
+              edit = !edit;
+            });
+          },
+          backgroundColor: edit ? Colors.green : AppColors.primary,
+          label: Text(edit ? "Save" : "Select point"),
+          icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
+        ),
+        body: FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: latLng ?? LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
+            initialZoom: 15.0,
+            onTap: (tapPosition, point) => {
+              if (edit)
+                setState(() {
+                  latLng = point;
+                }),
+            },
+          ),
+          children: [
+            TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.runtrack'),
+            if (latLng != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: latLng!,
+                    width: 40,
+                    height: 40,
+                    child: Icon(Icons.location_on, color: Colors.red, size: 40),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

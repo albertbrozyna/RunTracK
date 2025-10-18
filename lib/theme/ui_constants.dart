@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'colors.dart';
+
 class AppUiConstants {
   static const double scaffoldBodyPadding = 16.0;
-  static const double borderRadiusButtons = 8.0;
   static const double paddingTextFields = 8.0;
 
 
+  static const double textSize = 16.0;  // Text size of the all app
 
   // Text fields
   static const BorderRadius borderRadiusTextFields = BorderRadius.all(
-    Radius.circular(12.0),
+    Radius.circular(8.0),
   );
   static const EdgeInsets contentPaddingTextFields = EdgeInsets.symmetric(
     vertical: 16,
@@ -28,7 +30,7 @@ class AppUiConstants {
   // Buttons
   static const double horizontalSpacingButtons = 16.0;
   static const double verticalSpacingButtons = 16.0;
-
+  static const double borderRadiusButtons = 8.0;
 
   // Text fields borders
   static const OutlineInputBorder borderTextFields = OutlineInputBorder(
@@ -70,12 +72,12 @@ class AppUiConstants {
   );
 
   static TextStyle labelStyleTextFields = TextStyle(
-    color: Colors.white,
+    color: AppColors.textFieldsLabel,
     fontSize: 18,
   );
 
   static TextStyle textStyleTextFields = TextStyle(
-    color: Colors.white,
+    color: AppColors.textFieldsText,
     fontSize: 18,
   );
 

@@ -12,12 +12,12 @@ class AppColors {
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
   static const Color pageHeaderColor = AppColors.primary;
-
+  static const Color green =  Colors.green;
   // Form
   static Color formBackgroundOverlay = Colors.white.withValues( alpha:  0.4);
 
   // TextFields
-  static Color textFieldsBackground = Colors.white.withValues( alpha:  0.1);
+  static Color textFieldsBackground = Colors.black.withValues( alpha:  0.5);
   static Color textFieldsBorder = Colors.white24;
   static Color textFieldsLabel = Colors.white;
   static Color textFieldsText = Colors.white;

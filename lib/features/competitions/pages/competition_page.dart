@@ -52,7 +52,6 @@ class _CompetitionsState extends State<CompetitionsPage>
 
   final int _limit = 10; // Competitions per page
 
-
   @override
   void initState() {
     super.initState();
@@ -175,7 +174,7 @@ class _CompetitionsState extends State<CompetitionsPage>
   void onPressedAddCompetition(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddCompetition(role: CompetitionRole.owner,)),
+      MaterialPageRoute(builder: (context) => AddCompetition(role: CompetitionRole.owner,initTab: _tabController.index,)),
     );
   }
 
@@ -194,7 +193,7 @@ class _CompetitionsState extends State<CompetitionsPage>
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
+            image: AssetImage("assets/appBg6.jpg"),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
               Colors.black.withValues(alpha: 0.25),

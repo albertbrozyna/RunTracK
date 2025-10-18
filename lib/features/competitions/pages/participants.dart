@@ -9,8 +9,6 @@ import '../../../services/user_service.dart';
 import '../../../theme/colors.dart';
 
 
-
-
 class UsersList extends StatefulWidget{
   final List<String> usersUid;
   final List<String> usersUid2;

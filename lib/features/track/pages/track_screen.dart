@@ -134,7 +134,7 @@ class TrackScreenState extends State<TrackScreen> {
                     onLongPressStart: (_) {
                       _finishProgressNotifier.value = 0.0;
                       _finishTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-                        _finishProgressNotifier.value += 0.02;
+                        _finishProgressNotifier.value += 0.04;
                         if (_finishProgressNotifier.value >= 1.0) {
                           _finishTimer?.cancel();
                           handleStopTracking();
@@ -158,11 +158,12 @@ class TrackScreenState extends State<TrackScreen> {
                             valueListenable: _finishProgressNotifier,
                             builder: (context, progress, _) {
                               return ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusButtons),
                                 child: LinearProgressIndicator(
                                   value: progress,
                                   minHeight: 50,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red.withValues(alpha: 0.6)),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.third),
+                                  backgroundColor: Colors.transparent,
                                 ),
                               );
                             },
@@ -171,7 +172,7 @@ class TrackScreenState extends State<TrackScreen> {
                           const Center(
                             child: Text(
                               "Finish",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold,fontSize: AppUiConstants.textSize),
                             ),
                           ),
                         ],

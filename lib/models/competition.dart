@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
+import 'package:run_track/models/activity.dart';
 import '../common/enums/visibility.dart' as enums;
 
 class CompetitionResult {
@@ -23,7 +24,7 @@ class Competition {
   List<String> participantsUid;
   List<String> invitedParticipantsUid;
   enums.ComVisibility visibility; // Visibility of competition
-  Map<String, CompetitionResult>? results; // result of run
+  Map<String, String>? results; // result of run first is the uid
   double? distanceKm;
   String? activityType; // Allowed activity types of competition
   String? locationName; // Location name

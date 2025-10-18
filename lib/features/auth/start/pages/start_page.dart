@@ -113,7 +113,7 @@ class StartPageState extends State<StartPage> {
         height: double.infinity,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
+            image: AssetImage("assets/appBg4.jpg"),
             fit: BoxFit.cover,
           ),
         ),
