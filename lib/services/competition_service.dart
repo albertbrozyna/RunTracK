@@ -51,8 +51,8 @@ class CompetitionService {
       registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
       maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
-      participantsUid: map['participantsUids'] != null ? List<String>.from(map['participantsUids']) : [],
-      invitedParticipantsUid: map['invitedParticipantsUids'] != null ? List<String>.from(map['invitedParticipantsUids']) : [],
+      participantsUid: map['participantsUid'] != null ? List<String>.from(map['participantsUid']) : [],
+      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? List<String>.from(map['invitedParticipantsUid']) : [],
       activityType: map['activityType'],
       // TODO
       //results: map['results'] != null

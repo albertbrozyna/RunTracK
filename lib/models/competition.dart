@@ -23,7 +23,7 @@ class Competition {
   List<String> participantsUid;
   List<String> invitedParticipantsUid;
   enums.ComVisibility visibility; // Visibility of competition
-  Map<String, String>? results; // result of run first is the uid
+  Map<String, String>? results; // result of run first is the uid of the user and second is activity id
   String? activityType; // Allowed activity types of competition
   String? locationName; // Location name
   LatLng? location; // Location

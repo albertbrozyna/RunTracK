@@ -104,10 +104,10 @@ class _AddCompetition extends State<CompetitionDetails> {
     if (competition != null) {
       // Set all fields
 
-      _organizerController.text = _nameController.text = competition!.name ?? "";
+      _organizerController.text = _nameController.text = competition!.name;
       _descriptionController.text = competition!.description ?? "";
       _startDateController.text = competition!.startDate?.toString() ?? "";
-      _endDateController.text = competition!.endDate.toString() ?? "";
+      _endDateController.text = competition!.endDate.toString();
       _registrationDeadline.text = competition!.registrationDeadline?.toString() ?? "";
       _maxTimeToCompleteActivityHours.text = competition!.maxTimeToCompleteActivityHours.toString();
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
@@ -342,8 +342,8 @@ class _AddCompetition extends State<CompetitionDetails> {
     if (endDateValue == null || endDateValue.trim().isEmpty) {
       return 'Please select an end date before registration deadline';
     }
-    DateTime? start = DateTime.tryParse(startDateValue ?? '');
-    DateTime? end = DateTime.tryParse(endDateValue ?? '');
+    DateTime? start = DateTime.tryParse(startDateValue);
+    DateTime? end = DateTime.tryParse(endDateValue);
     if (start == null) {
       return 'Invalid end date';
     }
@@ -962,7 +962,7 @@ class _AddCompetition extends State<CompetitionDetails> {
                     height: 40,
                     child: CustomButton(
                       text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
-                      onPressed: () => (context),
+                      onPressed: () => onPressedListParticipants(context),
                     ),
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
