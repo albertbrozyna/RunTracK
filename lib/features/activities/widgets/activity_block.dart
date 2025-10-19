@@ -266,13 +266,26 @@ class _ActivityBlockState extends State<ActivityBlock> {
                               ? widget.activity.trackedPath!.first
                               : LatLng(37.7749, -122.4194),
                           // default location
-                          onMapReady: () => AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController),
+                            onMapReady: () {
+                              // Fit map to path
+                              AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController);
+
+                              // Force redraw by lekkim "przesunięciem" mapy
+                              final mapState = _mapController.mapEventSink; // do wysyłania eventów
+                              // Albo po prostu ponownie wywołaj fitBounds
+                              final bounds = LatLngBounds.fromPoints(widget.activity.trackedPath ?? []);
+                              _mapController.fitCamera(
+                                bounds,
+                                options: FitBoundsOptions(
+                                  padding: EdgeInsets.all(AppUiConstants.innerPaddingRectangleBounds),
+                                ),
+                              );
+                            },
                           onTap: (tapPosition, point) {
                             onTapBlock(context);
                           },
                           initialZoom: 15.0,
-                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
-                        ),
+                          interactionOptions: InteractionOptions(flags:  InteractiveFlag.none)),
                         children: [
                           TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

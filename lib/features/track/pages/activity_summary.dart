@@ -581,13 +581,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             options: MapOptions(
                               initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                               initialZoom: 15.0,
-                              onMapReady: () => AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController),
-                              interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                              onMapReady: () => {
+                                _mapController.move(widget.activityData.trackedPath!.first, 15.0),
+                                AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController)},
+                              interactionOptions: InteractionOptions(flags:  InteractiveFlag.all & ~InteractiveFlag.drag & ~InteractiveFlag.pinchZoom),
                               onTap: (tapPosition, point) => {onTapMap(context)},
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.runtrack',
                               ),
                               PolylineLayer(
