@@ -14,7 +14,8 @@ import '../../../common/utils/utils.dart';
 class ActivityChoose extends StatefulWidget {
   final String currentActivity;
 
-  ActivityChooseState createState() => ActivityChooseState();
+  @override
+  State<ActivityChoose> createState() => ActivityChooseState();
 
   const ActivityChoose({super.key, required this.currentActivity});
 }
@@ -32,8 +33,7 @@ class ActivityChooseState extends State<ActivityChoose> {
   }
 
   void setCurrentlySelectedActivity() {
-    if (AppData.currentUser == null ||
-        AppData.currentUser?.activityNames == null) {
+    if (AppData.currentUser == null || AppData.currentUser?.activityNames == null) {
       return;
     }
 
@@ -60,8 +60,7 @@ class ActivityChooseState extends State<ActivityChoose> {
   // Todo export function to fetch user activities
   Future<void> fetchUserActivities() async {
     // If list is read, do not fetch it
-    if (AppData.currentUser != null &&
-        AppData.currentUser?.activityNames != null) {
+    if (AppData.currentUser != null && AppData.currentUser?.activityNames != null) {
       return;
     }
     try {
@@ -70,11 +69,7 @@ class ActivityChooseState extends State<ActivityChoose> {
         // User need to log again
         FirebaseAuth.instance.signOut();
         // Push to start page
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => StartPage()),
-          (route) => false,
-        );
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => StartPage()), (route) => false);
         return; // No logged-in user
       }
 
@@ -83,20 +78,14 @@ class ActivityChooseState extends State<ActivityChoose> {
       final uid = user.uid;
 
       // Fetch user document
-      final docSnapshot = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(uid)
-          .get();
+      final docSnapshot = await FirebaseFirestore.instance.collection("users").doc(uid).get();
 
       if (docSnapshot.exists) {
         final data = docSnapshot.data();
         if (data != null && data.containsKey("activityNames")) {
-          if (AppData.currentUser != null &&
-              AppData.currentUser!.activityNames != null) {
+          if (AppData.currentUser != null && AppData.currentUser!.activityNames != null) {
             setState(() {
-              AppData.currentUser?.activityNames = List<String>.from(
-                data["activityNames"],
-              );
+              AppData.currentUser?.activityNames = List<String>.from(data["activityNames"]);
             });
           }
         }
@@ -108,8 +97,7 @@ class ActivityChooseState extends State<ActivityChoose> {
 
   // Adding new activity
   void addNewActivity() {
-    if (AppData.currentUser == null ||
-        AppData.currentUser?.activityNames == null) {
+    if (AppData.currentUser == null || AppData.currentUser?.activityNames == null) {
       return;
     }
 
@@ -120,24 +108,19 @@ class ActivityChooseState extends State<ActivityChoose> {
       return;
     }
 
-    if (AppData.currentUser?.activityNames?.contains(
-          _newActivityController.text.trim(),
-        ) ??
-        false) {
+    if (AppData.currentUser?.activityNames?.contains(_newActivityController.text.trim()) ?? false) {
       AppUtils.showMessage(context, "Activity is already on the list");
       return;
     }
 
     setState(() {
-      AppData.currentUser?.activityNames?.add(
-        _newActivityController.text.trim(),
-      );
+      AppData.currentUser?.activityNames?.add(_newActivityController.text.trim());
       _newActivityController.text = "";
     });
 
     AppUtils.showMessage(context, "Activity added to list");
     addingEnabled = false;
-    UserService.updateUser(AppData.currentUser!);  // Save activity data to firestore
+    UserService.updateUser(AppData.currentUser!); // Save activity data to firestore
   }
 
   /// Delete activity from list
@@ -152,45 +135,30 @@ class ActivityChooseState extends State<ActivityChoose> {
     // When activities are not loaded
     if (AppData.currentUser?.activityNames == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Choose your activity typee:",
-            style: AppTextStyles.PageHeaderTextStyle.copyWith(),
-          ),
-          centerTitle: true,
-        ),
+        appBar: AppBar(title: Text("Choose your activity type:", style: AppTextStyles.PageHeaderTextStyle.copyWith()), centerTitle: true),
         backgroundColor: AppColors.pageHeaderColor,
-
         body: Center(child: CircularProgressIndicator()), // Loading state
       );
     }
 
-
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (bool didPop,String? result)async {
-        if(!didPop){
+      onPopInvokedWithResult: (bool didPop, String? result) async {
+        if (!didPop) {
           if (AppData.currentUser?.activityNames?.isNotEmpty ?? false) {
-            Navigator.pop(context,AppData.currentUser!.activityNames![_selectedActivity]);
-          }else{
-            Navigator.pop(context,"Unknown");
+            Navigator.pop(context, AppData.currentUser!.activityNames![_selectedActivity]);
+          } else {
+            Navigator.pop(context, "Unknown");
           }
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            "Choose your activity type:",
-            style: AppTextStyles.PageHeaderTextStyle.copyWith(),
-          ),
+          title: Text("Choose your activity type:", style: AppTextStyles.PageHeaderTextStyle.copyWith()),
           centerTitle: true,
           backgroundColor: AppColors.pageHeaderColor,
         ),
-        floatingActionButtonLocation: CustomFabLocation(
-          xOffset: 30,
-          yOffset: 60,
-        ),
-
+        floatingActionButtonLocation: CustomFabLocation(xOffset: 30, yOffset: 60),
         floatingActionButton: !addingEnabled
             ? FloatingActionButton(
                 backgroundColor: AppColors.primary,
@@ -199,12 +167,7 @@ class ActivityChooseState extends State<ActivityChoose> {
                     addingEnabled = !addingEnabled;
                   }),
                 },
-                child: Icon(
-                  Icons.add_rounded,
-                  color: Colors.white,
-                  size: 30,
-                  weight: 2000,
-                ),
+                child: Icon(Icons.add_rounded, color: Colors.white, size: 30, weight: 2000),
               )
             : null,
         body: GestureDetector(
@@ -221,13 +184,10 @@ class ActivityChooseState extends State<ActivityChoose> {
             height: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/background-first.jpg"),
+                image: AssetImage("assets/appBg6.jpg"),
                 fit: BoxFit.cover,
                 // Darkening
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withValues(alpha: 0.25),
-                  BlendMode.darken,
-                ),
+                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
               ),
             ),
             child: Padding(
@@ -239,33 +199,21 @@ class ActivityChooseState extends State<ActivityChoose> {
                       itemCount: AppData.currentUser?.activityNames?.length,
                       itemBuilder: (context, index) {
                         bool isSelected =
-                            AppData.currentUser!.activityNames![index] ==
-                            AppData
-                                .currentUser!
-                                .activityNames![_selectedActivity];
+                            AppData.currentUser!.activityNames![index] == AppData.currentUser!.activityNames![_selectedActivity];
                         return ListTile(
                           title: Text(
-                            AppData.currentUser!.activityNames![index]
-                                .toString(),
+                            AppData.currentUser!.activityNames![index].toString(),
                             style: TextStyle(
                               color: isSelected ? Colors.green : Colors.white,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               letterSpacing: isSelected ? 1.5 : 1,
                             ),
                           ),
-                          onTap: isSelected
-                              ? () => ()
-                              : () => onActivityTap(index),
-                          selected:
-                              AppData.currentUser!.activityNames![index] ==
-                              widget.currentActivity,
+                          onTap: isSelected ? () => () : () => onActivityTap(index),
+                          selected: AppData.currentUser!.activityNames![index] == widget.currentActivity,
                           trailing: IconButton(
                             onPressed: isSelected ? () => () : () => deleteActivity(index),
-                            icon: isSelected
-                                ? Icon(Icons.check, color: Colors.green)
-                                : Icon(Icons.delete, color: Colors.white),
+                            icon: isSelected ? Icon(Icons.check, color: Colors.green) : Icon(Icons.delete, color: Colors.white),
                           ),
                         );
                       },
@@ -277,11 +225,7 @@ class ActivityChooseState extends State<ActivityChoose> {
                       child: TextField(
                         controller: _newActivityController,
                         keyboardType: TextInputType.text,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w200,
-                          letterSpacing: 1,
-                        ),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w200, letterSpacing: 1),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           labelText: "Your new activity name",
@@ -289,17 +233,11 @@ class ActivityChooseState extends State<ActivityChoose> {
                           filled: true,
                           labelStyle: TextStyle(color: Colors.white),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white24,
-                              width: 1,
-                            ),
+                            borderSide: BorderSide(color: Colors.white24, width: 1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white,
-                              width: 2,
-                            ),
+                            borderSide: BorderSide(color: Colors.white, width: 2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -308,14 +246,10 @@ class ActivityChooseState extends State<ActivityChoose> {
                     ),
                   if (addingEnabled)
                     Padding(
-                      padding: EdgeInsets.only(top: 8,bottom: 10),
+                      padding: EdgeInsets.only(top: 8, bottom: 10),
                       child: SizedBox(
                         width: double.infinity,
-                        child: CustomButton(
-                          text: "Add new activity",
-                          onPressed: addNewActivity,
-                          backgroundColor: AppColors.primary,
-                        ),
+                        child: CustomButton(text: "Add new activity", onPressed: addNewActivity, backgroundColor: AppColors.primary),
                       ),
                     ),
                 ],

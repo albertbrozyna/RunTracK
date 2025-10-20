@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:run_track/common/utils/utils.dart';
 
 class LocationService {
   // Request permission and return current position
@@ -9,7 +10,7 @@ class LocationService {
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // TODO show better error here
+
       return Future.error('Location services are disabled.');
     }
 
