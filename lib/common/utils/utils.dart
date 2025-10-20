@@ -14,6 +14,15 @@ extension StringCapitalize on String {
 }
 
 class AppUtils {
+  static String formatDateTime(DateTime? time) {
+    if (time == null) {
+      return "";
+    }
+
+    return "${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} "
+        "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+  }
+
   // Show message using scaffold
   static void showMessage(BuildContext context, String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -33,7 +42,9 @@ class AppUtils {
       return;
     }
     final bounds = LatLngBounds.fromPoints(path);
-    controller.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(AppUiConstants.innerPaddingRectangleBounds)));
+    controller.fitCamera(
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(AppUiConstants.flutterMapInnerPaddingRectangleBounds)),
+    );
   }
 
   /// Compare paths

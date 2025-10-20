@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary app colors
+  // Primary app UI colors
   static const Color primary = Color(0xFF678FE3);
   static const Color secondary = Color(0xFF5374C8);
-  static const Color  third = Color(0xFF4BB8DF);
+  static const Color third = Color(0xFF4BB8DF);
   static const Color gray = Color(0xFF9E9E9E);
+  static const Color green =  Colors.green;
   static const Color danger = Color(0xFFFF3B30);
   static const Color background = Color(0xFFF2F2F7);
   static const Color textPrimary = Color(0xFFF2F2F7);
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
-  static const Color pageHeaderColor = AppColors.primary;
-  static const Color green =  Colors.green;
+  static const Color pageHeaderColor = AppColors.primary; // Page header color
+
+  // Primary app text colors
+  static Color textPrimaryColor = Colors.white;
+
+
   // Form
   static Color formBackgroundOverlay = Colors.white.withValues( alpha:  0.4);
 
@@ -32,7 +37,9 @@ class AppColors {
 
   // Dropdown menu
 
-  // Activity block
+  // Blocks competition / activity
+  static Color blockColor = Colors.white;
+
 
 
 

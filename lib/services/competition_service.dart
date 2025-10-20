@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/constans/firestore_names.dart';
 import 'package:run_track/models/competition.dart';
-import 'package:run_track/services/activity_service.dart';
 
 import '../common/enums/visibility.dart' as enums;
 import '../common/enums/visibility.dart';
@@ -14,6 +13,9 @@ class CompetitionService {
   static DocumentSnapshot? lastFetchedDocumentMyCompetitions;
   static DocumentSnapshot? lastFetchedDocumentFriendsCompetitions;
   static DocumentSnapshot? lastFetchedDocumentAllCompetitions;
+  static DocumentSnapshot? lastFetchedDocumentMyInvitedCompetitions;
+  static DocumentSnapshot? lastFetchedDocumentMyParticipatingCompetitions;
+
 
   /// Pare competition goal from string to enum
   static CompetitionGoal? parseCompetitionGoal(String goal) {
@@ -51,6 +53,7 @@ class CompetitionService {
       registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
       maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
+      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
       participantsUid: map['participantsUid'] != null ? List<String>.from(map['participantsUid']) : [],
       invitedParticipantsUid: map['invitedParticipantsUid'] != null ? List<String>.from(map['invitedParticipantsUid']) : [],
       activityType: map['activityType'],
@@ -80,8 +83,8 @@ class CompetitionService {
       'maxTimeToCompleteActivityHours': competition.maxTimeToCompleteActivityHours,
       'maxTimeToCompleteActivityMinutes': competition.maxTimeToCompleteActivityMinutes,
       'createdAt': Timestamp.fromDate(DateTime.now()),
-      'participantsUids': competition.participantsUid ?? [],
-      'invitedParticipantsUids': competition.invitedParticipantsUid ?? [],
+      'participantsUids': competition.participantsUid,
+      'invitedParticipantsUids': competition.invitedParticipantsUid,
       'activityType': competition.activityType,
       'results': competition.results ?? {},
       'locationName': competition.locationName,
@@ -275,6 +278,57 @@ class CompetitionService {
       return [];
     }
   }
+
+  /// Fetch my competition which I am invited
+  static Future<List<Competition>> fetchMyInvitedCompetitions(List<String> competitionsIds, int limit, DocumentSnapshot? lastDocument) async {
+    try {
+      Query queryCompetitions = FirebaseFirestore.instance
+          .collection(FirestoreCollections.competitions)
+          .where("competitionId", whereIn: competitionsIds)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryCompetitions = queryCompetitions.startAfterDocument(lastDocument);
+      }
+      final querySnapshot = await queryCompetitions.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentMyInvitedCompetitions = querySnapshot.docs.last;
+      }
+      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return competitions;
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching latest competitions: $e");
+      return [];
+    }
+  }
+
+  /// Fetch my competition which I participate
+  static Future<List<Competition>> fetchMyParticipatedCompetitions(List<String> competitionsIds, int limit, DocumentSnapshot? lastDocument) async {
+    try {
+      Query queryCompetitions = FirebaseFirestore.instance
+          .collection(FirestoreCollections.competitions)
+          .where("competitionId", whereIn: competitionsIds)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        queryCompetitions = queryCompetitions.startAfterDocument(lastDocument);
+      }
+      final querySnapshot = await queryCompetitions.get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        lastFetchedDocumentMyParticipatingCompetitions = querySnapshot.docs.last;
+      }
+      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return competitions;
+    } catch (e) {
+      // TODO TO DELETE
+      print("Error fetching latest competitions: $e");
+      return [];
+    }
+  }
+
 
   // TODO ADD ALL FIELDS FROM COMPETITION
   /// Compare two competitions and check if they are equal

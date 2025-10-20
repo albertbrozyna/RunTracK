@@ -6,10 +6,14 @@ class AppUiConstants {
   static const double scaffoldBodyPadding = 16.0;
   static const double paddingTextFields = 8.0;
 
-
+  // ALL APP
+  // -----------------------------------------------------------------
   static const double textSize = 16.0;  // Text size of the all app
+  static const double borderRadiusApp = 8.0;
 
   // Text fields
+  // -----------------------------------------------------------------
+  // Borders
   static const BorderRadius borderRadiusTextFields = BorderRadius.all(
     Radius.circular(8.0),
   );
@@ -17,22 +21,6 @@ class AppUiConstants {
     vertical: 16,
     horizontal: 16,
   );
-
-  static const horizontalSpacingTextFields = 8.0;
-  static const verticalSpacingTextFields = 8.0;
-
-  static const BoxShadow boxShadowTextFields =    BoxShadow(
-    color: Colors.black26, // Shadow color
-    blurRadius: 10, // How blurry the shadow is
-    offset: Offset(0, 4), // Position of the shadow
-  );
-
-  // Buttons
-  static const double horizontalSpacingButtons = 16.0;
-  static const double verticalSpacingButtons = 16.0;
-  static const double borderRadiusButtons = 8.0;
-
-  // Text fields borders
   static const OutlineInputBorder borderTextFields = OutlineInputBorder(
       borderRadius: AppUiConstants.borderRadiusTextFields,
       borderSide: BorderSide(
@@ -40,9 +28,8 @@ class AppUiConstants {
           width: 1
       )
   );
-
   static const OutlineInputBorder focusedBorderTextFields = OutlineInputBorder(
-    borderRadius: AppUiConstants.borderRadiusTextFields,
+      borderRadius: AppUiConstants.borderRadiusTextFields,
       borderSide: BorderSide(
           color: Colors.white24,
           width: 1
@@ -50,11 +37,11 @@ class AppUiConstants {
   );
 
   static const OutlineInputBorder enabledBorderTextFields = OutlineInputBorder(
-    borderRadius: AppUiConstants.borderRadiusTextFields,
-    borderSide: BorderSide(
-      color: Colors.white70,
-      width: 1
-    )
+      borderRadius: AppUiConstants.borderRadiusTextFields,
+      borderSide: BorderSide(
+          color: Colors.white70,
+          width: 1
+      )
   );
   static const OutlineInputBorder errorBorderTextFields = OutlineInputBorder(
       borderRadius: AppUiConstants.borderRadiusTextFields,
@@ -71,6 +58,7 @@ class AppUiConstants {
       )
   );
 
+  // Text styles
   static TextStyle labelStyleTextFields = TextStyle(
     color: AppColors.textFieldsLabel,
     fontSize: 18,
@@ -80,6 +68,31 @@ class AppUiConstants {
     color: AppColors.textFieldsText,
     fontSize: 18,
   );
+
+
+  // Spacing
+  static const horizontalSpacingTextFields = 8.0;
+  static const verticalSpacingTextFields = 8.0;
+
+  // Box shadow
+  static const BoxShadow boxShadowTextFields =    BoxShadow(
+    color: Colors.black26, // Shadow color
+    blurRadius: 10, // How blurry the shadow is
+    offset: Offset(0, 4), // Position of the shadow
+  );
+
+
+  // Buttons
+  // -----------------------------------------------------------------
+  static const double horizontalSpacingButtons = 16.0;
+  static const double verticalSpacingButtons = 16.0;
+  static const double borderRadiusButtons = 8.0;
+
+
+
+
+
+
 
   // Forms by form i understand a Container with Column a text fields
   static const EdgeInsets paddingOutsideForm = EdgeInsets.all(16.0);
@@ -102,6 +115,22 @@ class AppUiConstants {
       width: 1,
   );
 
+  // Pages with block Competitions or
+  static const pageBlockInsideContentPadding = 12.0;
+  static const pageBlockSpacingBetweenElements = 12.0;
+
+  // Blocks with activities and competitions
+
+  static BoxDecoration decorationBlock = BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(borderRadiusApp),
+      border: Border.all(color: Colors.white24, width: 1, style: BorderStyle.solid),
+  );
+
+  static const blockInsideContentPadding = 8.0;
+
+
+
   // Flutter map
-  static const double innerPaddingRectangleBounds = 40;
+  static const double flutterMapInnerPaddingRectangleBounds = 40;
 }
