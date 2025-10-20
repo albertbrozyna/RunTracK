@@ -581,10 +581,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             options: MapOptions(
                               initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                               initialZoom: 15.0,
-                              onMapReady: () => {
-                                _mapController.move(widget.activityData.trackedPath!.first, 15.0),
-                                AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController)},
-                              interactionOptions: InteractionOptions(flags:  InteractiveFlag.all & ~InteractiveFlag.drag & ~InteractiveFlag.pinchZoom),
+                              onMapReady: () async {
+                                // Delay to load a tiles properly
+                                Future.delayed(const Duration(milliseconds: 100), () {
+                                  AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController);
+                                });
+                              },
+                              interactionOptions: InteractionOptions(flags:  InteractiveFlag.none),
                               onTap: (tapPosition, point) => {onTapMap(context)},
                             ),
                             children: [

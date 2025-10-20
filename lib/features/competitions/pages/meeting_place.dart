@@ -67,7 +67,7 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
         body: FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: latLng ?? LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
+            initialCenter: latLng ?? LatLng(AppConstants.defaultLat, AppConstants.defaultLon),  // Move to meeting point
             initialZoom: 15.0,
             onTap: (tapPosition, point) => {
               if (edit)

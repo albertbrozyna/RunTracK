@@ -35,7 +35,12 @@ class _TrackMapState extends State<TrackMap> {
         options: MapOptions(
           initialCenter: widget.activity?.trackedPath?.first ?? LatLng(0, 0),
           initialZoom: 15.0,
-          onMapReady: () => AppUtils.fitMapToPath(widget.activity?.trackedPath ?? [], _mapController),
+          onMapReady: () async {
+            // Delay to load a tiles properly
+            Future.delayed(const Duration(milliseconds: 100), () {
+              AppUtils.fitMapToPath(widget.activity?.trackedPath ?? [], _mapController);
+            });
+          },
         ),
         children: [
           TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.runtrack'),
