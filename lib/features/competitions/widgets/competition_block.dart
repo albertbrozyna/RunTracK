@@ -62,19 +62,19 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
   void initialize() {
     if (widget.initIndex == 0) {
       // Set enter context
-      enterContext == CompetitionContext.ownerModify;
+      enterContext = CompetitionContext.ownerModify;
     } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.viewerNotAbleToJoin;
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
     } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.viewerAbleToJoin;
+      enterContext = CompetitionContext.viewerAbleToJoin;
     } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.viewerAbleToJoin;
+      enterContext = CompetitionContext.viewerAbleToJoin;
     } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.viewerNotAbleToJoin;
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
     } else if (widget.initIndex == 3 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.participant;
+      enterContext = CompetitionContext.participant;
     } else if (widget.initIndex == 4 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext == CompetitionContext.invited;
+      enterContext = CompetitionContext.invited;
     }
 
     firstName = widget.firstName;

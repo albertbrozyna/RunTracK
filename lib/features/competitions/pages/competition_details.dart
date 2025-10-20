@@ -55,6 +55,7 @@ class _AddCompetition extends State<CompetitionDetails> {
   bool canPause = true;
   bool edit = true; // Can we edit a competition?
   Competition? competition;
+  bool readOnly = false;
 
   @override
   void dispose() {
@@ -103,16 +104,17 @@ class _AddCompetition extends State<CompetitionDetails> {
     competition = widget.competitionData;
     if (competition != null) {
       // Set all fields
-
       _organizerController.text = _nameController.text = competition!.name;
       _descriptionController.text = competition!.description ?? "";
-      _startDateController.text = competition!.startDate?.toString() ?? "";
-      _endDateController.text = competition!.endDate.toString();
-      _registrationDeadline.text = competition!.registrationDeadline?.toString() ?? "";
+      _startDateController.text = AppUtils.formatDateTime(competition!.startDate);
+      _endDateController.text =  AppUtils.formatDateTime(competition!.endDate);
+      _registrationDeadline.text = AppUtils.formatDateTime(competition!.registrationDeadline);
       _maxTimeToCompleteActivityHours.text = competition!.maxTimeToCompleteActivityHours.toString();
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
       _activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
+      _competitionGoal = competition!.competitionGoalType;
+      _goalController.text = competition!.goal.toString();
 
       String? latStr = competition?.location?.latitude.toStringAsFixed(4);
       String? lngStr = competition?.location?.longitude.toStringAsFixed(4);
@@ -440,6 +442,9 @@ class _AddCompetition extends State<CompetitionDetails> {
     return null;
   }
 
+  /// Close competition
+
+
   /// Save competition to database
   void handleSaveCompetition() async {
     if (!UserService.isUserLoggedIn()) {
@@ -475,10 +480,18 @@ class _AddCompetition extends State<CompetitionDetails> {
     bool result = await CompetitionService.saveCompetition(compData);
 
     if(result){
-      if(mounted){
-        AppUtils.showMessage(context, "Competition saved successfully");
+      if(widget.enterContext == CompetitionContext.ownerCreate){
+        if(mounted){
+          AppUtils.showMessage(context, "Competition saved successfully");
+        }
+        competitionAdded = true;
       }
-      competitionAdded = true;
+      else if(widget.enterContext == CompetitionContext.ownerModify){
+        if(mounted){
+          AppUtils.showMessage(context, "Changes saved successfully");
+        }
+        competitionAdded = true;
+      }
     }else{
       if(mounted){
         AppUtils.showMessage(context, "Error saving competition");
@@ -966,14 +979,33 @@ class _AddCompetition extends State<CompetitionDetails> {
                     ),
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: CustomButton(
-                      text: competitionAdded ? "Competition added" : "Add competition",
-                      onPressed: competitionAdded ? null : () => handleSaveCompetition(),
+                  if(widget.enterContext == CompetitionContext.ownerCreate)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: CustomButton(
+                        text: competitionAdded ? "Competition added" : "Add competition",
+                        onPressed: competitionAdded ? null : () => handleSaveCompetition(),
+                      ),
                     ),
-                  ),
+                  if(widget.enterContext == CompetitionContext.ownerModify && (competition?.startDate?.isAfter(DateTime.now()) ?? false))
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: CustomButton(
+                        text: "Save changes",
+                        onPressed: () => handleSaveCompetition(),
+                      ),
+                    ),
+                  if(widget.enterContext == CompetitionContext.ownerModify)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: CustomButton(
+                        text: "Close competition",
+                        onPressed: () => handleSaveCompetition(),
+                      ),
+                    ),
                 ],
               ),
             ),

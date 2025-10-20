@@ -30,6 +30,7 @@ class Competition {
   CompetitionGoal competitionGoalType;
   double goal; // Goal  depends what type is // distance, steps or time
   List<String> photos;  // Photos from competitions
+  bool closedBeforeEndTime;
 
   Competition({
     this.competitionId = '',
@@ -51,8 +52,10 @@ class Competition {
     this.results,
     this.locationName,
     this.location,
+    bool? closedBeforeEndTime,
     List<String>? photos,
-  }) : photos = photos ?? [],
+  }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
+        photos = photos ?? [],
   participantsUid = participantsUid ?? [],
   invitedParticipantsUid = invitedParticipantsUid ?? [];
 }

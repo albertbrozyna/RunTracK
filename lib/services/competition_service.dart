@@ -329,6 +329,44 @@ class CompetitionService {
     }
   }
 
+  /// Close competition before EndTime
+  static Future<void>closeCompetitionBeforeEndTime(String competitionId) async {
+    if (competitionId.isEmpty) {
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance
+          .collection(FirestoreCollections.competitions)
+          .doc(competitionId)
+          .update({
+        'closedBeforeEndTime': true,
+      });
+    } catch (e) {
+      print("Error closing competition: $e");
+    }
+  }
+
+    /// Update field in competition
+    static Future<void>updateFields(String competitionId,List<String> fields,List<dynamic> values) async {
+      if (competitionId.isEmpty || fields.isEmpty || values.isEmpty) {
+        return;
+      }
+      if (fields.length != values.length) {
+        return;
+      }
+      final Map<String, dynamic> updateData = {};
+      for (int i = 0; i < fields.length; i++) {
+        updateData[fields[i]] = values[i];
+      }
+      try{
+        await FirebaseFirestore.instance
+            .collection(FirestoreCollections.competitions)
+            .doc(competitionId)
+            .update(updateData);
+      }catch(e){
+        print("Error closing competition: $e");
+      }
+  }
 
   // TODO ADD ALL FIELDS FROM COMPETITION
   /// Compare two competitions and check if they are equal
