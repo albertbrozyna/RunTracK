@@ -1,16 +1,8 @@
-import 'dart:math';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/features/competitions/pages/competition_details.dart';
-import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/competition.dart';
-import 'package:run_track/services/activity_service.dart';
-import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../common/enums/competition_goal.dart';
@@ -56,6 +48,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
   String profilePhotoUrl = "";
   String goalType = "";
   String goalFormatted = "";
+  String? meetingPlace;
   String? maxTimeToCompleteActivity;
   final ScrollController _scrollController = ScrollController();
 
@@ -105,9 +98,20 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
       goalType = "Unknown";
     }
 
+    if (widget.competition.location != null) {
+      String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
+      String? lngStr = widget.competition.location?.longitude.toStringAsFixed(4);
+
+      if (widget.competition.locationName != null) {
+        meetingPlace = "${widget.competition.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+      } else {
+        meetingPlace = "Lat: $latStr, Lng: $lngStr";
+      }
+    }
+
     if (widget.competition.maxTimeToCompleteActivityHours != null && widget.competition.maxTimeToCompleteActivityMinutes != null) {
-        maxTimeToCompleteActivity =
-        '${widget.competition.maxTimeToCompleteActivityHours}h ${widget.competition.maxTimeToCompleteActivityMinutes}m';
+      maxTimeToCompleteActivity =
+          '${widget.competition.maxTimeToCompleteActivityHours}h ${widget.competition.maxTimeToCompleteActivityMinutes}m';
     }
   }
 
@@ -169,9 +173,10 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                           : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
                     ),
                   ),
-                  SizedBox(width: 10),
+                  SizedBox(width: 4),
                   // First name and date
                   Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$firstName $lastName",
@@ -187,6 +192,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                   ),
                 ],
               ),
+              SizedBox(height: 6),
               // Title
               Padding(
                 padding: EdgeInsets.only(left: 15),
@@ -208,7 +214,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                 ),
               ),
 
-              SizedBox(height: 4),
+              SizedBox(height: 7),
               // Stats scrollable
               Container(
                 width: double.infinity,
@@ -277,8 +283,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                             titleFontSize: widget.titleFontSizeBlock,
                             valueFontSize: widget.valueFontSizeBlock,
                             innerPadding: widget.innerPaddingBlock,
-   ),
-
+                          ),
                       ],
                     ),
                   ),
@@ -286,9 +291,29 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                 ),
                 // Optional Description under stats
               ),
-
+              SizedBox(height: 7),
+              if (meetingPlace != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: DefaultTextStyle.of(context).style,
+                      children: [
+                        TextSpan(
+                          text: "Meeting place: ",
+                          style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
+                        ),
+                        TextSpan(
+                          text: meetingPlace,
+                          style: const TextStyle(fontWeight: FontWeight.normal,fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               // Photos from the run
-              if (widget.competition.photos.isNotEmpty)
+              if (widget.competition.photos.isNotEmpty && AppData.images)
                 SizedBox(
                   height: 120,
                   child: ListView.builder(
