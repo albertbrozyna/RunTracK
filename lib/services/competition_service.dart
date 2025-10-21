@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/constans/firestore_names.dart';
@@ -7,6 +8,7 @@ import 'package:run_track/models/competition.dart';
 
 import '../common/enums/visibility.dart' as enums;
 import '../common/enums/visibility.dart';
+import '../common/utils/app_data.dart';
 import '../common/utils/utils.dart';
 
 class CompetitionService {
@@ -16,23 +18,22 @@ class CompetitionService {
   static DocumentSnapshot? lastFetchedDocumentMyInvitedCompetitions;
   static DocumentSnapshot? lastFetchedDocumentMyParticipatingCompetitions;
 
-
   /// Pare competition goal from string to enum
   static CompetitionGoal? parseCompetitionGoal(String goal) {
-    if(goal.isEmpty){
+    if (goal.isEmpty) {
       return null;
     }
 
-    if(goal == CompetitionGoal.distance.toString()){
+    if (goal == CompetitionGoal.distance.toString()) {
       return CompetitionGoal.distance;
     }
-    if(goal == CompetitionGoal.timedActivity.toString()){
+    if (goal == CompetitionGoal.timedActivity.toString()) {
       return CompetitionGoal.timedActivity;
     }
-    if(goal == CompetitionGoal.longestDistance.toString()){
+    if (goal == CompetitionGoal.longestDistance.toString()) {
       return CompetitionGoal.longestDistance;
     }
-    if(goal == CompetitionGoal.steps.toString()){
+    if (goal == CompetitionGoal.steps.toString()) {
       return CompetitionGoal.steps;
     }
     return null;
@@ -45,7 +46,8 @@ class CompetitionService {
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
       competitionGoalType: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
-      goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0, // To num and then to double to avoid null
+      goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0,
+      // To num and then to double to avoid null
       visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
@@ -59,8 +61,8 @@ class CompetitionService {
       activityType: map['activityType'],
       // TODO
       //results: map['results'] != null
-         // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
-          //: {},
+      // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
+      //: {},
       locationName: map['locationName'],
       location: (map['latitude'] != null && map['longitude'] != null)
           ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
@@ -74,7 +76,7 @@ class CompetitionService {
       'competitionId': competition.competitionId,
       'organizerUid': competition.organizerUid,
       'name': competition.name,
-      'competitionGoal':competition.competitionGoalType.toString(),
+      'competitionGoal': competition.competitionGoalType.toString(),
       'description': competition.description,
       'visibility': competition.visibility.toString(),
       'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
@@ -186,7 +188,6 @@ class CompetitionService {
     }
   }
 
-
   /// Fetch last page of user activities
   static Future<List<Competition>> fetchLatestCompetitionsPage(int limit, DocumentSnapshot? lastDocument) async {
     try {
@@ -218,7 +219,11 @@ class CompetitionService {
   }
 
   /// Fetch pages of friends competitions
-  static Future<List<Competition>> fetchLastFriendsCompetitionsPage(int limit, DocumentSnapshot? lastDocument, List<String> friendsUids) async {
+  static Future<List<Competition>> fetchLastFriendsCompetitionsPage(
+    int limit,
+    DocumentSnapshot? lastDocument,
+    List<String> friendsUids,
+  ) async {
     if (friendsUids.isEmpty) {
       return [];
     }
@@ -280,7 +285,11 @@ class CompetitionService {
   }
 
   /// Fetch my competition which I am invited
-  static Future<List<Competition>> fetchMyInvitedCompetitions(List<String> competitionsIds, int limit, DocumentSnapshot? lastDocument) async {
+  static Future<List<Competition>> fetchMyInvitedCompetitions(
+    List<String> competitionsIds,
+    int limit,
+    DocumentSnapshot? lastDocument,
+  ) async {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -305,7 +314,11 @@ class CompetitionService {
   }
 
   /// Fetch my competition which I participate
-  static Future<List<Competition>> fetchMyParticipatedCompetitions(List<String> competitionsIds, int limit, DocumentSnapshot? lastDocument) async {
+  static Future<List<Competition>> fetchMyParticipatedCompetitions(
+    List<String> competitionsIds,
+    int limit,
+    DocumentSnapshot? lastDocument,
+  ) async {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -330,42 +343,145 @@ class CompetitionService {
   }
 
   /// Close competition before EndTime
-  static Future<void>closeCompetitionBeforeEndTime(String competitionId) async {
+  static Future<bool> closeCompetitionBeforeEndTime(String competitionId) async {
     if (competitionId.isEmpty) {
-      return;
+      return false;
     }
     try {
-      await FirebaseFirestore.instance
-          .collection(FirestoreCollections.competitions)
-          .doc(competitionId)
-          .update({
+      await FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId).update({
         'closedBeforeEndTime': true,
       });
+      return true;
     } catch (e) {
       print("Error closing competition: $e");
+      return false;
     }
   }
 
-    /// Update field in competition
-    static Future<void>updateFields(String competitionId,List<String> fields,List<dynamic> values) async {
-      if (competitionId.isEmpty || fields.isEmpty || values.isEmpty) {
-        return;
-      }
-      if (fields.length != values.length) {
-        return;
-      }
-      final Map<String, dynamic> updateData = {};
-      for (int i = 0; i < fields.length; i++) {
-        updateData[fields[i]] = values[i];
-      }
-      try{
-        await FirebaseFirestore.instance
+  /// Delete competition
+  static Future<bool> deleteCompetition(String competitionId) async {
+    if (competitionId.isEmpty) {
+      return false;
+    }
+    try {
+      await FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId).delete();
+      return true;
+    } catch (e) {
+      print("Error deleting competition: $e");
+      return false;
+    }
+  }
+
+  /// Accept invitation to competition
+  static Future<bool> acceptInvitation(Competition competition) async {
+    String? currentUserUid = AppData.currentUser?.uid;
+    if(currentUserUid == null){
+      return false;
+    }
+
+    try {
+
+      await FirebaseFirestore.instance.runTransaction((transaction)async {
+        final competitionReference = FirebaseFirestore.instance
             .collection(FirestoreCollections.competitions)
-            .doc(competitionId)
-            .update(updateData);
-      }catch(e){
-        print("Error closing competition: $e");
+            .doc(competition.competitionId);
+        final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(currentUserUid);
+
+        final competitionS = await transaction.get(competitionReference);
+        if (!competitionS.exists) {
+          throw Exception("Competition not found in database");
+        }
+
+        final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
+        updatedInviteList.remove(currentUserUid);
+
+        transaction.update(competitionReference, {
+          'invitedParticipantsUid': updatedInviteList,
+        });
+        final userS = await transaction.get(userReference);
+
+        // Updated received invitation list
+
+        List<String> receivedInvitationsToCompetitions = userS['receivedInvitationsToCompetitions'] ?? [];
+        receivedInvitationsToCompetitions.remove(competition.competitionId);
+
+        transaction.update(userReference, {
+          'receivedInvitationsToCompetitions': receivedInvitationsToCompetitions,
+          'participatedCompetitions':
+          FieldValue.arrayUnion([competition.competitionId]),
+        });
+
+    });
+      return true;
+    } catch (e) {
+      print("Error accepting invitation: $e");
+      return false;
+    }
+  }
+
+  /// Decline invitation to competition
+  static Future<bool> declineInvitation(Competition competition) async {
+      String? currentUserUid = AppData.currentUser?.uid;
+      if(currentUserUid == null){
+        return false;
       }
+
+      try {
+        // Do this in one transaction
+        await FirebaseFirestore.instance.runTransaction((transaction)async {
+          final competitionReference = FirebaseFirestore.instance
+              .collection(FirestoreCollections.competitions)
+              .doc(competition.competitionId);
+          final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(currentUserUid);
+
+          final competitionS = await transaction.get(competitionReference);
+          if (!competitionS.exists) {
+            throw Exception("Competition not found in database");
+          }
+
+          final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
+          updatedInviteList.remove(currentUserUid);
+
+          transaction.update(competitionReference, {
+            'invitedParticipantsUid': updatedInviteList,
+          });
+
+          final userS = await transaction.get(userReference);
+          // Updated received invitation list
+          List<String> receivedInvitationsToCompetitions = userS['receivedInvitationsToCompetitions'] ?? [];
+          receivedInvitationsToCompetitions.remove(competition.competitionId);
+
+          transaction.update(userReference, {
+            'receivedInvitationsToCompetitions': receivedInvitationsToCompetitions,
+          });
+
+        });
+        return true;
+      } catch (e) {
+        print("Error accepting invitation: $e");
+        return false;
+      }
+    }
+
+
+
+    /// Update field in competition
+  static Future<void> updateFields(String competitionId, List<String> fields, List<dynamic> values) async {
+    if (competitionId.isEmpty || fields.isEmpty || values.isEmpty) {
+      return;
+    }
+    if (fields.length != values.length) {
+      return;
+    }
+    final Map<String, dynamic> updateData = {};
+    for (int i = 0; i < fields.length; i++) {
+      updateData[fields[i]] = values[i];
+    }
+    try {
+      await FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId).update(updateData);
+    } catch (e) {
+      print("Error closing competition: $e");
+    }
   }
 
   // TODO ADD ALL FIELDS FROM COMPETITION

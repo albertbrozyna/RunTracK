@@ -120,7 +120,7 @@ class AppUiConstants {
   static const pageBlockSpacingBetweenElements = 12.0;
 
   // Blocks with activities and competitions
-
+  // -----------------------------------------------------------------
   static BoxDecoration decorationBlock = BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(borderRadiusApp),
@@ -130,6 +130,9 @@ class AppUiConstants {
   static const blockInsideContentPadding = 8.0;
 
 
+  // Exit forms, i mean alert dialog by this
+  // -----------------------------------------------------------------
+  static const double alertDialogBorderRadius = borderRadiusApp;
 
   // Flutter map
   static const double flutterMapInnerPaddingRectangleBounds = 40;

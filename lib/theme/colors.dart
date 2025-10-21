@@ -41,6 +41,8 @@ class AppColors {
   static Color blockColor = Colors.white;
 
 
+  // Alert dialogs
+  static Color alertDialogColor = Colors.white;
 
 
 }
