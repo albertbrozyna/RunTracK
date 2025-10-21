@@ -12,7 +12,7 @@ import '../../../common/utils/app_data.dart';
 import '../../../models/user.dart';
 import '../../../services/user_service.dart';
 import '../widgets/competition_block.dart';
-import '../widgets/no_items_msg.dart';
+import '../../../common/widgets/no_items_msg.dart';
 import 'competition_details.dart';
 
 class CompetitionsPage extends StatefulWidget {

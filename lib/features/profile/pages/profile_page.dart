@@ -1,35 +1,40 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;
 import 'dart:math';
 
-class ProfilePage extends StatefulWidget {
-  final String? uid;
+import '../../../common/utils/utils.dart';
 
-  const ProfilePage({super.key, this.uid});
+class ProfilePage extends StatefulWidget {
+  final String? uid;  // uid of the user which we need to show a profile
+  final model.User? passedUser; // Data of user which we are showing
+
+  const ProfilePage({super.key, this.uid,this.passedUser});
 
   @override
-  State<StatefulWidget> createState() {
-    return _ProfilePageState();
-  }
+  State<StatefulWidget> createState() =>  _ProfilePageState();
+
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _emailController =  TextEditingController();
   bool edit = false;
-  bool changes = false;
   bool search = false;
-  bool myProfile =
-      false; // Variable that tells us if we are viewing our own profile or not
+  bool friendAdded = false;
+  bool myProfile = false; // Variable that tells us if we are viewing our own profile or not
+  bool loaded = false;  // This tells us if we loaded a user
   model.User? user; // User which we are showing
   model.User? userBeforeChange;
-  model.User? userAfterChange;
   List<String> randomFriends = [];
-  TextEditingController firstNameController = TextEditingController();
-  TextEditingController lastNameController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
+
 
   @override
   void initState(){
@@ -37,27 +42,53 @@ class _ProfilePageState extends State<ProfilePage> {
     initialize();
   }
 
-  Future<void> initialize()  async{
-    if (!UserService.isUserLoggedIn() || widget.uid == null) {
-      await UserService.signOutUser();
+  void initialize(){
+    if (!UserService.isUserLoggedIn()) {
+      UserService.signOutUser();
+      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+      return;
     }
 
-    if (widget.uid == AppData.currentUser?.uid) {
-      myProfile = true;
-    }
-
-    initFields();
-    randomFriends.addAll(
+    randomFriends.addAll(  // Get random friends
       getRandomFriends(AppData.currentUser?.friendsUid ?? [], 6),
     );
-  }
 
-
-  void initData() {
-    if (myProfile) {
-      userBeforeChange = UserService.cloneUserData(AppData.currentUser!);
+    if (widget.uid == AppData.currentUser?.uid) { // check if this profile is my profile
+      myProfile = true;
     }
+    // If it is not our profile check if user is not our friend or is not added to friend
+
   }
+
+  Future<void> initializeAsync()  async{
+    // Load user data
+    if (widget.uid == AppData.currentUser?.uid) { // check if this profile is my profile
+      user = AppData.currentUser;
+      loaded = true;
+    }else if(widget.passedUser != null){
+      user = widget.passedUser;
+      loaded = true;
+    }else if(widget.uid != null){
+      user = await UserService.fetchUser(widget.uid!);
+      if(user != null){
+        loaded = true;
+      }else{
+        loaded = false;
+      }
+      }
+    else{
+      loaded = false;
+    }
+
+    if(loaded == true){ // Sync with textfields
+      _firstNameController.text = user!.firstName;
+      _lastNameController.text = user!.lastName;
+      userBeforeChange = UserService.cloneUserData(user!);
+    }
+
+
+  }
+
 
   // Pick a count random friends from user friends
   List<String> getRandomFriends(List<String> friends, int count) {
@@ -77,9 +108,9 @@ class _ProfilePageState extends State<ProfilePage> {
       result.add(friendsCopy[index]);
       friendsCopy.removeAt(index); // avoid duplicates
     }
-
     return result;
   }
+
   /// Delete account action
   void deleteAccountButtonPressed(BuildContext context) {
     showDialog(
@@ -87,6 +118,8 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.alertDialogColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
           title: const Text("Confirm Delete", textAlign: TextAlign.center),
           content: const Text(
             "Are you sure you want to delete your account? This action cannot be undone.",
@@ -97,24 +130,42 @@ class _ProfilePageState extends State<ProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // close dialog
-                  },
-                  child: const Text("Cancel"),
+                // Cancel button
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: AppColors.white,
+                      backgroundColor:AppColors.gray,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text("Cancel"),
+                  ),
                 ),
-                SizedBox(width: 15),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // close dialog
-                    UserService.deleteUserFromFirestore();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Account deleted")),
-                    );
-                    UserService.signOutUser();
-                  },
-                  child: const Text("Delete my account"),
+                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
+                // Delete button
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: AppColors.white,
+                      backgroundColor:AppColors.danger,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+                      ),
+                    ),
+                    onPressed: () async {
+                      Navigator.of(context).pop(); // close dialog
+                      if(await UserService.deleteUserFromFirestore()){
+                        AppUtils.showMessage(context, "User account deleted successfully");
+                      }
+                      UserService.signOutUser();
+                    },
+                    child: const Text("Delete my account"),
+                  ),
                 ),
               ],
             ),
@@ -170,56 +221,58 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-
   }
 
 
 
   /// Function invoked when edit is finished and changes are saved
-  void onEditFinished() {}
+  void onEditFinished(BuildContext context)async  {
+    if (!UserService.usersEqual(userBeforeChange!, user!)){
+      setState(() {
+        edit = false;
+      });
+    }else{ // Update user if there are changes
+      model.User? res = await UserService.updateUser(user!);
+      if(res == null){
+        if(mounted)
+          AppUtils.showMessage(context, "Error updating user");
+      }else{
+        AppUtils.showMessage(context, "User updated successfully");
+      }
+    }
+  }
+
+  void onPressedAddFriend() async {
+    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.inviteToFriends);
+    if(added){
+
+    }
+  }
 
   // Init fields
-  void initFields() {
-    //TODO uncomment
-    // firstNameController.text = AppData.currentUser?.firstName ?? "";
-    // lastNameController.text = AppData.currentUser?.lastName ?? "";
-    firstNameController.text = "Albert";
-    lastNameController.text = "Brożyna";
-  }
+
 
   @override
   Widget build(BuildContext context) {
+    if(loaded ==  false){
+        return NoItemsMsg(textMessage: "No user data");
+    }
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/background-first.jpg"),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.30),
-              BlendMode.darken,
-            ),
-          ),
-        ),
         child: Padding(
           padding: const EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if(myProfile && search == false)
+                if(myProfile)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Searcher
-                      IconButton(
-                        icon: Icon(Icons.search, color: Colors.white),
-                        onPressed: () {
-                          // action for left icon
-                        },
-                      ),
+                      // Edit button
                       IconButton(
                         padding: EdgeInsets.zero,
                         iconSize: 23,
@@ -230,9 +283,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         onPressed: () {
                           setState(() {
-                            changes = true;
                             if (edit) {
-                              onEditFinished();
+                              onEditFinished(context);
                             }
                             edit = !edit;
                           });
@@ -242,7 +294,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
 
                 // If this is not my profile, show button add friends
-
                 if(!myProfile)
                   SizedBox(
                     width: MediaQuery.of(context).size.width / 1.5,
@@ -257,7 +308,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       ),
-                      onPressed: () => deleteAccountButtonPressed(context),
+                      onPressed: () => addFriend(context),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -366,7 +417,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 textAlign: edit
                                     ? TextAlign.center
                                     : TextAlign.right,
-                                controller: firstNameController,
+                                controller: _firstNameController,
                                 readOnly: edit ? false : true,
                                 style: TextStyle(
                                   color: Colors.white,
@@ -421,7 +472,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     alpha: 0.4,
                                   ),
                                 ),
-                                controller: lastNameController,
+                                controller: _lastNameController,
                                 readOnly: edit ? false : true,
                                 textAlign: edit
                                     ? TextAlign.center

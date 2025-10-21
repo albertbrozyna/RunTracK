@@ -1,24 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/constans/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
-import 'package:run_track/models/activity.dart';
 import 'package:run_track/models/user.dart' as model;
+
+
+enum UserAction{
+  inviteToFriends,
+  acceptInvitationToFriends,
+  declineInvitationToFriends,
+  deleteFriend
+}
 
 class UserService {
   static DocumentSnapshot? lastFetchedDocumentParticipants; // Participants in run competition
   static DocumentSnapshot? lastFetchedDocumentInvitedParticipants; // Invited participants
 
+  /// Check if current user i logged in to app
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
         AppData.currentUser != null &&
         AppData.currentUser!.uid == FirebaseAuth.instance.currentUser!.uid;
   }
 
+  /// Sign out user
   static Future<void> signOutUser() async {
     await FirebaseAuth.instance.signOut();
     AppData.currentUser = null;
@@ -32,8 +40,7 @@ class UserService {
     DateTime today = DateTime.now();
     int age = today.year - birthDate.year;
 
-    if (today.month < birthDate.month ||
-        (today.month == birthDate.month && today.day < birthDate.day)) {
+    if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
       age--;
     }
 
@@ -47,23 +54,14 @@ class UserService {
       firstName: sourceUser.firstName,
       lastName: sourceUser.lastName,
       gender: sourceUser.gender,
-      activityNames: sourceUser.activityNames != null
-          ? List.from(sourceUser.activityNames!)
-          : null,
-      friendsUid: sourceUser.friendsUid != null
-          ? List.from(sourceUser.friendsUid!)
-          : null,
+      activityNames: sourceUser.activityNames != null ? List.from(sourceUser.activityNames!) : null,
+      friendsUid: sourceUser.friendsUid != null ? List.from(sourceUser.friendsUid!) : null,
       email: sourceUser.email,
       profilePhotoUrl: sourceUser.profilePhotoUrl,
       dateOfBirth: sourceUser.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              sourceUser.dateOfBirth!.millisecondsSinceEpoch,
-            )
+          ? DateTime.fromMillisecondsSinceEpoch(sourceUser.dateOfBirth!.millisecondsSinceEpoch)
           : null,
-      defaultLocation: LatLng(
-        sourceUser.userDefaultLocation.latitude,
-        sourceUser.userDefaultLocation.longitude,
-      ),
+      defaultLocation: LatLng(sourceUser.userDefaultLocation.latitude, sourceUser.userDefaultLocation.longitude),
     );
   }
 
@@ -76,10 +74,7 @@ class UserService {
         return false;
       }
       final uid = user.uid;
-      // Delete a collection from a firestore
       await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).delete();
-
-      // Delete user from Firebase Auth
       await user.delete();
 
       print("User deleted successfully.");
@@ -96,25 +91,23 @@ class UserService {
       'uid': user.uid,
       'firstName': user.firstName,
       'lastName': user.lastName,
-      'fullName' : user.fullName,
+      'fullName': user.fullName,
       'email': user.email,
       'activityNames': user.activityNames ?? [],
-      'dateOfBirth': user.dateOfBirth != null
-          ? Timestamp.fromDate(user.dateOfBirth!)
-          : null,
+      'dateOfBirth': user.dateOfBirth != null ? Timestamp.fromDate(user.dateOfBirth!) : null,
       'gender': user.gender,
       'friendsUid': user.friendsUid,
-      'pendingInvitationsToFriends' : user.pendingInvitationsToFriends,
-      'receivedInvitationsToFriends' : user.receivedInvitationsToFriends,
-      'receivedInvitationsToCompetitions' : user.receivedInvitationsToCompetitions,
+      'pendingInvitationsToFriends': user.pendingInvitationsToFriends,
+      'receivedInvitationsToFriends': user.receivedInvitationsToFriends,
+      'receivedInvitationsToCompetitions': user.receivedInvitationsToCompetitions,
+      'participatedCompetitions': user.participatedCompetitions,
       'profilePhotoUrl': user.profilePhotoUrl,
-      'userDefaultLocation': {
-        'latitude': user.userDefaultLocation.latitude,
-        'longitude': user.userDefaultLocation.longitude,
-      },
+      'userDefaultLocation': {'latitude': user.userDefaultLocation.latitude, 'longitude': user.userDefaultLocation.longitude},
+      'kilometers': user.kilometers,
+      'burnedCalories': user.burnedCalories,
+      'hoursOfActivity': user.hoursOfActivity,
     };
   }
-
 
   /// Create user from firestore collection
   static model.User fromMap(Map<String, dynamic> map) {
@@ -125,21 +118,16 @@ class UserService {
       lastName: map['lastName'] ?? '',
       email: map['email'],
       activityNames: List<String>.from(map['activityNames'] ?? []),
-      friendsUid: List<String>.from(map['friendsUids'] ?? []),
-      pendingInvitationsToFriends: map['pendingInvitationsToFriends'],
-      receivedInvitationsToFriends: map['receivedInvitationsToFriends'],
-      receivedInvitationForCompetitions: map['receivedInvitationForCompetitions'],
-      participatedCompetitions: map['participatedCompetitions'],
+      friendsUid: List<String>.from(map['friendsUid'] ?? []),
+      pendingInvitationsToFriends: List<String>.from(map['pendingInvitationsToFriends'] ?? []),
+      receivedInvitationsToFriends: List<String>.from(map['receivedInvitationsToFriends'] ?? []),
+      receivedInvitationsToCompetitions: List<String>.from(map['receivedInvitationsToCompetitions'] ?? []),
+      participatedCompetitions: List<String>.from(map['participatedCompetitions'] ?? []),
       profilePhotoUrl: map['profilePhotoUrl'],
       defaultLocation: location != null
-          ? LatLng(
-              (location['latitude'] ?? 0.0).toDouble(),
-              (location['longitude'] ?? 0.0).toDouble(),
-            )
+          ? LatLng((location['latitude'] ?? 0.0).toDouble(), (location['longitude'] ?? 0.0).toDouble())
           : LatLng(0.0, 0.0),
-      dateOfBirth: map['dateOfBirth'] != null
-          ? (map['dateOfBirth'] as Timestamp).toDate()
-          : null,
+      dateOfBirth: map['dateOfBirth'] != null ? (map['dateOfBirth'] as Timestamp).toDate() : null,
 
       gender: map['gender'],
       kilometers: map['kilometers'] ?? 0,
@@ -150,13 +138,10 @@ class UserService {
 
   /// Fetch one user data
   static Future<model.User?> fetchUser(String uid) async {
-    if(uid.isEmpty){
+    if (uid.isEmpty) {
       return null;
     }
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .get();
+    final docSnapshot = await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).get();
 
     if (docSnapshot.exists) {
       final userData = docSnapshot.data();
@@ -169,10 +154,7 @@ class UserService {
 
   /// Fetch  user firstName LastName and profile photo uri data
   static Future<model.User?> fetchUserForBlock(String uid) async {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     if (userDoc.exists) {
       final data = userDoc.data();
@@ -182,36 +164,31 @@ class UserService {
         final gender = data['gender'] as String?;
         final profilePhotoUrl = data['profilePhotoUrl'] as String?;
 
-        if(firstName == null || lastName == null){
+        if (firstName == null || lastName == null) {
           return null;
         }
 
-        return model.User(
-          uid: uid,
-          firstName: firstName,
-          lastName: lastName,
-          gender: gender,
-          profilePhotoUrl: profilePhotoUrl,
-        );
+        return model.User(uid: uid, firstName: firstName, lastName: lastName, gender: gender, profilePhotoUrl: profilePhotoUrl);
       }
     }
     return null;
   }
 
   /// Fetch participants invited to run competition
-  static Future<List<model.User>> fetchInvitedParticipants({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
+  static Future<List<model.User>> fetchInvitedParticipants({
+    required List<String> uids,
+    DocumentSnapshot? lastDocument,
+    int limit = 10,
+  }) async {
     if (uids.isEmpty) {
       return [];
     }
 
     try {
-      Query queryUsers = FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .where("uid", whereIn: uids)
-          .limit(limit);
+      Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: uids).limit(limit);
 
       if (lastDocument != null) {
-        queryUsers =  queryUsers.startAfterDocument(lastDocument);
+        queryUsers = queryUsers.startAfterDocument(lastDocument);
       }
       final querySnapshot = await queryUsers.get();
 
@@ -219,9 +196,7 @@ class UserService {
         lastFetchedDocumentInvitedParticipants = querySnapshot.docs.last;
       }
 
-      final users = querySnapshot.docs
-          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();
+      final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
       return users;
     } catch (e) {
       print("Error: $e");
@@ -229,10 +204,9 @@ class UserService {
     }
   }
 
-
   /// Search users in firestore
   static Future<List<model.User>> searchUsers(String query) async {
-    if(query.isEmpty){
+    if (query.isEmpty) {
       return [];
     }
     final docSnapshot = await FirebaseFirestore.instance
@@ -252,35 +226,23 @@ class UserService {
       final gender = data['gender'].toString();
       final profilePhotoUrl = data['profilePhotoUrl'].toString();
 
-      return model.User(
-        uid: doc.id,
-        firstName: firstName,
-        lastName: lastName,
-        gender: gender ?? "",
-        profilePhotoUrl: profilePhotoUrl,
-      );
+      return model.User(uid: doc.id, firstName: firstName, lastName: lastName, gender: gender, profilePhotoUrl: profilePhotoUrl);
     }).toList();
 
     return users;
   }
 
-
-
-
   /// Fetch list of users
-  static Future<List<model.User>> fetchParticipants({required List<String> uids,DocumentSnapshot? lastDocument,int limit = 10}) async{
+  static Future<List<model.User>> fetchParticipants({required List<String> uids, DocumentSnapshot? lastDocument, int limit = 10}) async {
     if (uids.isEmpty) {
       return [];
     }
 
     try {
-      Query queryUsers = FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .where("uid", whereIn: uids)
-          .limit(limit);
+      Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: uids).limit(limit);
 
       if (lastDocument != null) {
-        queryUsers =  queryUsers.startAfterDocument(lastDocument);
+        queryUsers = queryUsers.startAfterDocument(lastDocument);
       }
       final querySnapshot = await queryUsers.get();
 
@@ -288,16 +250,13 @@ class UserService {
         lastFetchedDocumentParticipants = querySnapshot.docs.last;
       }
 
-      final users = querySnapshot.docs
-          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();
+      final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
       return users;
     } catch (e) {
       print("Error: $e");
       return [];
     }
   }
-
 
   /// Create a new user in firestore
   static Future<model.User?> addUser(model.User user) async {
@@ -310,9 +269,7 @@ class UserService {
       print("User not logged in!");
     }
     try {
-      final docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await docRef.set(UserService.toMap(user));
       return user;
     } catch (e) {
@@ -327,9 +284,7 @@ class UserService {
       if (user.uid.isEmpty) {
         return null;
       }
-      final docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await docRef.set(UserService.toMap(user));
       return user;
     } catch (e) {
@@ -338,72 +293,80 @@ class UserService {
     }
   }
 
-  /// Send invitations to friends to another user returns true if success
-  static Future<bool> inviteToFriends(
-    String senderUid,
-    String receiverUid,
-  ) async {
-    // TODO
-    try {
-      // Add a uid to send invites
-      model.User? sender = await UserService.fetchUser(senderUid);
-      model.User? receiver = await UserService.fetchUser(receiverUid);
-
-      if (sender == null || receiver == null) {
-        return false;
-      }
-      sender.pendingInvitationsToFriends.add(receiverUid);
-      receiver.receivedInvitationsToFriends.add(senderUid);
-      await UserService.updateUser(sender);
-      await UserService.updateUser(receiver);
-    } catch (e) {
-      print(e);
+  /// Do action in one transaction to users depending on action type
+  static Future<bool> actionToUsers(String senderUid, String receiverUid,UserAction action) async {
+    if(senderUid.isEmpty || receiverUid.isEmpty){
+      return false;
     }
-    return false;
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final userSenderReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(senderUid);
+
+        final userReceiverReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(receiverUid);
+
+        final senderSnap = await transaction.get(userSenderReference);
+        if (!senderSnap.exists) {
+          throw Exception("User not found in database");
+        }
+
+        final receiverSnap = await transaction.get(userReceiverReference);
+        if (!receiverSnap.exists) {
+          throw Exception("User not found in database");
+        }
+
+        final senderFriendsList = List<String>.from(senderSnap['friendsUid'] ?? []);
+        final senderPendingInvitationsList = List<String>.from(senderSnap['pendingInvitationsToFriends'] ?? []);
+        final receiverFriendsList = List<String>.from(senderSnap['friendsUid'] ?? []);
+        final receiverReceivedInvitationsList = List<String>.from(senderSnap['receivedInvitationsToFriends'] ?? []);
+
+        if(action == UserAction.inviteToFriends){ // Do action
+          senderFriendsList.add(receiverUid);
+          senderPendingInvitationsList.remove(receiverUid);
+          receiverFriendsList.add(senderUid);
+          receiverReceivedInvitationsList.remove(senderUid);
+        }else if(action == UserAction.acceptInvitationToFriends) {
+          senderFriendsList.add(receiverUid);
+          senderPendingInvitationsList.remove(receiverUid);
+          receiverFriendsList.add(senderUid);
+          receiverReceivedInvitationsList.remove(senderUid);
+        }else if(action == UserAction.declineInvitationToFriends){
+          senderPendingInvitationsList.remove(receiverUid);
+          receiverReceivedInvitationsList.remove(senderUid);
+        }else if(action == UserAction.deleteFriend){
+          senderFriendsList.remove(receiverUid);
+          receiverFriendsList.remove(senderUid);
+        }
+
+        transaction.update(userSenderReference, {
+          'pendingInvitationsToFriends': senderPendingInvitationsList,
+          'friendsUid': senderFriendsList,
+        });
+        transaction.update(userReceiverReference, {
+          'receivedInvitationsToFriends': receiverReceivedInvitationsList,
+          'friendsUid': receiverFriendsList,
+        });
+      });
+      return true;
+    } catch (e) {
+      print("Error doing action: $e");
+      return false;
+    }
   }
 
-  /// Accept invitations to friends from another user, returns true if success
-  static Future<bool> acceptFriend(String senderUid, String receiverUid) async {
-    // TODO
-    try {
-      // Add a uid to send invites
-      model.User? sender = await UserService.fetchUser(senderUid);
-      model.User? receiver = await UserService.fetchUser(receiverUid);
-
-      if (sender == null || receiver == null) {
-        return false;
-      }
-      if (sender.pendingInvitationsToFriends.contains(receiverUid)) {
-        sender.pendingInvitationsToFriends.remove(receiverUid);
-      }
-      if (receiver.receivedInvitationsToFriends.contains(senderUid)) {
-        receiver.receivedInvitationsToFriends.remove(senderUid);
-      }
-      // TODO The same as with invitations
-      receiver.friendsUid.add(senderUid);
-      sender.friendsUid.add(receiverUid);
-      await UserService.updateUser(sender);
-      await UserService.updateUser(receiver);
-    } catch (e) {
-      print(e);
-    }
-    return false;
-  }
 
   /// Create a user in firebase auth
   static Future<AuthResponse> createUserInFirebaseAuth(String email, String password) async {
     try {
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: email.trim().toLowerCase(),
-            password: password.trim(),
-          );
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      );
 
-      return AuthResponse(message: "User created",userCredential: userCredential);
+      return AuthResponse(message: "User created", userCredential: userCredential);
     } on FirebaseAuthException catch (e) {
-      return AuthResponse(message:"Auth error ${e.message}");
+      return AuthResponse(message: "Auth error ${e.message}");
     } catch (e) {
-      return AuthResponse(message:"Auth error $e");
+      return AuthResponse(message: "Auth error $e");
     }
   }
 
@@ -416,7 +379,6 @@ class UserService {
     String gender,
     DateTime dateOfBirth,
   ) async {
-
     model.User? user = await UserService.addUser(
       model.User(
         uid: uid,
@@ -434,16 +396,36 @@ class UserService {
     return "User created";
   }
 
+  static bool usersEqual(model.User u1, model.User u2) {
+    return u1.uid == u2.uid &&
+        u1.firstName == u2.firstName &&
+        u1.lastName == u2.lastName &&
+        u1.fullName == u2.fullName &&
+        u1.email == u2.email &&
+        u1.profilePhotoUrl == u2.profilePhotoUrl &&
+        u1.gender == u2.gender &&
+        u1.dateOfBirth == u2.dateOfBirth &&
+        u1.kilometers == u2.kilometers &&
+        u1.burnedCalories == u2.burnedCalories &&
+        u1.hoursOfActivity == u2.hoursOfActivity &&
+        u1.userDefaultLocation.latitude == u2.userDefaultLocation.latitude &&
+        u1.userDefaultLocation.longitude == u2.userDefaultLocation.longitude &&
+        AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
+        AppUtils.listsEqual(u1.friendsUid, u2.friendsUid) &&
+        AppUtils.listsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&
+        AppUtils.listsEqual(u1.receivedInvitationsToFriends, u2.receivedInvitationsToFriends) &&
+        AppUtils.listsEqual(u1.receivedInvitationsToCompetitions, u2.receivedInvitationsToCompetitions) &&
+        AppUtils.listsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
+  }
+
+
   /// Check if the user account exists in firestore
   // TODO TO FIX THIS with returning true
   static Future<bool> checkIfUserAccountExists(String uid) async {
-    try{
-      final docSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+    try {
+      final docSnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       return docSnapshot.exists;
-    }catch(e){
+    } catch (e) {
       return true;
     }
   }

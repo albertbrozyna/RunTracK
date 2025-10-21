@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
@@ -14,16 +15,15 @@ import '../../../../common/utils/app_data.dart';
 import '../../../../models/activity.dart';
 import '../../../../models/user.dart';
 
-
 class MyProfile extends StatefulWidget {
-  _MyProfile createState() => _MyProfile();
+  const MyProfile({super.key});
+
+  @override
+  State<MyProfile> createState() => _MyProfile();
 }
 
-class _MyProfile extends State<MyProfile>
-    with SingleTickerProviderStateMixin {
+class _MyProfile extends State<MyProfile> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<User>? friendsActivities;
-  User? currentUser = AppData.currentUser;
 
   @override
   void initState() {
@@ -37,12 +37,9 @@ class _MyProfile extends State<MyProfile>
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
+            image: AssetImage("assets/appBg4.jpg"),
             fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.25),
-              BlendMode.darken,
-            ),
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
           ),
         ),
         child: Column(
@@ -53,15 +50,8 @@ class _MyProfile extends State<MyProfile>
                 controller: _tabController,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white.withAlpha(100),
-                labelStyle: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  backgroundColor: AppColors.primary,
-                ),
+                labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, backgroundColor: AppColors.primary),
                 tabs: [
                   Tab(text: "My profile"),
                   Tab(text: "My stats"),
@@ -73,7 +63,7 @@ class _MyProfile extends State<MyProfile>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  ProfilePage(uid: AppData.currentUser!.uid,),
+                  ProfilePage(uid: FirebaseAuth.instance.currentUser?.uid),
                   Stats(),
                   SettingsPage(),
                 ],

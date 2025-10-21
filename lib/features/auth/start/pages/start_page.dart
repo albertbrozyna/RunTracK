@@ -28,10 +28,12 @@ class StartPageState extends State<StartPage> {
     AppData.googleLogin = true;
     SignInResult result = await GoogleService.signInWithGoogle();
 
-    if (result.status == SignInStatus.success) {
+    if (result.status == SignInStatus.success) {  // User exist in database so we log in
       AppData.googleLogin = false;
       if(mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, '/home');
+        });
       }
       return;
     } else if (result.status == SignInStatus.userDoesNotExists) {
@@ -74,7 +76,9 @@ class StartPageState extends State<StartPage> {
           if(message == "User created"){
             AppData.googleLogin = false;
             AppUtils.showMessage(context, "Registered successfully!");
-            Navigator.of(context).pushReplacementNamed('/home');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacementNamed(context, '/home');
+            });
           }else{
             AppData.googleLogin = false;
             AppUtils.showMessage(context, "Register failed!",isError: true);

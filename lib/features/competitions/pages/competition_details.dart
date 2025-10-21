@@ -555,13 +555,14 @@ class _AddCompetition extends State<CompetitionDetails> {
         return AlertDialog(
           backgroundColor: AppColors.alertDialogColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
+          alignment: Alignment.center,
           title: const Text("Warning", textAlign: TextAlign.center),
           content: const Text(
             "Are you sure you want to delete this activity?\n\n"
             "This action cannot be undone.",
             textAlign: TextAlign.center,
           ),
-          alignment: Alignment.center,
+
           actions: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

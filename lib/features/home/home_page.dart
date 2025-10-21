@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  /// Ask user for location
   Future<void> _askLocation() async {
     try {
       await LocationService.determinePosition();
