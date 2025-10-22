@@ -3,7 +3,7 @@ import 'package:run_track/models/user.dart' as model;
 
 class ProfileBlock extends StatelessWidget {
   final model.User? user;
-  const ProfileBlock({this.user});
+  const ProfileBlock({super.key, this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +11,7 @@ class ProfileBlock extends StatelessWidget {
       children: [
         Container(
           padding: EdgeInsets.all(10),
-          child: Row(
+          child: Column(
             children: [
               ClipOval(
                 child: user != null && user!.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
@@ -36,7 +36,6 @@ class ProfileBlock extends StatelessWidget {
                     "${user?.firstName ?? "Unknown"} ${user?.lastName ?? ""}",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text("Friends: ${user?.friendsUid?.length ?? 0}"),
                 ],
               ),
             ],

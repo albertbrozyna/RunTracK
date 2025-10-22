@@ -6,7 +6,7 @@ class User {
   String lastName;
   String fullName;
   List<String>? activityNames; // Activity names
-  String? email;
+  String email;
   String? profilePhotoUrl; // Profile photo url
   DateTime? dateOfBirth;
   String? gender;
@@ -31,8 +31,8 @@ class User {
     required this.firstName,
     required this.lastName,
     required this.gender,
+    required this.email,
     this.activityNames,
-    this.email,
     this.profilePhotoUrl,
     LatLng? defaultLocation,
     DateTime? dateOfBirth,

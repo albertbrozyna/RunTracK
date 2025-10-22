@@ -68,7 +68,7 @@ class StartPageState extends State<StartPage> {
           newUser.uid,
           newUser.firstName,
           newUser.lastName,
-          newUser.email!,
+          newUser.email,
           newUser.gender!,
           newUser.dateOfBirth!,
         );
@@ -81,13 +81,13 @@ class StartPageState extends State<StartPage> {
             });
           }else{
             AppData.googleLogin = false;
-            AppUtils.showMessage(context, "Register failed!",isError: true);
+            AppUtils.showMessage(context, "Register failed!",messageType: MessageType.error);
           }
         }
       }
     } else if (result.status == SignInStatus.failed) {
       if (mounted && result.errorMessage != null) {
-        AppUtils.showMessage(context, result.errorMessage!, isError: true);
+        AppUtils.showMessage(context, result.errorMessage!, messageType: MessageType.error);
       }
       return;
     }

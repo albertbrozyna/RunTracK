@@ -6,11 +6,20 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../theme/colors.dart';
+
 extension StringCapitalize on String {
   String capitalize() {
     if (isEmpty) return this;
     return this[0].toUpperCase() + substring(1).toLowerCase();
   }
+}
+
+enum MessageType{
+  info,
+  success,
+  warning,
+  error
 }
 
 class AppUtils {
@@ -24,14 +33,29 @@ class AppUtils {
   }
 
   // Show message using scaffold
-  static void showMessage(BuildContext context, String message, {bool isError = false}) {
+  static void showMessage(BuildContext context, String message, {MessageType messageType = MessageType.info}) {
+    String title = "";
+    Color bgColor;
+    if(MessageType.info == messageType){
+      bgColor = AppColors.scaffoldMessengerInfoColor;
+    }else if(MessageType.success == messageType){
+      bgColor = AppColors.scaffoldMessengerSuccessColor;
+    }else if(MessageType.warning == messageType){
+      bgColor = AppColors.scaffoldMessengerWarningColor;
+    }else{
+      bgColor = AppColors.scaffoldMessengerErrorColor;
+    }
+
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        content: Text(message,textAlign: TextAlign.center,style: TextStyle(
+          fontSize: AppUiConstants.textSizeApp
+        ),),
+        backgroundColor: bgColor,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
       ),
     );
   }
@@ -111,12 +135,19 @@ class AppUtils {
     DateTime firstDate,
     DateTime lastDate,
     TextEditingController? dateController,
+      bool onlyDate
   ) async {
     final DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: firstDate, lastDate: lastDate);
 
     if (picked == null) {
       return null;
     }
+
+    if(onlyDate){
+      dateController?.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')} ";
+      return picked;
+    }
+
     TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
 
     if (pickedTime == null) {

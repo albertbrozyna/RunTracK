@@ -39,7 +39,7 @@ class _MyProfile extends State<MyProfile> with SingleTickerProviderStateMixin {
           image: DecorationImage(
             image: AssetImage("assets/appBg4.jpg"),
             fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.50), BlendMode.darken),
           ),
         ),
         child: Column(
@@ -51,6 +51,8 @@ class _MyProfile extends State<MyProfile> with SingleTickerProviderStateMixin {
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white.withAlpha(100),
                 labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorColor: Colors.white,
                 unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, backgroundColor: AppColors.primary),
                 tabs: [
                   Tab(text: "My profile"),

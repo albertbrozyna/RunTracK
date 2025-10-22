@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/common/enums/enter_context.dart';
+import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../models/user.dart';
@@ -7,9 +10,9 @@ import '../../theme/colors.dart';
 class UserSearcher extends SearchDelegate<List<String>?> {
   final List<String> invitedUsers;  // Invited to participate or to friends
   final List<String> listUsers; // Participants list or friends list
-
+  EnterContextSearcher enterContext;
   final List<User>suggestedUsers = [];
-  UserSearcher({required this.invitedUsers,required this.listUsers});
+  UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,});
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -22,7 +25,6 @@ class UserSearcher extends SearchDelegate<List<String>?> {
     if(listUsers.contains(uid)){
       return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
     }
-    // TODO FIND A MORE SUITABLE ICON
     if(invitedUsers.contains(uid)){
       return Icon(Icons.mail_outline, color: Colors.green); // Participate in or is on our friend list
     }
@@ -31,11 +33,22 @@ class UserSearcher extends SearchDelegate<List<String>?> {
   }
 
   /// Add user uid to list
-  void onPressedPersonAdd(String uid,BuildContext context){
-    if(!invitedUsers.contains(uid)){
+  void onPressedPersonAdd(String uid,BuildContext context)async{
+    if(enterContext == EnterContextSearcher.friends){
+      bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", uid, UserAction.inviteToFriends);
+      if (added) {
+        invitedUsers.add(uid);
+          showResults(context);
+      }
+    }else{
       invitedUsers.add(uid);
       showResults(context);
     }
+  }
+
+  /// Navigate to user profile
+  void onTapUser(BuildContext context,String uid){
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfilePage(uid: uid)));
   }
 
   @override
@@ -67,7 +80,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
     }
 
     return FutureBuilder<List<User>>(
-      future: UserService.searchUsers(query),
+      future: UserService.searchUsers(query,exceptMe: true,myUid: FirebaseAuth.instance.currentUser?.uid ?? ""),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -87,9 +100,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
                     ? NetworkImage(user.profilePhotoUrl!)
                     : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
               ),
-              onTap: () => {
-                // TODO show user profile
-              },
+              onTap: () => onTapUser(context, user.uid),
               title: Text("${user.firstName} ${user.lastName}"),
               trailing: IconButton(onPressed: () => onPressedPersonAdd(user.uid,context), icon: getIconForUser(user.uid)),
             );
@@ -98,8 +109,6 @@ class UserSearcher extends SearchDelegate<List<String>?> {
       },
     );
   }
-
-
 
   @override
   ThemeData appBarTheme(BuildContext context) {

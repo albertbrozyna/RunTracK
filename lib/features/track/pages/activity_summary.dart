@@ -71,6 +71,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
+  /// Get text for save button
   String getSaveButtonText() {
     if (widget.editMode) {
       return "Save changes";
@@ -82,6 +83,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     return "Unknown";
   }
 
+  /// Get callback function for save button
   VoidCallback? getSaveButtonCallback() {
     if (activitySaved && !widget.editMode) {
       return null; // No action if activity saved after training

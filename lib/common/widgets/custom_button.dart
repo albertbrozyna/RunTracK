@@ -15,7 +15,7 @@ class CustomButton extends StatelessWidget {
     super.key,
     required this.text,
     required this.onPressed,
-    this.textSize = AppUiConstants.textSize,
+    this.textSize = AppUiConstants.textSizeApp,
     this.borderRadius = AppUiConstants.borderRadiusButtons,
     this.backgroundColor = AppColors.secondary,
     this.textColor = AppColors.textPrimary,

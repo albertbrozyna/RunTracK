@@ -5,12 +5,12 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/constans/app_routes.dart';
 import 'package:run_track/features/competitions/pages/meeting_place.dart';
-import 'package:run_track/features/competitions/pages/participants.dart';
+import 'package:run_track/common/pages/users_list.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/user_service.dart';
 
-import '../../../common/enums/enter_context_users_list.dart';
+import '../../../common/enums/enter_context.dart';
 import '../../../common/enums/visibility.dart' as enums;
 import '../../../common/utils/utils.dart';
 import '../../../services/competition_service.dart';
@@ -302,6 +302,7 @@ class _AddCompetition extends State<CompetitionDetails> {
     }
   }
 
+  /// On pressed list participants
   void onPressedListParticipants(BuildContext context) async {
     EnterContextUsersList enterContext = EnterContextUsersList.participantsModify;
     if(widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
@@ -936,7 +937,7 @@ class _AddCompetition extends State<CompetitionDetails> {
                         if (readOnly) {
                           return;
                         }
-                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _startDateController);
+                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _startDateController,false);
                       },
                     ),
                   ),
@@ -964,7 +965,7 @@ class _AddCompetition extends State<CompetitionDetails> {
                         if (readOnly) {
                           return;
                         }
-                        AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _endDateController);
+                        AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _endDateController,false);
                       },
                     ),
                   ),
@@ -996,7 +997,7 @@ class _AddCompetition extends State<CompetitionDetails> {
                         if (readOnly) {
                           return;
                         }
-                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _registrationDeadline);
+                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _registrationDeadline,false);
                       },
                     ),
                   ),

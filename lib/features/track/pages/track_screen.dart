@@ -172,7 +172,7 @@ class TrackScreenState extends State<TrackScreen> {
                           const Center(
                             child: Text(
                               "Finish",
-                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold,fontSize: AppUiConstants.textSize),
+                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold,fontSize: AppUiConstants.textSizeApp),
                             ),
                           ),
                         ],

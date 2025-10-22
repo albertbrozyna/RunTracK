@@ -8,8 +8,11 @@ class AppUiConstants {
 
   // ALL APP
   // -----------------------------------------------------------------
-  static const double textSize = 16.0;  // Text size of the all app
+  static const double textSizeApp = 16.0;  // Text size of the all app
+  static const double textSizeTitlesApp = 20.0;  // Text size of the all app
   static const double borderRadiusApp = 8.0;
+  static const double iconSizeApp = 24.0;
+
 
   // Text fields
   // -----------------------------------------------------------------
