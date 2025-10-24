@@ -4,6 +4,7 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/no_items_msg.dart';
+import 'package:run_track/common/widgets/stat_card.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
@@ -41,6 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
   List<String> randomFriends = [];
   List<model.User> randomFriendsUsers = [];
 
+  final double cardHeight = 150;
+  final double cardWidth = 150;
 
   @override
   void initState() {
@@ -55,7 +58,6 @@ class _ProfilePageState extends State<ProfilePage> {
       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
       return;
     }
-
 
     if (widget.uid == AppData.currentUser?.uid) {
       // check if this profile is my profile
@@ -91,20 +93,6 @@ class _ProfilePageState extends State<ProfilePage> {
       _emailController.text = user!.email;
 
       userBeforeChange = UserService.cloneUserData(user!);
-
-      randomFriends.addAll(       // Get random friends
-        getRandomFriends(AppData.currentUser?.friendsUid ?? [], 6),
-      );
-      
-      List<model.User>? users = await UserService.fetchUsers( uids: randomFriends);
-
-      if(users == null){
-        if (mounted) {
-          AppUtils.showMessage(context, "Error fetching users", messageType: MessageType.error);
-        }
-      }else{
-        randomFriendsUsers.addAll(users);
-      }
 
       if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
         friend = true;
@@ -262,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   /// Show friends list
-  void onPressedFriends() async {
+  void onTapFriends() async {
     EnterContextUsersList enterContext = EnterContextUsersList.friendsModify;
     final result = await Navigator.push(
       context,
@@ -310,8 +298,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SizedBox(
+      body: Container(
         width: double.infinity,
         height: double.infinity,
         child: Padding(
@@ -546,10 +533,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 // Date of birth
-                if (!edit && AppData.currentUser?.dateOfBirth != null)
-                  Text("Age: ${UserService.calculateAge(AppData.currentUser?.dateOfBirth)}"),
+                if (!edit && user?.dateOfBirth != null) Text("Age: ${UserService.calculateAge(user?.dateOfBirth)}"),
+
                 if (edit) // Date of birth
-                  TextField(
+                  TextFormField(
                     controller: _dateController,
                     readOnly: true,
                     // Makes the field non-editable
@@ -585,17 +572,64 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
                 // Friend list
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      InkWell(
+                        onTap: onTapFriends,
+                        child: StatCard(
+                          title: "Friends",
+                          value: user!.friendsUid.length.toString(),
+                          icon: Icon(Icons.people),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        ),
+                      ),
+                      if (user!.createdAt != null)
+                        StatCard(
+                          title: "Member Since",
+                          value: AppUtils.formatDateTime(user!.createdAt),
+                          icon: Icon(Icons.calendar_today),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        ),
+                      StatCard(
+                        title: "Age",
+                        value: UserService.calculateAge(user!.dateOfBirth).toString(),
+                        icon: Icon(Icons.cake),
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                      ),
+                      StatCard(
+                        title: "Gender",
+                        value: user!.gender!,
+                        icon: Icon(user!.gender! == 'male' ? Icons.male : Icons.female),
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                      ),
+                      StatCard(
+                        title: "Participated\ncompetitions",
+                        value: user!.participatedCompetitions.length.toString(),
+                        icon: Icon(Icons.run_circle_outlined),
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                      ),
+                      StatCard(
+                        title: "",
+                        value: user!.kilometers.toString(),
+                        icon: Icon(Icons.run_circle_outlined),
+                        cardWidth: cardWidth,
+                        cardHeight: cardHeight,
+                      ),
+                    ],
+                  ),
+                ),
 
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: "Friends: ${user?.friendsUid.length ?? 0}", onPressed: () => onPressedFriends()),
-                    ),
-                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 SizedBox(height: AppUiConstants.verticalSpacingButtons),
 

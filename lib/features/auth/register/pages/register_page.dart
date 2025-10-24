@@ -165,7 +165,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       if (mounted) {
-        AppUtils.showMessage(context, "Register failed!", messageType: MessageType.error);
+        AppUtils.showMessage(context, "Register failed : ${result.message}", messageType: MessageType.error);
       }
     } else {
       // Success

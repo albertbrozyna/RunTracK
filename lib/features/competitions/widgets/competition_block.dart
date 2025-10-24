@@ -9,7 +9,7 @@ import '../../../common/enums/competition_goal.dart';
 import '../../../common/enums/competition_role.dart';
 import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
-import '../../track/widgets/stat_card.dart';
+import '../../../common/widgets/stat_card.dart';
 
 class CompetitionBlock extends StatefulWidget {
   final String firstName;

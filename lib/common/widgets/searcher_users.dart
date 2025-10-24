@@ -13,6 +13,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
   EnterContextSearcher enterContext;
   final List<User>suggestedUsers = [];
   UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,});
+  int _rebuildKey = 0;
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -38,6 +39,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
       bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", uid, UserAction.inviteToFriends);
       if (added) {
         invitedUsers.add(uid);
+        ++_rebuildKey;
           showResults(context);
       }
     }else{
@@ -80,6 +82,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
     }
 
     return FutureBuilder<List<User>>(
+      key: ValueKey(_rebuildKey),
       future: UserService.searchUsers(query,exceptMe: true,myUid: FirebaseAuth.instance.currentUser?.uid ?? ""),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

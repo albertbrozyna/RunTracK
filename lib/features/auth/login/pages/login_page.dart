@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/utils/validators.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/app_data.dart';
+import '../../../../config/routes/app_routes.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Future.delayed(Duration(seconds: 1), () {
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home,(route) => false);
         }
       });
     } on FirebaseAuthException {

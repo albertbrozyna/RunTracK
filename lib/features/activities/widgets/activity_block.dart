@@ -9,7 +9,7 @@ import 'package:run_track/services/activity_service.dart';
 import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
 import '../../track/pages/activity_summary.dart';
-import '../../track/widgets/stat_card.dart';
+import '../../../common/widgets/stat_card.dart';
 
 class ActivityBlock extends StatefulWidget {
   final String? profilePhotoUrl;

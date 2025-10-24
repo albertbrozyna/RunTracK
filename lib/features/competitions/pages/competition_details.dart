@@ -3,7 +3,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/constans/app_routes.dart';
 import 'package:run_track/features/competitions/pages/meeting_place.dart';
 import 'package:run_track/common/pages/users_list.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
@@ -13,6 +12,7 @@ import 'package:run_track/services/user_service.dart';
 import '../../../common/enums/enter_context.dart';
 import '../../../common/enums/visibility.dart' as enums;
 import '../../../common/utils/utils.dart';
+import '../../../config/routes/app_routes.dart';
 import '../../../services/competition_service.dart';
 import '../../../services/preferences_service.dart';
 import '../../../theme/colors.dart';
@@ -81,7 +81,7 @@ class _AddCompetition extends State<CompetitionDetails> {
   void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.startPage, (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
       return;
     }
 

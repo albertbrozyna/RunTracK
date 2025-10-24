@@ -8,8 +8,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.light),
-      scaffoldBackgroundColor: AppColors.primary,
-
+      scaffoldBackgroundColor: AppColors.white,
       // App font
       fontFamily: "sans-serif",
       textTheme: TextTheme(

@@ -15,7 +15,7 @@ import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import '../widgets/stat_card.dart';
+import '../../../common/widgets/stat_card.dart';
 import 'activity_choose.dart';
 import 'package:run_track/common/enums/visibility.dart' as enums;
 import 'package:run_track/services/preferences_service.dart';

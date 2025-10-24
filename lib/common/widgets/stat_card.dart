@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/colors.dart';
+import '../../theme/colors.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -17,15 +17,12 @@ class StatCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.icon,
-    double? valueFontSize,
-    double? titleFontSize,
-    double? innerPadding,
+    this.valueFontSize = 18,
+    this.titleFontSize = 14,
+    this.innerPadding = 12,
     this.cardWidth,
-    double? cardHeight,
-  }) : valueFontSize = valueFontSize ?? 18.0,
-       titleFontSize = titleFontSize ?? 14.0,
-       innerPadding = innerPadding ?? 12.0,
-       cardHeight = cardHeight ?? 120;
+    this.cardHeight = 120,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -133,7 +133,6 @@ class UserService {
           ? LatLng((location['latitude'] ?? 0.0).toDouble(), (location['longitude'] ?? 0.0).toDouble())
           : LatLng(0.0, 0.0),
       dateOfBirth: map['dateOfBirth'] != null ? (map['dateOfBirth'] as Timestamp).toDate() : null,
-
       gender: map['gender'],
       kilometers: map['kilometers'] ?? 0,
       burnedCalories: map['burnedCalories'] ?? 0,

@@ -9,8 +9,8 @@ class User {
   String email;
   String? profilePhotoUrl; // Profile photo url
   DateTime? dateOfBirth;
+  DateTime? createdAt;
   String? gender;
-
   // Default location for user
   LatLng userDefaultLocation;
 
@@ -35,7 +35,8 @@ class User {
     this.activityNames,
     this.profilePhotoUrl,
     LatLng? defaultLocation,
-    DateTime? dateOfBirth,
+    this.dateOfBirth,
+    this.createdAt,
     this.kilometers = 0,
     this.burnedCalories = 0,
     this.hoursOfActivity = 0,
