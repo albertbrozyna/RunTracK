@@ -30,6 +30,7 @@ dependencies:
   rxdart: ^0.27.7
   path_provider: ^2.1.2
   geocoding: ^4.0.0
+  google_fonts: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(backgroundColor: AppColors.primary, title: currentPageName(_selectedIndex)),
+      appBar: TopBar(title: currentPageName(_selectedIndex)),
       body: _pages[_selectedIndex],
       bottomNavigationBar: (_selectedIndex == 0)
           ? ValueListenableBuilder<bool>(

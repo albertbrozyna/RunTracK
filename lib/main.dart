@@ -8,6 +8,7 @@ import 'package:run_track/features/auth/start/widgets/additional_info_form.dart'
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/l10n/app_localizations.dart';
+import 'package:run_track/theme/app_theme.dart';
 
 import 'common/enums/tracking_state.dart';
 import 'config/firebase_options.dart';
@@ -33,10 +34,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true
-      ),
+      theme: AppTheme.lightTheme,
       routes: {
         '/start': (context) => StartPage(),
         '/home': (context) => HomePage(),

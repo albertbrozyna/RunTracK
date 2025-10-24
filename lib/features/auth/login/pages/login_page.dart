@@ -6,7 +6,6 @@ import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
-import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/app_data.dart';
@@ -41,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void handleLogin() {
     if (!isEmailValid(_emailController.text.trim())) {
-      AppUtils.showMessage(context, "Given email is incorrect",messageType: MessageType.error);
+      AppUtils.showMessage(context, "Given email is incorrect", messageType: MessageType.error);
       return;
     }
 
@@ -50,44 +49,38 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> loginUser() async {
     try {
-      final userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-            email: _emailController.text.trim().toLowerCase(),
-            password: _passwordController.text.trim(),
-          );
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim().toLowerCase(),
+        password: _passwordController.text.trim(),
+      );
 
       if (userCredential.user?.uid == null) {
-        if(mounted){
-          AppUtils.showMessage(context, "Incorrect email or password, try again.",messageType: MessageType.info);
+        if (mounted) {
+          AppUtils.showMessage(context, "Incorrect email or password, try again.", messageType: MessageType.info);
         }
         return;
       }
 
-      AppData.currentUser = await UserService.fetchUser(
-        FirebaseAuth.instance.currentUser!.uid,
-      );
+      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
       if (AppData.currentUser == null) {
-        if(mounted){
-          AppUtils.showMessage(context, "User don't exists.",messageType: MessageType.info);
+        if (mounted) {
+          AppUtils.showMessage(context, "User don't exists.", messageType: MessageType.info);
         }
         return;
       }
 
       if (mounted) {
-        AppUtils.showMessage(context, "Logged in successfully!",messageType: MessageType.success);
+        AppUtils.showMessage(context, "Logged in successfully!", messageType: MessageType.success);
       }
 
       Future.delayed(Duration(seconds: 1), () {
-        if(mounted){
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomePage()),
-          );
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
         }
       });
     } on FirebaseAuthException {
-      if(mounted){
-        AppUtils.showMessage(context, "Incorrect email or password, try again.",messageType: MessageType.info);
+      if (mounted) {
+        AppUtils.showMessage(context, "Incorrect email or password, try again.", messageType: MessageType.info);
       }
     }
   }
@@ -95,22 +88,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Log in", style: AppTextStyles.PageHeaderTextStyle),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-      ),
-      backgroundColor: Colors.transparent,
+      appBar: AppBar(title: Text("Log in")),
       body: Form(
         key: _formKey,
         child: Container(
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/appBg4.jpg"),
-              fit: BoxFit.cover,
-            ),
+            image: DecorationImage(image: AssetImage("assets/appBg4.jpg"), fit: BoxFit.cover),
           ),
           child: Center(
             child: Transform.translate(
@@ -123,22 +108,14 @@ class _LoginPageState extends State<LoginPage> {
                       // Logo
                       Padding(
                         padding: const EdgeInsetsGeometry.only(bottom: 0),
-                        child: Image.asset(
-                          "assets/runtrack-app-icon-round.png",
-                          width: 300,
-                        ),
+                        child: Image.asset("assets/runtrack-app-icon-round.png", width: 300),
                       ),
                       // App name
                       Padding(
                         padding: EdgeInsetsGeometry.only(bottom: 15),
                         child: Text(
                           "RunTracK",
-                          style: TextStyle(
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 34,
-                          ),
+                          style: TextStyle(color: Colors.white, letterSpacing: 1.5, fontWeight: FontWeight.bold, fontSize: 34),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -153,21 +130,14 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Column(
                             children: [
-                              // Email field
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 style: AppUiConstants.textStyleTextFields,
                                 decoration: InputDecoration(
                                   labelText: "Email",
-                                  labelStyle: AppUiConstants.labelStyleTextFields,
-                                  prefixIcon: Icon(Icons.email,color: AppColors.white,),
-                                  border: AppUiConstants.borderTextFields,
-                                  enabledBorder: AppUiConstants.enabledBorderTextFields,
-                                  focusedBorder: AppUiConstants.focusedBorderTextFields,
-                                  errorBorder: AppUiConstants.errorBorderTextFields,
-                                  focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                                  fillColor: AppColors.textFieldsBackground,
+                                  hintText: "Enter your email",
+                                  prefixIcon: Icon(Icons.email),
                                 ),
                               ),
                               SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -178,41 +148,20 @@ class _LoginPageState extends State<LoginPage> {
                                 style: AppUiConstants.textStyleTextFields,
                                 decoration: InputDecoration(
                                   labelText: "Password",
-                                  labelStyle: AppUiConstants.labelStyleTextFields,
-                                  prefixIcon: Icon(Icons.password,color: AppColors.white,),
-                                  border: AppUiConstants.borderTextFields,
-                                  enabledBorder: AppUiConstants.enabledBorderTextFields,
-                                  focusedBorder: AppUiConstants.focusedBorderTextFields,
-                                  errorBorder: AppUiConstants.errorBorderTextFields,
-                                  focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                                  fillColor: AppColors.textFieldsBackground,
+                                  hintText: "Enter your password",
+                                  prefixIcon: Icon(Icons.password),
                                   suffixIcon: IconButton(
                                     onPressed: () {
                                       setState(() {
                                         _isPasswordHidden = !_isPasswordHidden;
                                       });
                                     },
-                                    icon: Icon(
-                                      _isPasswordHidden
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: AppColors.white,
-                                    ),
+                                    icon: Icon(_isPasswordHidden ? Icons.visibility_off : Icons.visibility),
                                   ),
                                 ),
                               ),
                               SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                              // Login
-                              SizedBox(
-                                width: double.infinity,
-                                height: 60,
-                                child: CustomButton(
-                                  text: "Login",
-                                  onPressed: () => handleLogin(),
-                                  textSize: 20,
-
-                                ),
-                              ),
+                              CustomButton(text: "Login", onPressed: () => handleLogin()),
                             ],
                           ),
                         ),

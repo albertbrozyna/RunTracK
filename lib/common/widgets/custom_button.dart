@@ -10,6 +10,8 @@ class CustomButton extends StatelessWidget {
   final Color textColor;
   final double borderRadius;
   final double textSize;
+  final double width;
+  final double height;
 
   const CustomButton({
     super.key,
@@ -19,18 +21,15 @@ class CustomButton extends StatelessWidget {
     this.borderRadius = AppUiConstants.borderRadiusButtons,
     this.backgroundColor = AppColors.secondary,
     this.textColor = AppColors.textPrimary,
+    this.width = double.infinity,
+    this.height = 60.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: Colors.white24,
-          width: 1.0,
-        ),
-      ),
+    return SizedBox(
+      width: width,
+      height: height,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ButtonStyle(
