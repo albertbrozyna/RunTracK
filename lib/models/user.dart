@@ -18,6 +18,8 @@ class User {
   int kilometers;
   int burnedCalories;
   int hoursOfActivity;
+  int activitiesCount;
+  int competitionsCount;
 
   // Social functions
   List<String> friendsUid;
@@ -40,6 +42,8 @@ class User {
     this.kilometers = 0,
     this.burnedCalories = 0,
     this.hoursOfActivity = 0,
+    this.activitiesCount = 0,
+    this.competitionsCount = 0,
     List<String>? friendsUid,
     List<String>? pendingInvitationsToFriends,
     List<String>? receivedInvitationsToFriends,

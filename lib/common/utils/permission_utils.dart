@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:run_track/common/utils/utils.dart';
 
 class LocationService {
   // Request permission and return current position

@@ -7,6 +7,8 @@ import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
+import '../../../common/widgets/page_container.dart';
+import '../../../config/assets/app_images.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart' as model;
 
@@ -178,14 +180,9 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/appBg4.jpg"),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-        ),
-      ),
+    return PageContainer(
+      assetPath: AppImages.appBg4,
+      padding: 0,
       child: Column(
         children: [
           Container(

@@ -48,14 +48,4 @@ flutter:
   generate: true
   assets:
     - lib/l10n/
-    - assets/background-start.jpg
-    - assets/runtrack-app-icon-round.png
-    - assets/background-first.jpg
-    - assets/DefaultProfilePhoto.png
-    - assets/google-icon.png
-    - assets/appBg1.jpg
-    - assets/appBg2.jpg
-    - assets/appBg3.jpg
-    - assets/appBg4.jpg
-    - assets/appBg5.jpg
-    - assets/appBg6.jpg
+    - assets/images/

@@ -5,13 +5,12 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
-import 'package:run_track/features/profile/pages/profile.dart';
+import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../common/widgets/navigation_bar.dart';
 import '../../common/widgets/top_bar.dart';
-import '../../theme/colors.dart';
 import 'package:run_track/common/utils/permission_utils.dart';
 import 'package:run_track/features/track/models/track_state.dart';
 
@@ -63,7 +62,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initialize();
     initializeAsync();
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), MyProfile()];
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
     _loadCurrentUser();
   }
 

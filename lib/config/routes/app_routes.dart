@@ -6,6 +6,10 @@ class AppRoutes {
   static const String login = '/login';
   static const String home = '/home';
   static const String activitySummary = '/activitySummary';
+  static const String activityChoose = '/activityChoose';
+  static const String activities = '/activities';
+  static const String competitions = '/competitions';
+  static const String profile = '/competitions';
 
 
 }

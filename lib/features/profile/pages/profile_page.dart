@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/alert_dialog.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/content_container.dart';
 import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/common/widgets/stat_card.dart';
+import 'package:run_track/features/profile/widgets/info_tile.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
@@ -14,6 +15,8 @@ import 'dart:math';
 import '../../../common/enums/enter_context.dart';
 import '../../../common/utils/utils.dart';
 import '../../../common/pages/users_list.dart';
+import '../../../common/widgets/page_container.dart';
+import '../../../config/assets/app_images.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile
@@ -298,400 +301,291 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (myProfile)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Edit button
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        iconSize: 23,
-                        constraints: BoxConstraints(),
-                        icon: Icon(!edit ? Icons.edit : Icons.check, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            if (edit) {
-                              onEditFinished(context);
-                            }
-                            edit = !edit;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-
-                // If this is not my profile, show button add friends
-                if (!myProfile && !friendInvited && !receivedInvitation) ...[
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                        ),
-                        backgroundColor: WidgetStateProperty.all(Colors.red),
-                        side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                      ),
-                      onPressed: () => onPressedAddFriend(),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: Icon(Icons.person_add_alt_1, color: Colors.white, size: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                ],
-                // Accept friend and decline friend
-                if (!myProfile && receivedInvitation) ...[
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width / 1.5,
-                        child: TextButton(
-                          style: ButtonStyle(
-                            shape: WidgetStatePropertyAll(
-                              RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                            ),
-                            backgroundColor: WidgetStateProperty.all(AppColors.green),
-                            side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                          ),
-                          onPressed: () => onPressedAcceptFriend(),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4.0),
-                                child: Icon(Icons.person_add, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width / 1.5,
-                        child: TextButton(
-                          style: ButtonStyle(
-                            shape: WidgetStatePropertyAll(
-                              RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                            ),
-                            backgroundColor: WidgetStateProperty.all(AppColors.green),
-                            side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                          ),
-                          onPressed: () => onPressedAcceptFriend(),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4.0),
-                                child: Icon(Icons.person_add, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                ],
-
-                // My profile
-
-                // Profile photo
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      "assets/DefaultProfilePhoto.png",
-                      width: MediaQuery.of(context).size.width / 2,
-                      height: MediaQuery.of(context).size.width / 2,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+      body: PageContainer(
+        assetPath: AppImages.appBg4,
+        backgroundColor: Colors.white60,
+        padding: 0,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.secondary,
+                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
                 ),
-                // Name and last name
-                Container(
-                  padding: EdgeInsets.only(),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    border: Border.all(color: Colors.transparent, width: 2, style: BorderStyle.solid),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 15),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            // Name
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white),
-                                        ),
-                                  enabledBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white24),
-                                        ),
-                                  focusedBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white, width: 2),
-                                        ),
-                                  hintText: !edit ? "" : "First name",
-                                  label: Text(!edit ? "" : "First name", style: TextStyle(color: Colors.white)),
-                                  filled: edit ? true : false,
-                                  fillColor: Colors.black.withValues(alpha: 0.4),
-                                ),
 
-                                textAlign: edit ? TextAlign.center : TextAlign.right,
-                                controller: _firstNameController,
-                                readOnly: edit ? false : true,
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24),
-                              ),
-                            ),
-                            SizedBox(width: 13),
-                            // Last name
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white),
-                                        ),
-                                  enabledBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white24),
-                                        ),
-                                  focusedBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.white, width: 2),
-                                        ),
-                                  hintText: !edit ? "" : "Last name",
-                                  label: Text(!edit ? "" : "First name", style: TextStyle(color: Colors.white)),
-                                  filled: edit ? true : false,
-                                  fillColor: Colors.black.withValues(alpha: 0.4),
-                                ),
-                                controller: _lastNameController,
-                                readOnly: edit ? false : true,
-                                textAlign: edit ? TextAlign.center : TextAlign.left,
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24),
-                              ),
-                            ),
-                          ],
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text("Settings",style: TextStyle(
+                          color: Colors.white
+                        ),),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: IconButton(
+                            onPressed: () => {},
+                            icon: Icon(Icons.settings, color: Colors.white, size: 26),
+                          ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              textAlign: TextAlign.center,
-                              "Email: ",
-                              style: TextStyle(color: Colors.white24, fontSize: 22),
-                            ),
-                            Text(
-                              "${AppData.currentUser?.email}",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white, fontSize: 22),
-                            ),
-                          ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
+              // If this is not my profile, show button add friends
+              if (!myProfile && !friendInvited && !receivedInvitation) ...[
+                SizedBox(
+                  width: MediaQuery.of(context).size.width / 1.5,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(Colors.red),
+                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                    ),
+                    onPressed: () => onPressedAddFriend(),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10.0),
+                          child: Icon(Icons.person_add_alt_1, color: Colors.white, size: 16),
                         ),
                       ],
                     ),
                   ),
                 ),
-                // Date of birth
-                if (!edit && user?.dateOfBirth != null) Text("Age: ${UserService.calculateAge(user?.dateOfBirth)}"),
-
-                if (edit) // Date of birth
-                  TextFormField(
-                    controller: _dateController,
-                    readOnly: true,
-                    // Makes the field non-editable
-                    textAlign: TextAlign.left,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.black.withValues(alpha: 0.4),
-                      labelText: "Date of Birth",
-                      labelStyle: TextStyle(color: Colors.white),
-                      prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(width: 1, color: Colors.white),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+              ],
+              // Accept friend and decline friend
+              if (!myProfile && receivedInvitation) ...[
+                Row(
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 1.5,
+                      child: TextButton(
+                        style: ButtonStyle(
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
+                          ),
+                          backgroundColor: WidgetStateProperty.all(AppColors.green),
+                          side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                        ),
+                        onPressed: () => onPressedAcceptFriend(),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Icon(Icons.person_add, color: Colors.white),
+                            ),
+                          ],
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(width: 1, color: Colors.white),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                     ),
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (pickedDate != null) {
-                        String formattedDate = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
-                        _dateController.text = formattedDate;
-                      }
-                    },
-                  ),
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    SizedBox(width: AppUiConstants.horizontalSpacingButtons),
 
-                // Friend list
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      InkWell(
-                        onTap: onTapFriends,
-                        child: StatCard(
-                          title: "Friends",
-                          value: user!.friendsUid.length.toString(),
-                          icon: Icon(Icons.people),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 1.5,
+                      child: TextButton(
+                        style: ButtonStyle(
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
+                          ),
+                          backgroundColor: WidgetStateProperty.all(AppColors.green),
+                          side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                        ),
+                        onPressed: () => onPressedAcceptFriend(),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Icon(Icons.person_add, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ),
-                      if (user!.createdAt != null)
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+              ],
+
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    "assets/DefaultProfilePhoto.png",
+                    width: MediaQuery.of(context).size.width / 2,
+                    height: MediaQuery.of(context).size.width / 2,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              // Name and last name
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
+              // Friend list
+              ContentContainer(
+                borderRadius: 30,
+                backgroundColor: AppColors.secondary,
+                child: Column(
+                  children: [
+                    ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
+                    ListInfoTile(icon: Icons.email, title: "${user?.email}"),
+                    ListInfoTile(icon: user!.gender! == 'male' ? Icons.male : Icons.female, title: "${user?.gender}"),
+                    ListInfoTile(icon: Icons.cake, title: "${user?.dateOfBirth}"),
+                    ListInfoTile(icon: Icons.card_membership, title: "Member since: ${AppUtils.formatDateTime(user!.createdAt)}"),
+                    InkWell(
+                      onTap: onTapFriends,
+                      child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}",endDivider: false,),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
+              ContentContainer(
+                borderRadius: 30,
+                backgroundColor: AppColors.secondary,
+                child: Column(
+                  children: [
+                    Text(
+                      "Activity & Stats",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+
+                    SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        InkWell(
+                          onTap: onTapFriends,
+                        child:
                         StatCard(
-                          title: "Member Since",
-                          value: AppUtils.formatDateTime(user!.createdAt),
-                          icon: Icon(Icons.calendar_today),
+                          title: "Created\ncompetitions",
+                          value: user!.competitionsCount.toString(),
+                          icon: Icon(Icons.run_circle_outlined),
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
                         ),
-                      StatCard(
-                        title: "Age",
-                        value: UserService.calculateAge(user!.dateOfBirth).toString(),
-                        icon: Icon(Icons.cake),
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
+                        ),
+                        InkWell(
+                          onTap: onTapFriends,
+                          child:
+                          StatCard(
+                          title: "Activities",
+                          value: user!.activitiesCount.toString(),
+                          icon: Icon(Icons.run_circle_outlined),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        ),
+                        ),
+
+                        StatCard(
+                          title: "Total\ndistance",
+                          value: "${user!.kilometers.toString()} km",
+                          icon: Icon(Icons.directions_run),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        ),
+
+                        StatCard(
+                          title: "Total hours\nof activity",
+                          value: "${user!.hoursOfActivity.toString()} h",
+                          icon: Icon(Icons.timer),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        ),
+
+                        StatCard(
+                          title: "Burned\ncalories",
+                          value: "${user!.burnedCalories.toString()} kcal",
+                          icon: Icon(Icons.timer),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
+                        )
+
+
+
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Log out button
+              if (!edit)
+                SizedBox(
+                  width: MediaQuery.of(context).size.width / 1.5,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
                       ),
-                      StatCard(
-                        title: "Gender",
-                        value: user!.gender!,
-                        icon: Icon(user!.gender! == 'male' ? Icons.male : Icons.female),
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
-                      ),
-                      StatCard(
-                        title: "Participated\ncompetitions",
-                        value: user!.participatedCompetitions.length.toString(),
-                        icon: Icon(Icons.run_circle_outlined),
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
-                      ),
-                      StatCard(
-                        title: "",
-                        value: user!.kilometers.toString(),
-                        icon: Icon(Icons.run_circle_outlined),
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
-                      ),
-                    ],
+                      backgroundColor: WidgetStateProperty.all(AppColors.primary),
+                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                    ),
+                    onPressed: () => logoutButtonPressed(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Log out",
+                          style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: Icon(Icons.logout, color: Colors.white, size: AppUiConstants.iconSizeApp),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-                SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
-                // Log out button
-                if (!edit)
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
+              // Delete profile button
+              if (edit)
+                SizedBox(
+                  width: MediaQuery.of(context).size.width / 1.5,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
+                      ),
+                      backgroundColor: WidgetStateProperty.all(AppColors.danger),
+                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
+                    ),
+                    onPressed: () => deleteAccountButtonPressed(context),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Delete my account",
+                          style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
                         ),
-                        backgroundColor: WidgetStateProperty.all(AppColors.primary),
-                        side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                      ),
-                      onPressed: () => logoutButtonPressed(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Log out",
-                            style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.logout, color: Colors.white, size: AppUiConstants.iconSizeApp),
-                          ),
-                        ],
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: Icon(Icons.delete, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
-
-                // Delete profile button
-                if (edit)
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                        ),
-                        backgroundColor: WidgetStateProperty.all(AppColors.danger),
-                        side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                      ),
-                      onPressed: () => deleteAccountButtonPressed(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Delete my account",
-                            style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.delete, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

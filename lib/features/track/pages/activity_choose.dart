@@ -14,10 +14,11 @@ import '../../../common/utils/utils.dart';
 class ActivityChoose extends StatefulWidget {
   final String currentActivity;
 
+  const ActivityChoose({super.key, required this.currentActivity});
+
   @override
   State<ActivityChoose> createState() => ActivityChooseState();
 
-  const ActivityChoose({super.key, required this.currentActivity});
 }
 
 class ActivityChooseState extends State<ActivityChoose> {

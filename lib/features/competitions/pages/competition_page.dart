@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/common/widgets/page_container.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/competition_service.dart';
@@ -9,6 +10,7 @@ import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../common/enums/competition_role.dart';
 import '../../../common/utils/app_data.dart';
+import '../../../config/assets/app_images.dart';
 import '../../../models/user.dart';
 import '../../../services/user_service.dart';
 import '../widgets/competition_block.dart';
@@ -274,14 +276,9 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
           child: Icon(Icons.add_card, color: Colors.white),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/appBg6.jpg"),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-          ),
-        ),
+      body: PageContainer(
+        assetPath: AppImages.appBg4,
+        padding: 0,
         child: Column(
           children: [
             Container(

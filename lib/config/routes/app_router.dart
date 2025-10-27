@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/home/home_page.dart';
+import 'package:run_track/features/profile/pages/profile_page.dart';
 
 
+import '../../features/track/pages/activity_choose.dart';
 import '../../features/track/pages/activity_summary.dart';
 import '../../models/activity.dart';
 import 'app_routes.dart';
@@ -39,6 +43,23 @@ class AppRouter {
         final editMode = args?['editMode'] ?? '';
 
         return MaterialPageRoute(builder: (_) => ActivitySummary(firstName: firstName, lastName: lastName, readonly: readOnly, editMode: editMode,activityData: activity,));
+
+      case AppRoutes.activityChoose:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final currentActivity = args?[' currentActivity'] ?? '';
+
+        return MaterialPageRoute(builder: (_) => ActivityChoose(currentActivity: currentActivity));
+      case AppRoutes.activities:
+        return MaterialPageRoute(builder: (_) => const ActivitiesPage());
+
+      case AppRoutes.competitions:
+        return MaterialPageRoute(builder: (_) => const CompetitionsPage());
+      case AppRoutes.profile:
+        // TODO ARGS HERE
+        final args = settings.arguments as Map<String, dynamic>?;
+        final uid = args?['uid'] ?? '';
+
+        return MaterialPageRoute(builder: (_) => ProfilePage(uid: uid,));
 
       default:
         return MaterialPageRoute(

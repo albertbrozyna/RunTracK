@@ -7,7 +7,10 @@ import '../../../../common/widgets/custom_button.dart';
 import '../../../../theme/colors.dart';
 
 class AdditionalInfo extends StatefulWidget {
-  _AdditionalInfoState createState() => _AdditionalInfoState();
+  const AdditionalInfo({super.key});
+
+  @override
+  State<AdditionalInfo> createState() => _AdditionalInfoState();
 }
 
 class _AdditionalInfoState extends State<AdditionalInfo> {
@@ -41,34 +44,16 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                 children: [
                   TextFormField(
                     // Date of birth
-                    controller: _dateController,
                     readOnly: true,
+                    controller: _dateController,
                     validator: (value) => validateFields(value, "DateOfBirth"),
                     decoration: InputDecoration(
                       labelText: "Date of Birth",
                       prefixIcon: Icon(Icons.calendar_today),
-                      border: OutlineInputBorder(
-                        borderRadius: AppUiConstants.borderRadiusTextFields,
-                      ),
-                      enabledBorder: AppUiConstants.enabledBorderTextFields,
-                      focusedBorder: AppUiConstants.focusedBorderTextFields,
-                      errorBorder: AppUiConstants.errorBorderTextFields,
-                      contentPadding: AppUiConstants.contentPaddingTextFields,
                     ),
                     onTap: () async {
                       // Date picker
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (pickedDate != null) {
-                        String formattedDate = "${pickedDate.year.toString().padLeft(4,'0')}-"
-                            "${pickedDate.month.toString().padLeft(2,'0')}-"
-                            "${pickedDate.day.toString().padLeft(2,'0')}";
-                        _dateController.text = formattedDate;
-                      }
+                      AppUtils.pickDate(context, DateTime(1900), DateTime.now(),_dateController, true);
                     },
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -79,13 +64,6 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                     decoration: InputDecoration(
                       labelText: "Gender",
                       prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: AppUiConstants.borderRadiusTextFields,
-                      ),
-                      enabledBorder: AppUiConstants.enabledBorderTextFields,
-                      focusedBorder: AppUiConstants.focusedBorderTextFields,
-                      errorBorder: AppUiConstants.errorBorderTextFields,
-                      contentPadding: AppUiConstants.contentPaddingTextFields,
                     ),
                     items: AppConstants.genders.map((String gender) {
                       return DropdownMenuItem<String>(
@@ -99,9 +77,7 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       });
                     },
                   ),
-
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
                   SizedBox(
                     width: double.infinity,
                     height: 60,
