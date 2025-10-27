@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/enter_context.dart';
+import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/services/user_service.dart';
 
@@ -13,7 +14,7 @@ class UserSearcher extends SearchDelegate<List<String>?> {
   EnterContextSearcher enterContext;
   final List<User>suggestedUsers = [];
   UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,});
-  int _rebuildKey = 0;
+  final ValueNotifier<int> rebuildNotifier = ValueNotifier(0);
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -39,17 +40,36 @@ class UserSearcher extends SearchDelegate<List<String>?> {
       bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", uid, UserAction.inviteToFriends);
       if (added) {
         invitedUsers.add(uid);
-        ++_rebuildKey;
-          showResults(context);
+        rebuildNotifier.value++;
+        showResults(context);
+
+
       }
     }else{
       invitedUsers.add(uid);
+      rebuildNotifier.value++;
       showResults(context);
+
     }
   }
 
   /// Navigate to user profile
-  void onTapUser(BuildContext context,String uid){
+  void onTapUser(BuildContext context,String uid) async {
+    final result = await Navigator.pushNamed(context, AppRoutes.profile,arguments: {
+      'uid': uid,
+    });
+
+    if(result != null && result is Map){
+      final List<String> usersUid = result['usersUid'];
+      final List<String> usersUid2 = result['usersUid2'];
+      // Set invited participants
+      invitedUsers.clear();
+      invitedUsers.addAll(usersUid);
+      listUsers.clear();
+      listUsers.addAll(usersUid2);
+      rebuildNotifier.value++;
+    }
+
     Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfilePage(uid: uid)));
   }
 
@@ -81,35 +101,39 @@ class UserSearcher extends SearchDelegate<List<String>?> {
       return Center(child: Text("Enter a name to search"));
     }
 
-    return FutureBuilder<List<User>>(
-      key: ValueKey(_rebuildKey),
-      future: UserService.searchUsers(query,exceptMe: true,myUid: FirebaseAuth.instance.currentUser?.uid ?? ""),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData) {
-          return Center(child: Text("No users found"));
-        }
-        final users = snapshot.data!;
-        return ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            final user = users[index];
-            return ListTile(
-              leading: CircleAvatar(
-                radius: 18,
-                backgroundImage: user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty
-                    ? NetworkImage(user.profilePhotoUrl!)
-                    : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
-              ),
-              onTap: () => onTapUser(context, user.uid),
-              title: Text("${user.firstName} ${user.lastName}"),
-              trailing: IconButton(onPressed: () => onPressedPersonAdd(user.uid,context), icon: getIconForUser(user.uid)),
+    return ValueListenableBuilder(
+      valueListenable: rebuildNotifier,
+      builder: (context, value, child) {
+        return FutureBuilder<List<User>>(
+          future: UserService.searchUsers(query,exceptMe: true,myUid: FirebaseAuth.instance.currentUser?.uid ?? ""),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData) {
+              return Center(child: Text("No users found"));
+            }
+            final users = snapshot.data!;
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundImage: user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty
+                        ? NetworkImage(user.profilePhotoUrl!)
+                        : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                  ),
+                  onTap: () => onTapUser(context, user.uid),
+                  title: Text("${user.firstName} ${user.lastName}"),
+                  trailing: IconButton(onPressed: () => onPressedPersonAdd(user.uid,context), icon: getIconForUser(user.uid)),
+                );
+              },
             );
           },
         );
-      },
+      }
     );
   }
 

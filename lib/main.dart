@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/config/routes/app_router.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/auth/start/widgets/additional_info_form.dart';
 import 'package:run_track/features/home/home_page.dart';
@@ -35,10 +36,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: AppTheme.lightTheme,
-      routes: {
-        '/start': (context) => StartPage(),
-        '/home': (context) => HomePage(),
-      },
+      onGenerateRoute: AppRouter.onGenerateRoute,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

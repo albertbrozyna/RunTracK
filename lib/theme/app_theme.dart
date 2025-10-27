@@ -23,6 +23,7 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         centerTitle: true,
         titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
 
       inputDecorationTheme: InputDecorationTheme(

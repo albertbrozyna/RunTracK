@@ -11,6 +11,7 @@ import 'package:run_track/models/user.dart' as model;
 
 enum UserAction{
   inviteToFriends,
+  removeInvitation,
   acceptInvitationToFriends,
   declineInvitationToFriends,
   deleteFriend
@@ -359,26 +360,42 @@ class UserService {
         final receiverReceivedInvitationsList = List<String>.from(senderSnap['receivedInvitationsToFriends'] ?? []);
 
         if(action == UserAction.inviteToFriends){// Do action
-          if(!senderFriendsList.contains(receiverUid)){
+          if(!senderFriendsList.contains(receiverUid)){ // Sender it is me
             senderPendingInvitationsList.add(receiverUid);
           }
+          AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
+
           if(!receiverFriendsList.contains(senderUid)){
             receiverReceivedInvitationsList.add(senderUid);
           }
-        }else if(action == UserAction.acceptInvitationToFriends) {
+        }else if(action == UserAction.removeInvitation) {
+          receiverReceivedInvitationsList.remove(senderUid);
+          senderPendingInvitationsList.remove(receiverUid);
+          AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
+        }
+        else if(action == UserAction.acceptInvitationToFriends) {
           if(!senderFriendsList.contains(receiverUid)){
             senderFriendsList.add(receiverUid);
           }
           if(!receiverFriendsList.contains(senderUid)){
             receiverFriendsList.add(senderUid);
           }
+
+          AppData.currentUser?.friendsUid = receiverFriendsList;
+          AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
+
           senderPendingInvitationsList.remove(receiverUid);
           receiverReceivedInvitationsList.remove(senderUid);
         }else if(action == UserAction.declineInvitationToFriends){
-          senderPendingInvitationsList.remove(receiverUid);
+          receiverReceivedInvitationsList.remove(receiverUid);
+
+          AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
+
         }else if(action == UserAction.deleteFriend){
           senderFriendsList.remove(receiverUid);
           receiverFriendsList.remove(senderUid);
+
+          AppData.currentUser?.friendsUid = senderFriendsList;
         }
 
         transaction.update(userSenderReference, {

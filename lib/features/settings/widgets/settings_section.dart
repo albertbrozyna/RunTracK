@@ -1,9 +1,10 @@
 
 import 'package:flutter/material.dart';
-import 'package:vrooom/core/configs/theme/app_spacing.dart';
-import 'package:vrooom/presentation/admin/admin_settings/widgets/settings_tile.dart';
+import 'package:run_track/features/settings/widgets/settings_tile.dart';
+import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../../core/configs/theme/app_colors.dart';
+import '../../../theme/colors.dart';
+
 
 class SettingsSection extends StatefulWidget {
   final String sectionTitle;
@@ -25,7 +26,7 @@ class _SettingsSectionState extends State<SettingsSection> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.container.neutral800,
+        color: AppColors.secondary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -39,7 +40,7 @@ class _SettingsSectionState extends State<SettingsSection> {
               const TextStyle(color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             const SizedBox(
-              height: AppSpacing.xxs,
+              height: AppUiConstants.horizontalSpacingTextFields,
             ),
             Row(
               children: [

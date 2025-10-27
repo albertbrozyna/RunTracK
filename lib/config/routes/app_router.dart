@@ -6,11 +6,15 @@ import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
+import 'package:run_track/features/settings/pages/settings_page.dart';
 
 
+import '../../common/enums/enter_context.dart';
+import '../../common/pages/users_list.dart';
 import '../../features/track/pages/activity_choose.dart';
 import '../../features/track/pages/activity_summary.dart';
 import '../../models/activity.dart';
+import '../../models/user.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -55,11 +59,20 @@ class AppRouter {
       case AppRoutes.competitions:
         return MaterialPageRoute(builder: (_) => const CompetitionsPage());
       case AppRoutes.profile:
-        // TODO ARGS HERE
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
-
+        final passedUser = args?['passedUser'] as User;
         return MaterialPageRoute(builder: (_) => ProfilePage(uid: uid,));
+
+      case AppRoutes.settings:
+        return MaterialPageRoute(builder: (_) => SettingsPage());
+      case AppRoutes.usersList:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final usersUid = args?['usersUid'] ?? [];
+        final usersUid2 = args?['usersUid2'] ?? [];
+        final enterContext = args?['enterContext']  as EnterContextUsersList;
+
+        return MaterialPageRoute(builder: (_) => UsersList(usersUid: usersUid,usersUid2: usersUid2,enterContext: enterContext));
 
       default:
         return MaterialPageRoute(

@@ -1,52 +1,46 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/enums/user_relationship.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/content_container.dart';
 import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/common/widgets/stat_card.dart';
 import 'package:run_track/features/profile/widgets/info_tile.dart';
+import 'package:run_track/features/profile/widgets/profile_action_button.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;
-import 'dart:math';
 
 import '../../../common/enums/enter_context.dart';
 import '../../../common/utils/utils.dart';
 import '../../../common/pages/users_list.dart';
 import '../../../common/widgets/page_container.dart';
 import '../../../config/assets/app_images.dart';
+import '../../../config/routes/app_routes.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile
   final model.User? passedUser; // Data of user which we are showing
-
-  const ProfilePage({super.key, this.uid, this.passedUser});
+  final List<String>usersList;
+  final List<String>invitedUsers;
+  const ProfilePage({super.key, this.uid, this.passedUser,this.usersList = const [],this.invitedUsers = const []});
 
   @override
   State<StatefulWidget> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  bool edit = false;
-  bool search = false;
-  bool friendInvited = false; // You invited this person to friends
-  bool receivedInvitation = false; // You received invitation from this user to friends
-  bool friend = false;
-  bool myProfile = false; // Variable that tells us if we are viewing our own profile or not
-  bool loaded = false; // This tells us if we loaded a user
-  model.User? user; // User which we are showing
-  model.User? userBeforeChange;
-  List<String> randomFriends = [];
-  List<model.User> randomFriendsUsers = [];
-
   final double cardHeight = 150;
   final double cardWidth = 150;
+
+  late List<String> usersList;
+  late List<String> invitedUsers;
+  bool loaded = false; // This tells us if we loaded a user
+  model.User? user; // User which we are showing
+  UserRelationshipStatus relationshipStatus = UserRelationshipStatus.notConnected;
+
 
   @override
   void initState() {
@@ -58,14 +52,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
       return;
     }
 
-    if (widget.uid == AppData.currentUser?.uid) {
-      // check if this profile is my profile
-      myProfile = true;
-    }
+    usersList = List.from(widget.usersList);
+    invitedUsers = List.from(widget.invitedUsers);
   }
 
   /// Initialize async data
@@ -90,106 +82,21 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (loaded == true && user != null) {
-      // Sync with textfields
-      _firstNameController.text = user!.firstName;
-      _lastNameController.text = user!.lastName;
-      _emailController.text = user!.email;
-
-      userBeforeChange = UserService.cloneUserData(user!);
-
+      // Check user relationship
       if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
-        friend = true;
+        relationshipStatus = UserRelationshipStatus.friend;
       } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(user!.uid) ?? false) {
-        receivedInvitation = true;
+        relationshipStatus = UserRelationshipStatus.pendingReceived;
       } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(user!.uid) ?? false) {
-        friendInvited = true;
+        relationshipStatus = UserRelationshipStatus.pendingSent;
+      }else if(user!.uid == AppData.currentUser?.uid) {
+        relationshipStatus = UserRelationshipStatus.myProfile;
       }
     }
 
     setState(() {});
   }
 
-  /// Pick a count random friends from user friends
-  List<String> getRandomFriends(List<String> friends, int count) {
-    if (friends.isEmpty) {
-      return [];
-    }
-    if (friends.length <= count) {
-      return friends;
-    } else {
-      final random = Random();
-      final friendsCopy = List<String>.from(friends); // make a copy to avoid modifying original
-      final result = <String>[];
-
-      final pickCount = count <= friendsCopy.length ? count : friendsCopy.length;
-
-      for (int i = 0; i < pickCount; i++) {
-        final index = random.nextInt(friendsCopy.length);
-        result.add(friendsCopy[index]);
-        friendsCopy.removeAt(index); // avoid duplicates
-      }
-      return result;
-    }
-  }
-
-  /// Delete account action
-  void deleteAccountButtonPressed(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.alertDialogColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-          title: const Text("Confirm Delete", textAlign: TextAlign.center),
-          content: const Text("Are you sure you want to delete your account? This action cannot be undone.", textAlign: TextAlign.center),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Cancel button
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor: AppColors.gray,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                // Delete button
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor: AppColors.danger,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-                    ),
-                    onPressed: () async {
-                      Navigator.of(context).pop(); // close dialog
-                      if (await UserService.deleteUserFromFirestore()) {
-                        if (mounted) {
-                          AppUtils.showMessage(context, "User account deleted successfully", messageType: MessageType.info);
-                        }
-                      }
-                      UserService.signOutUser();
-                    },
-                    child: const Text("Delete my account"),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   /// Logout button action
   void logoutButtonPressed(BuildContext context) {
@@ -221,19 +128,39 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// Function invoked when edit is finished and changes are saved
-  void onEditFinished(BuildContext context) async {
-    user?.firstName = _firstNameController.text;
-    user?.lastName = _lastNameController.text;
-    DateTime? date = DateTime.tryParse(_dateController.text);
-    user?.dateOfBirth = date;
+  /// Accept invitation
+  void onPressedAcceptInvitation() async {
+    bool added = await UserService.actionToUsers(
+      user!.uid,
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      UserAction.acceptInvitationToFriends,
+    );
+    if (added) {
+      setState(() {
+        usersList.add(user!.uid); // Add to friends or competitions
+          relationshipStatus = UserRelationshipStatus.friend;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
+      }
+    }
+  }
 
-    if (!UserService.usersEqual(userBeforeChange!, user!)) {
-      model.User? res = await UserService.updateUser(user!);
-      if (res == null) {
-        if (mounted) {
-          AppUtils.showMessage(context, "Error updating user");
-        }
+  /// Decline invitation
+  void onPressedDeclineInvitation() async {
+    bool added = await UserService.actionToUsers(
+      user!.uid,
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      UserAction.declineInvitationToFriends,
+    );
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, "Error declining invitation", messageType: MessageType.error);
       }
     }
   }
@@ -243,7 +170,8 @@ class _ProfilePageState extends State<ProfilePage> {
     bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.inviteToFriends);
     if (added) {
       setState(() {
-        friendInvited = true;
+        relationshipStatus = UserRelationshipStatus.pendingSent;
+
       });
     } else {
       if (mounted) {
@@ -252,17 +180,43 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  /// Remove invite to friends
+  void onPressedRemoveInviteToFriends() async {
+    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.removeInvitation);
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, "Error removing invitation", messageType: MessageType.error);
+      }
+    }
+  }
+
+  void onPressedDeleteFriend() async {
+    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.deleteFriend);
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(context, "Error deleting friend", messageType: MessageType.error);
+      }
+    }
+  }
+
   /// Show friends list
   void onTapFriends() async {
     EnterContextUsersList enterContext = EnterContextUsersList.friendsModify;
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            UsersList(usersUid: user?.friendsUid ?? [], usersUid2: user?.pendingInvitationsToFriends ?? [], enterContext: enterContext),
-      ),
-    );
-    if (result != null) {
+    final result = await Navigator.pushNamed(context, AppRoutes.usersList,arguments: {
+      'usersUid': user?.friendsUid ?? [],
+      'usersUid2': user?.pendingInvitationsToFriends ?? [],
+      'enterContext': enterContext,
+    } );
+
+    if (result != null && result is Map) {
       final List<String> usersUid = result['usersUid'];
       final List<String> usersUid2 = result['usersUid2'];
       // Set invited participants
@@ -270,24 +224,6 @@ class _ProfilePageState extends State<ProfilePage> {
         user?.friendsUid = usersUid;
         user?.pendingInvitationsToFriends = usersUid2;
       });
-    }
-  }
-
-  /// Accept friend
-  void onPressedAcceptFriend() async {
-    bool added = await UserService.actionToUsers(
-      FirebaseAuth.instance.currentUser?.uid ?? "",
-      user!.uid,
-      UserAction.acceptInvitationToFriends,
-    );
-    if (added) {
-      setState(() {
-        friend = true;
-      });
-    } else {
-      if (mounted) {
-        AppUtils.showMessage(context, "Error accepting friend", messageType: MessageType.error);
-      }
     }
   }
 
@@ -301,6 +237,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
+      appBar: !(relationshipStatus == UserRelationshipStatus.myProfile) ? AppBar(title: Text("Profile"),) : null,
       body: PageContainer(
         assetPath: AppImages.appBg4,
         backgroundColor: Colors.white60,
@@ -317,109 +254,50 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text("Settings",style: TextStyle(
-                          color: Colors.white
-                        ),),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            onPressed: () => {},
-                            icon: Icon(Icons.settings, color: Colors.white, size: 26),
+                    if (relationshipStatus == UserRelationshipStatus.myProfile)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: IconButton(
+                                  onPressed: () => logoutButtonPressed(context),
+                                  icon: Icon(Icons.logout, color: Colors.white, size: 26),
+                                ),
+                              ),
+                              Text("Logout", style: TextStyle(color: Colors.white)),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
+
+                          Row(
+                            children: [
+                              Text("Settings", style: TextStyle(color: Colors.white)),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: IconButton(
+                                  onPressed: () => {Navigator.pushNamed(context, '/settings')},
+                                  icon: Icon(Icons.settings, color: Colors.white, size: 26),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
+
+              ProfileActionButton(
+                userRelationshipStatus: relationshipStatus,
+                onPressedRemoveFriends: onPressedDeleteFriend,
+                onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
+                onPressedSendInvitation: onPressedAddFriend,
+                onPressedAcceptInvitation: onPressedAcceptInvitation,
+                onPressedDeclineInvitation: onPressedDeclineInvitation,
+              ),
               SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
-              // If this is not my profile, show button add friends
-              if (!myProfile && !friendInvited && !receivedInvitation) ...[
-                SizedBox(
-                  width: MediaQuery.of(context).size.width / 1.5,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                      ),
-                      backgroundColor: WidgetStateProperty.all(Colors.red),
-                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                    ),
-                    onPressed: () => onPressedAddFriend(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10.0),
-                          child: Icon(Icons.person_add_alt_1, color: Colors.white, size: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: AppUiConstants.verticalSpacingButtons),
-              ],
-              // Accept friend and decline friend
-              if (!myProfile && receivedInvitation) ...[
-                Row(
-                  children: [
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width / 1.5,
-                      child: TextButton(
-                        style: ButtonStyle(
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                          ),
-                          backgroundColor: WidgetStateProperty.all(AppColors.green),
-                          side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                        ),
-                        onPressed: () => onPressedAcceptFriend(),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4.0),
-                              child: Icon(Icons.person_add, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width / 1.5,
-                      child: TextButton(
-                        style: ButtonStyle(
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                          ),
-                          backgroundColor: WidgetStateProperty.all(AppColors.green),
-                          side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                        ),
-                        onPressed: () => onPressedAcceptFriend(),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Add friend", style: TextStyle(color: Colors.white, fontSize: 14)),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4.0),
-                              child: Icon(Icons.person_add, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: AppUiConstants.verticalSpacingButtons),
-              ],
 
               Container(
                 decoration: BoxDecoration(
@@ -451,7 +329,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ListInfoTile(icon: Icons.card_membership, title: "Member since: ${AppUtils.formatDateTime(user!.createdAt)}"),
                     InkWell(
                       onTap: onTapFriends,
-                      child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}",endDivider: false,),
+                      child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}", endDivider: false),
                     ),
                   ],
                 ),
@@ -475,25 +353,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         InkWell(
                           onTap: onTapFriends,
-                        child:
-                        StatCard(
-                          title: "Created\ncompetitions",
-                          value: user!.competitionsCount.toString(),
-                          icon: Icon(Icons.run_circle_outlined),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                        ),
+                          child: StatCard(
+                            title: "Created\ncompetitions",
+                            value: user!.competitionsCount.toString(),
+                            icon: Icon(Icons.run_circle_outlined),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
                         ),
                         InkWell(
                           onTap: onTapFriends,
-                          child:
-                          StatCard(
-                          title: "Activities",
-                          value: user!.activitiesCount.toString(),
-                          icon: Icon(Icons.run_circle_outlined),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                        ),
+                          child: StatCard(
+                            title: "Activities",
+                            value: user!.activitiesCount.toString(),
+                            icon: Icon(Icons.run_circle_outlined),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
                         ),
 
                         StatCard(
@@ -518,73 +394,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           icon: Icon(Icons.timer),
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
-                        )
-
-
-
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-
-              // Log out button
-              if (!edit)
-                SizedBox(
-                  width: MediaQuery.of(context).size.width / 1.5,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                      ),
-                      backgroundColor: WidgetStateProperty.all(AppColors.primary),
-                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                    ),
-                    onPressed: () => logoutButtonPressed(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Log out",
-                          style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: Icon(Icons.logout, color: Colors.white, size: AppUiConstants.iconSizeApp),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              // Delete profile button
-              if (edit)
-                SizedBox(
-                  width: MediaQuery.of(context).size.width / 1.5,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(AppUiConstants.borderRadiusButtons)),
-                      ),
-                      backgroundColor: WidgetStateProperty.all(AppColors.danger),
-                      side: WidgetStateProperty.all(BorderSide(color: Colors.white24, width: 1, style: BorderStyle.solid)),
-                    ),
-                    onPressed: () => deleteAccountButtonPressed(context),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Delete my account",
-                          style: TextStyle(color: Colors.white, fontSize: AppUiConstants.textSizeApp),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: Icon(Icons.delete, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
