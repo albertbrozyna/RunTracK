@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/pages/notifications.dart';
+import 'package:run_track/common/pages/notifications_page.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';

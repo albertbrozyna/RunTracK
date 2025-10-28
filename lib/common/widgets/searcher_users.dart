@@ -69,9 +69,9 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
     });
 
     if(result != null && result is Map){
-      final Set<String> usersUid = result['usersUid'];
-      final Set<String> usersUid2 = result['usersUid2'];
-      final Set<String> usersUid3 = result['usersUid3'];
+      final Set<String> usersUid = (result['usersUid'] as Set<String>?) ?? {};
+      final Set<String> usersUid2 = (result['usersUid2'] as Set<String>?) ?? {};
+      final Set<String> usersUid3 = (result['usersUid3'] as Set<String>?) ?? {};
       // Set invited participants
       listUsers.clear();
       listUsers.addAll(usersUid);

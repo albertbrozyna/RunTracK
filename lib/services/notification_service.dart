@@ -7,7 +7,7 @@ class NotificationService {
   static DocumentSnapshot? lastFetchedNotificationDoc;
 
   /// Save notification to database
-  Future<bool> saveNotification(AppNotification notification) async {
+  static Future<bool> saveNotification(AppNotification notification) async {
     if (notification.uid.isEmpty) {
       return false;
     }

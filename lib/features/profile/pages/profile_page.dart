@@ -236,8 +236,9 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    if (result != null && result is Map) {
-      final Set<String> usersUid = result['usersUid']; // Get here a list of friends, TODO TO THINK
+    // Set changes to current user if it me
+    if (enterContext == EnterContextUsersList.friendsModify && result != null && result is Map) {
+      final Set<String> usersUid = result['usersUid'];
       final Set<String> usersUid2 = result['usersUid2'];
       final Set<String> usersUid3 = result['usersUid3'];
       // Set invited participants

@@ -1,9 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/enter_context.dart';
 import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/common/widgets/page_container.dart';
 import 'package:run_track/common/widgets/user_profile_tile.dart';
+import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/models/user.dart';
 
 import '../../config/assets/app_images.dart';
@@ -26,11 +26,11 @@ class UsersList extends StatefulWidget {
 
 class _UsersListState extends State<UsersList> {
   final List<User> _users = [];
-  Set<String> _usersUid = {}; // List of participants
-  Set<String> _usersUid2 = {}; // For participants context it is list of invited
-  Set<String> _usersUid3 = {}; // For participants context it is list of invited
+  List<String> _usersUid = []; // List of participants
+  List<String> _usersUid2 = []; // For participants context it is list of invited
+  List<String> _usersUid3 = []; // For participants context it is list of invited
   bool visibleFabAdd = false;
-  DocumentSnapshot? lastDocument;
+  String? lastUid; // Last uid for pagination
   final ScrollController _scrollController = ScrollController();
   final int _limit = 20; // Users per page
   bool _hasMore = true;
@@ -38,20 +38,33 @@ class _UsersListState extends State<UsersList> {
   String pageTitle = "";
   String noItemsMessage = "";
 
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     initialize();
-    _loadUsers();
   }
 
   void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
       return;
     }
 
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent) {
+        _loadUsers();
+      }
+    });
+
+    // Set title and message depends on context
     if (widget.enterContext == EnterContextUsersList.participantsModify ||
         widget.enterContext == EnterContextUsersList.participantsReadOnly) {
       pageTitle = "Participants";
@@ -61,12 +74,14 @@ class _UsersListState extends State<UsersList> {
       noItemsMessage = "No friends found";
     }
 
-    _usersUid = widget.usersUid;
-    _usersUid2 = widget.usersUid2;
-    _usersUid3 = widget.usersUid3;
+    _usersUid = widget.usersUid.toList();
+    _usersUid2 = widget.usersUid2.toList();
+    _usersUid3 = widget.usersUid3.toList();
+
+    _loadUsers();
   }
 
-  /// Load my activities
+  /// Load users
   Future<void> _loadUsers() async {
     if (_isLoading == true || _hasMore == false) {
       return;
@@ -75,11 +90,25 @@ class _UsersListState extends State<UsersList> {
       _isLoading = true;
     });
 
-    final users = await UserService.fetchUsersListPage(uids: _usersUid, lastDocument: lastDocument, limit: _limit);
+    int index = 0;
+    if (lastUid != null) {
+      index = _usersUid.indexOf(lastUid!);
+
+      if (index == -1 || index == _usersUid.length - 1) {
+        _hasMore = false;
+        return;
+      }
+      index++;
+    }
+    int end = (index + _limit > _usersUid.length) ? _usersUid.length : index + _limit;
+
+    List<String> usersSlice = _usersUid.sublist(index, end);
+
+    final users = await UserService.fetchUsers(uids: usersSlice, limit: _limit);
 
     setState(() {
       _users.addAll(users);
-      lastDocument = users.isNotEmpty ? UserService.lastFetchedDocumentParticipants : null;
+      lastUid = users.isNotEmpty ? users.last.uid : null;
       _isLoading = false;
       if (users.length < _limit) {
         _hasMore = false;
@@ -94,13 +123,13 @@ class _UsersListState extends State<UsersList> {
       enterContextSearcher = EnterContextSearcher.participants;
     }
 
-    final result = await showSearch<Map<String,Set<String>?>>(
+    final result = await showSearch<Map<String, Set<String>?>>(
       context: context,
       delegate: UserSearcher(
         enterContext: enterContextSearcher,
-        listUsers: _usersUid,
-        invitedUsers: _usersUid2,
-        receivedInvitations: _usersUid3,
+        listUsers: _usersUid.toSet(),
+        invitedUsers: _usersUid2.toSet(),
+        receivedInvitations: _usersUid3.toSet(),
       ),
     );
 
@@ -110,17 +139,18 @@ class _UsersListState extends State<UsersList> {
       final Set<String>? usersUid3 = result['usersUid3'];
       // Set invited participants
       setState(() {
-        if(usersUid != null){
-          _usersUid = usersUid;
+        if (usersUid != null) {
+          _usersUid = usersUid.toList();
         }
-        if(usersUid2 != null){
-          _usersUid2 = usersUid2;
+        if (usersUid2 != null) {
+          _usersUid2 = usersUid2.toList();
         }
-        if(usersUid3 != null){
-          _usersUid3 = usersUid3;
+        if (usersUid3 != null) {
+          _usersUid3 = usersUid3.toList();
         }
-        _hasMore = false; // Reset users and fetch again
-        UserService.lastFetchedDocumentParticipants = null;
+        // Reset users and fetch again with new users
+        _hasMore = true;
+        lastUid = null;
         _users.clear();
         _loadUsers();
       });
@@ -134,7 +164,7 @@ class _UsersListState extends State<UsersList> {
       onPopInvokedWithResult: (didPop, result) => {
         if (!didPop)
           {
-            Navigator.of(context).pop({'usersUid': _usersUid, 'usersUid2': _usersUid2, 'usersUid3': _usersUid3}),
+            Navigator.of(context).pop({'usersUid': _usersUid.toSet(), 'usersUid2': _usersUid2.toSet(), 'usersUid3': _usersUid3.toSet()}),
           },
       },
       child: Scaffold(
@@ -156,7 +186,7 @@ class _UsersListState extends State<UsersList> {
           centerTitle: true,
           backgroundColor: AppColors.primary,
         ),
-        body:PageContainer(
+        body: PageContainer(
           assetPath: AppImages.appBg4,
           child: _users.isEmpty
               ? NoItemsMsg(textMessage: noItemsMessage)

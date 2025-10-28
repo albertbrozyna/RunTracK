@@ -6,21 +6,13 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/constans/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
+import 'package:run_track/models/notification.dart';
 import 'package:run_track/models/user.dart' as model;
+import 'package:run_track/services/notification_service.dart';
 
-
-enum UserAction{
-  inviteToFriends,
-  removeInvitation,
-  acceptInvitationToFriends,
-  declineInvitationToFriends,
-  deleteFriend
-}
+enum UserAction { inviteToFriends, removeInvitation, acceptInvitationToFriends, declineInvitationToFriends, deleteFriend }
 
 class UserService {
-  static DocumentSnapshot? lastFetchedDocumentParticipants; // Participants in run competition
-  static DocumentSnapshot? lastFetchedDocumentInvitedParticipants; // Invited participants
-
   /// Check if current user i logged in to app
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
@@ -157,24 +149,6 @@ class UserService {
     return null;
   }
 
-  /// Fetch users data up to 10 uids because of whereIn
-  static Future<List<model.User>?> fetchUsers({ required List<String> uids}) async {
-    if (uids.isEmpty) {
-      return null;
-    }
-    final querySnapshot = await FirebaseFirestore.instance.collection(FirestoreCollections.users).where(
-      'uid',
-      whereIn: uids
-    ).get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data())).toList();
-
-      return users;
-    }
-    return null;
-  }
-
   /// Fetch  user firstName LastName and profile photo uri data
   static Future<model.User?> fetchUserForBlock(String uid) async {
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -192,37 +166,48 @@ class UserService {
           return null;
         }
 
-        return model.User(uid: uid, firstName: firstName, lastName: lastName,email: email, gender: gender, profilePhotoUrl: profilePhotoUrl);
+        return model.User(
+          uid: uid,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          gender: gender,
+          profilePhotoUrl: profilePhotoUrl,
+        );
       }
     }
     return null;
   }
 
-  // TODO IMPORTANT LIMIT CANNOT BE BIGGER THAN 10
-  /// Fetch participants invited to run competition IMPORTANT LIMIT CANNOT BE BIGGER THAN 10
-  static Future<List<model.User>> fetchUsersListPage({
-    required Set<String> uids,
-    DocumentSnapshot? lastDocument,
-    int limit = 10,
-  }) async {
+  /// Fetch users list from firestore
+  static Future<List<model.User>> fetchUsers({required List<String> uids, int limit = 20}) async {
     if (uids.isEmpty) {
       return [];
     }
 
+    List<model.User> allUsers = [];
+
     try {
-      Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: uids).limit(limit);
+      final uidsList = uids.toList();
+      List<List<String>> chunkedUids = [];
 
-      if (lastDocument != null) {
-        queryUsers = queryUsers.startAfterDocument(lastDocument);
-      }
-      final querySnapshot = await queryUsers.get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentInvitedParticipants = querySnapshot.docs.last;
+      for (int i = 0; i < uidsList.length; i += 10) {
+        int end = (i + 10 > uidsList.length) ? uidsList.length : i + 10;
+        chunkedUids.add(uidsList.sublist(i, end));
       }
 
-      final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return users;
+      for (List<String> chunk in chunkedUids) {
+        Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: chunk).limit(limit);
+
+        final querySnapshot = await queryUsers.get();
+        final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+
+        allUsers.addAll(users);
+      }
+
+      allUsers.sort((a, b) => a.uid.compareTo(b.uid));
+
+      return allUsers;
     } catch (e) {
       print("Error: $e");
       return [];
@@ -230,23 +215,23 @@ class UserService {
   }
 
   /// Search users in firestore
-  static Future<List<model.User>> searchUsers(String query,{bool exceptMe = false,String myUid = ""}) async {
+  static Future<List<model.User>> searchUsers(String query, {bool exceptMe = false, String myUid = ""}) async {
     if (query.isEmpty) {
       return [];
     }
     QuerySnapshot snap;
 
-    if(exceptMe){
-      snap = await FirebaseFirestore.instance
-        .collection('users')
-        .where('uid',isNotEqualTo: myUid )
-        .where('fullName', isGreaterThanOrEqualTo: query)
-        .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
-        .get();
-    }else{
+    if (exceptMe) {
       snap = await FirebaseFirestore.instance
           .collection('users')
-          .where('uid',isNotEqualTo: myUid )
+          .where('uid', isNotEqualTo: myUid)
+          .where('fullName', isGreaterThanOrEqualTo: query)
+          .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
+          .get();
+    } else {
+      snap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isNotEqualTo: myUid)
           .where('fullName', isGreaterThanOrEqualTo: query)
           .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
           .get();
@@ -256,8 +241,6 @@ class UserService {
       return [];
     }
 
-
-
     final List<model.User> users = snap.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final firstName = data['firstName'].toString();
@@ -266,7 +249,14 @@ class UserService {
       final gender = data['gender'].toString();
       final profilePhotoUrl = data['profilePhotoUrl'].toString();
 
-      return model.User(uid: doc.id, firstName: firstName, lastName: lastName,email: email, gender: gender, profilePhotoUrl: profilePhotoUrl);
+      return model.User(
+        uid: doc.id,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        gender: gender,
+        profilePhotoUrl: profilePhotoUrl,
+      );
     }).toList();
 
     return users;
@@ -287,7 +277,7 @@ class UserService {
       final querySnapshot = await queryUsers.get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentParticipants = querySnapshot.docs.last;
+        //lastFetchedDocumentParticipants = querySnapshot.docs.last;
       }
 
       final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
@@ -334,10 +324,12 @@ class UserService {
   }
 
   /// Do action in one transaction to users depending on action type
-  static Future<bool> actionToUsers(String senderUid, String receiverUid,UserAction action) async {
-    if(senderUid.isEmpty || receiverUid.isEmpty){
+  static Future<bool> actionToUsers(String senderUid, String receiverUid, UserAction action) async {
+    if (senderUid.isEmpty || receiverUid.isEmpty) {
       return false;
     }
+
+    AppNotification? notification;
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final userSenderReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(senderUid);
@@ -356,45 +348,55 @@ class UserService {
 
         final senderFriendsList = Set<String>.from(senderSnap['friendsUid'] ?? []);
         final senderPendingInvitationsList = Set<String>.from(senderSnap['pendingInvitationsToFriends'] ?? []);
-        final receiverFriendsList = Set<String>.from(senderSnap['friendsUid'] ?? []);
-        final receiverReceivedInvitationsList = Set<String>.from(senderSnap['receivedInvitationsToFriends'] ?? []);
+        final receiverFriendsList = Set<String>.from(receiverSnap['friendsUid'] ?? []);
+        final receiverReceivedInvitationsList = Set<String>.from(receiverSnap['receivedInvitationsToFriends'] ?? []);
 
-        if(action == UserAction.inviteToFriends){// Do action
-          if(!senderFriendsList.contains(receiverUid)){ // Sender it is me
-            senderPendingInvitationsList.add(receiverUid);
-          }
+        final senderFirstName = senderSnap['firstName'] ?? '';
+        final senderLastName = senderSnap['lastName'] ?? '';
+        final receiverFirstName = receiverSnap['firstName'] ?? '';
+        final receiverLastName = receiverSnap['lastName'] ?? '';
+
+        if (action == UserAction.inviteToFriends) {
+          senderPendingInvitationsList.add(receiverUid);
           AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
-
-          if(!receiverFriendsList.contains(senderUid)){
-            receiverReceivedInvitationsList.add(senderUid);
-          }
-        }else if(action == UserAction.removeInvitation) {
+          receiverReceivedInvitationsList.add(senderUid);
+          notification = AppNotification(
+            notificationId: "",
+            uid: receiverUid,
+            title: "$senderFirstName $senderLastName wants to be your friend",
+            createdAt: DateTime.now(),
+            seen: false,
+            type: NotificationType.inviteFriends,
+          );
+        } else if (action == UserAction.removeInvitation) {
           receiverReceivedInvitationsList.remove(senderUid);
           senderPendingInvitationsList.remove(receiverUid);
           AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
-        }
-        else if(action == UserAction.acceptInvitationToFriends) {
-          if(!senderFriendsList.contains(receiverUid)){
-            senderFriendsList.add(receiverUid);
-          }
-          if(!receiverFriendsList.contains(senderUid)){
-            receiverFriendsList.add(senderUid);
-          }
+        } else if (action == UserAction.acceptInvitationToFriends) {
+          senderFriendsList.add(receiverUid);
+          receiverFriendsList.add(senderUid);
+
+          AppNotification(
+            notificationId: "",
+            uid: receiverUid,
+            title: "$receiverFirstName $receiverLastName accepted your friend request",
+            createdAt: DateTime.now(),
+            seen: false,
+            type: NotificationType.inviteFriends,
+          );
 
           AppData.currentUser?.friendsUid = receiverFriendsList;
           AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
 
           senderPendingInvitationsList.remove(receiverUid);
           receiverReceivedInvitationsList.remove(senderUid);
-        }else if(action == UserAction.declineInvitationToFriends){
+        } else if (action == UserAction.declineInvitationToFriends) {
           receiverReceivedInvitationsList.remove(receiverUid);
 
           AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
-
-        }else if(action == UserAction.deleteFriend){
+        } else if (action == UserAction.deleteFriend) {
           senderFriendsList.remove(receiverUid);
           receiverFriendsList.remove(senderUid);
-
           AppData.currentUser?.friendsUid = senderFriendsList;
         }
 
@@ -407,13 +409,17 @@ class UserService {
           'friendsUid': receiverFriendsList,
         });
       });
+
+      if (notification != null) {
+        await NotificationService.saveNotification(notification!);
+      }
+
       return true;
     } catch (e) {
       print("Error doing action: $e");
       return false;
     }
   }
-
 
   /// Create a user in firebase auth
   static Future<AuthResponse> createUserInFirebaseAuth(String email, String password) async {
@@ -478,7 +484,6 @@ class UserService {
         AppUtils.setsEqual(u1.receivedInvitationsToCompetitions, u2.receivedInvitationsToCompetitions) &&
         AppUtils.setsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
   }
-
 
   /// Check if the user account exists in firestore
   // TODO TO FIX THIS with returning true
