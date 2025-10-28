@@ -185,7 +185,7 @@ class ActivityService {
   }
 
   /// Fetch pages of friends activities
-  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, List<String> friendsUids) async {
+  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, Set<String> friendsUids) async {
     if (friendsUids.isEmpty) {
       return [];
     }

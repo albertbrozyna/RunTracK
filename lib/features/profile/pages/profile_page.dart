@@ -15,7 +15,6 @@ import 'package:run_track/models/user.dart' as model;
 
 import '../../../common/enums/enter_context.dart';
 import '../../../common/utils/utils.dart';
-import '../../../common/pages/users_list.dart';
 import '../../../common/widgets/page_container.dart';
 import '../../../config/assets/app_images.dart';
 import '../../../config/routes/app_routes.dart';
@@ -23,9 +22,18 @@ import '../../../config/routes/app_routes.dart';
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile
   final model.User? passedUser; // Data of user which we are showing
-  final List<String>usersList;
-  final List<String>invitedUsers;
-  const ProfilePage({super.key, this.uid, this.passedUser,this.usersList = const [],this.invitedUsers = const []});
+  final Set<String> usersList;
+  final Set<String> invitedUsers;
+  final Set<String> receivedInvites;
+
+  const ProfilePage({
+    super.key,
+    this.uid,
+    this.passedUser,
+    this.usersList = const {},
+    this.invitedUsers = const {},
+    this.receivedInvites = const {},
+  });
 
   @override
   State<StatefulWidget> createState() => _ProfilePageState();
@@ -35,12 +43,12 @@ class _ProfilePageState extends State<ProfilePage> {
   final double cardHeight = 150;
   final double cardWidth = 150;
 
-  late List<String> usersList;
-  late List<String> invitedUsers;
+  late Set<String> usersList;
+  late Set<String> invitedUsers;
+  late Set<String> receivedInvitations;
   bool loaded = false; // This tells us if we loaded a user
   model.User? user; // User which we are showing
   UserRelationshipStatus relationshipStatus = UserRelationshipStatus.notConnected;
-
 
   @override
   void initState() {
@@ -52,12 +60,13 @@ class _ProfilePageState extends State<ProfilePage> {
   void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
-       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
       return;
     }
 
-    usersList = List.from(widget.usersList);
-    invitedUsers = List.from(widget.invitedUsers);
+    usersList = Set.from(widget.usersList);
+    invitedUsers = Set.from(widget.invitedUsers);
+    receivedInvitations = Set.from(widget.receivedInvites);
   }
 
   /// Initialize async data
@@ -89,14 +98,13 @@ class _ProfilePageState extends State<ProfilePage> {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
       } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(user!.uid) ?? false) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
-      }else if(user!.uid == AppData.currentUser?.uid) {
+      } else if (user!.uid == AppData.currentUser?.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
       }
     }
 
     setState(() {});
   }
-
 
   /// Logout button action
   void logoutButtonPressed(BuildContext context) {
@@ -138,7 +146,8 @@ class _ProfilePageState extends State<ProfilePage> {
     if (added) {
       setState(() {
         usersList.add(user!.uid); // Add to friends or competitions
-          relationshipStatus = UserRelationshipStatus.friend;
+        receivedInvitations.remove(user!.uid);
+        relationshipStatus = UserRelationshipStatus.friend;
       });
     } else {
       if (mounted) {
@@ -156,6 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (added) {
       setState(() {
+        receivedInvitations.remove(user!.uid);
         relationshipStatus = UserRelationshipStatus.notConnected;
       });
     } else {
@@ -171,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.pendingSent;
-
+        invitedUsers.add(user!.uid);
       });
     } else {
       if (mounted) {
@@ -186,6 +196,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.notConnected;
+        invitedUsers.remove(user!.uid);
       });
     } else {
       if (mounted) {
@@ -199,6 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.notConnected;
+        usersList.remove(user!.uid);
       });
     } else {
       if (mounted) {
@@ -209,25 +221,33 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// Show friends list
   void onTapFriends() async {
-    EnterContextUsersList enterContext = EnterContextUsersList.friendsModify;
-    final result = await Navigator.pushNamed(context, AppRoutes.usersList,arguments: {
-      'usersUid': user?.friendsUid ?? [],
-      'usersUid2': user?.pendingInvitationsToFriends ?? [],
-      'enterContext': enterContext,
-    } );
+    EnterContextUsersList enterContext = EnterContextUsersList.friendReadOnly;
+    if (relationshipStatus == UserRelationshipStatus.myProfile) {
+      enterContext = EnterContextUsersList.friendsModify;
+    }
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.usersList,
+      arguments: {
+        'usersUid': user?.friendsUid ?? [],
+        'usersUid2': user?.pendingInvitationsToFriends ?? [],
+        'usersUid3': user?.receivedInvitationsToFriends ?? [],
+        'enterContext': enterContext,
+      },
+    );
 
     if (result != null && result is Map) {
-      final List<String> usersUid = result['usersUid'];
-      final List<String> usersUid2 = result['usersUid2'];
+      final Set<String> usersUid = result['usersUid']; // Get here a list of friends, TODO TO THINK
+      final Set<String> usersUid2 = result['usersUid2'];
+      final Set<String> usersUid3 = result['usersUid3'];
       // Set invited participants
       setState(() {
         user?.friendsUid = usersUid;
         user?.pendingInvitationsToFriends = usersUid2;
+        user?.receivedInvitationsToFriends = usersUid3;
       });
     }
   }
-
-  // Init fields
 
   @override
   Widget build(BuildContext context) {
@@ -236,171 +256,180 @@ class _ProfilePageState extends State<ProfilePage> {
       return NoItemsMsg(textMessage: "No user data");
     }
 
-    return Scaffold(
-      appBar: !(relationshipStatus == UserRelationshipStatus.myProfile) ? AppBar(title: Text("Profile"),) : null,
-      body: PageContainer(
-        assetPath: AppImages.appBg4,
-        backgroundColor: Colors.white60,
-        padding: 0,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.secondary,
-                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => {
+        if (!didPop)
+          {
+            Navigator.pop(context, {'usersUid': usersList, 'usersUid2': invitedUsers, 'usersUid3': receivedInvitations}),
+          },
+      },
+      child: Scaffold(
+        appBar: !(relationshipStatus == UserRelationshipStatus.myProfile) ? AppBar(title: Text("Profile")) : null,
+        body: PageContainer(
+          assetPath: AppImages.appBg4,
+          backgroundColor: Colors.white60,
+          padding: 0,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary,
+                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                  ),
+
+                  child: Column(
+                    children: [
+                      if (relationshipStatus == UserRelationshipStatus.myProfile)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: IconButton(
+                                    onPressed: () => logoutButtonPressed(context),
+                                    icon: Icon(Icons.logout, color: Colors.white, size: 26),
+                                  ),
+                                ),
+                                Text("Logout", style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+
+                            Row(
+                              children: [
+                                Text("Settings", style: TextStyle(color: Colors.white)),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: IconButton(
+                                    onPressed: () => {Navigator.pushNamed(context, '/settings')},
+                                    icon: Icon(Icons.settings, color: Colors.white, size: 26),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
 
-                child: Column(
-                  children: [
-                    if (relationshipStatus == UserRelationshipStatus.myProfile)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ProfileActionButton(
+                  userRelationshipStatus: relationshipStatus,
+                  onPressedRemoveFriends: onPressedDeleteFriend,
+                  onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
+                  onPressedSendInvitation: onPressedAddFriend,
+                  onPressedAcceptInvitation: onPressedAcceptInvitation,
+                  onPressedDeclineInvitation: onPressedDeclineInvitation,
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      "assets/DefaultProfilePhoto.png",
+                      width: MediaQuery.of(context).size.width / 2,
+                      height: MediaQuery.of(context).size.width / 2,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                // Name and last name
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
+                // Friend list
+                ContentContainer(
+                  borderRadius: 30,
+                  backgroundColor: AppColors.secondary,
+                  child: Column(
+                    children: [
+                      ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
+                      ListInfoTile(icon: Icons.email, title: "${user?.email}"),
+                      ListInfoTile(icon: user!.gender! == 'male' ? Icons.male : Icons.female, title: "${user?.gender}"),
+                      ListInfoTile(icon: Icons.cake, title: "${user?.dateOfBirth}"),
+                      ListInfoTile(icon: Icons.card_membership, title: "Member since: ${AppUtils.formatDateTime(user!.createdAt)}"),
+                      InkWell(
+                        onTap: onTapFriends,
+                        child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}", endDivider: false),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                ContentContainer(
+                  borderRadius: 30,
+                  backgroundColor: AppColors.secondary,
+                  child: Column(
+                    children: [
+                      Text(
+                        "Activity & Stats",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+
+                      SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
-                          Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: IconButton(
-                                  onPressed: () => logoutButtonPressed(context),
-                                  icon: Icon(Icons.logout, color: Colors.white, size: 26),
-                                ),
-                              ),
-                              Text("Logout", style: TextStyle(color: Colors.white)),
-                            ],
+                          InkWell(
+                            onTap: onTapFriends,
+                            child: StatCard(
+                              title: "Created\ncompetitions",
+                              value: user!.competitionsCount.toString(),
+                              icon: Icon(Icons.run_circle_outlined),
+                              cardWidth: cardWidth,
+                              cardHeight: cardHeight,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: onTapFriends,
+                            child: StatCard(
+                              title: "Activities",
+                              value: user!.activitiesCount.toString(),
+                              icon: Icon(Icons.run_circle_outlined),
+                              cardWidth: cardWidth,
+                              cardHeight: cardHeight,
+                            ),
                           ),
 
-                          Row(
-                            children: [
-                              Text("Settings", style: TextStyle(color: Colors.white)),
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: IconButton(
-                                  onPressed: () => {Navigator.pushNamed(context, '/settings')},
-                                  icon: Icon(Icons.settings, color: Colors.white, size: 26),
-                                ),
-                              ),
-                            ],
+                          StatCard(
+                            title: "Total\ndistance",
+                            value: "${user!.kilometers.toString()} km",
+                            icon: Icon(Icons.directions_run),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
+
+                          StatCard(
+                            title: "Total hours\nof activity",
+                            value: "${user!.hoursOfActivity.toString()} h",
+                            icon: Icon(Icons.timer),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
+
+                          StatCard(
+                            title: "Burned\ncalories",
+                            value: "${user!.burnedCalories.toString()} kcal",
+                            icon: Icon(Icons.timer),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
                           ),
                         ],
                       ),
-                  ],
-                ),
-              ),
-
-              ProfileActionButton(
-                userRelationshipStatus: relationshipStatus,
-                onPressedRemoveFriends: onPressedDeleteFriend,
-                onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
-                onPressedSendInvitation: onPressedAddFriend,
-                onPressedAcceptInvitation: onPressedAcceptInvitation,
-                onPressedDeclineInvitation: onPressedDeclineInvitation,
-              ),
-              SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    "assets/DefaultProfilePhoto.png",
-                    width: MediaQuery.of(context).size.width / 2,
-                    height: MediaQuery.of(context).size.width / 2,
-                    fit: BoxFit.cover,
+                    ],
                   ),
                 ),
-              ),
-              // Name and last name
-              SizedBox(height: AppUiConstants.verticalSpacingButtons),
-
-              // Friend list
-              ContentContainer(
-                borderRadius: 30,
-                backgroundColor: AppColors.secondary,
-                child: Column(
-                  children: [
-                    ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
-                    ListInfoTile(icon: Icons.email, title: "${user?.email}"),
-                    ListInfoTile(icon: user!.gender! == 'male' ? Icons.male : Icons.female, title: "${user?.gender}"),
-                    ListInfoTile(icon: Icons.cake, title: "${user?.dateOfBirth}"),
-                    ListInfoTile(icon: Icons.card_membership, title: "Member since: ${AppUtils.formatDateTime(user!.createdAt)}"),
-                    InkWell(
-                      onTap: onTapFriends,
-                      child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}", endDivider: false),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: AppUiConstants.verticalSpacingButtons),
-              ContentContainer(
-                borderRadius: 30,
-                backgroundColor: AppColors.secondary,
-                child: Column(
-                  children: [
-                    Text(
-                      "Activity & Stats",
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        InkWell(
-                          onTap: onTapFriends,
-                          child: StatCard(
-                            title: "Created\ncompetitions",
-                            value: user!.competitionsCount.toString(),
-                            icon: Icon(Icons.run_circle_outlined),
-                            cardWidth: cardWidth,
-                            cardHeight: cardHeight,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: onTapFriends,
-                          child: StatCard(
-                            title: "Activities",
-                            value: user!.activitiesCount.toString(),
-                            icon: Icon(Icons.run_circle_outlined),
-                            cardWidth: cardWidth,
-                            cardHeight: cardHeight,
-                          ),
-                        ),
-
-                        StatCard(
-                          title: "Total\ndistance",
-                          value: "${user!.kilometers.toString()} km",
-                          icon: Icon(Icons.directions_run),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                        ),
-
-                        StatCard(
-                          title: "Total hours\nof activity",
-                          value: "${user!.hoursOfActivity.toString()} h",
-                          icon: Icon(Icons.timer),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                        ),
-
-                        StatCard(
-                          title: "Burned\ncalories",
-                          value: "${user!.burnedCalories.toString()} kcal",
-                          icon: Icon(Icons.timer),
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

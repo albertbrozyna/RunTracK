@@ -164,7 +164,7 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
     final competitions = await CompetitionService.fetchLastFriendsCompetitionsPage(
       _limit,
       _lastPageFriendsCompetitions,
-      currentUser?.friendsUid ?? [],
+      currentUser?.friendsUid ?? {},
     );
 
     setState(() {
@@ -212,7 +212,7 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
     });
 
     final competitions = await CompetitionService.fetchMyInvitedCompetitions(
-      AppData.currentUser?.receivedInvitationsToCompetitions ?? [],
+      AppData.currentUser?.receivedInvitationsToCompetitions ?? {},
       _limit,
       _lastPageInvites,
     );
@@ -237,7 +237,7 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
     });
 
     final competitions = await CompetitionService.fetchMyParticipatedCompetitions(
-      AppData.currentUser?.participatedCompetitions ?? [],
+      AppData.currentUser?.participatedCompetitions ?? {},
       _limit,
       _lastPageParticipating,
     );

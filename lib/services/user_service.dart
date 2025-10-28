@@ -57,7 +57,7 @@ class UserService {
       lastName: sourceUser.lastName,
       gender: sourceUser.gender,
       activityNames: sourceUser.activityNames != null ? List.from(sourceUser.activityNames!) : null,
-      friendsUid: List.from(sourceUser.friendsUid),
+      friendsUid: Set.from(sourceUser.friendsUid),
       email: sourceUser.email,
       profilePhotoUrl: sourceUser.profilePhotoUrl,
       dateOfBirth: sourceUser.dateOfBirth != null
@@ -124,11 +124,11 @@ class UserService {
       lastName: map['lastName'] ?? '',
       email: map['email'],
       activityNames: List<String>.from(map['activityNames'] ?? []),
-      friendsUid: List<String>.from(map['friendsUid'] ?? []),
-      pendingInvitationsToFriends: List<String>.from(map['pendingInvitationsToFriends'] ?? []),
-      receivedInvitationsToFriends: List<String>.from(map['receivedInvitationsToFriends'] ?? []),
-      receivedInvitationsToCompetitions: List<String>.from(map['receivedInvitationsToCompetitions'] ?? []),
-      participatedCompetitions: List<String>.from(map['participatedCompetitions'] ?? []),
+      friendsUid: Set<String>.from(map['friendsUid'] ?? []),
+      pendingInvitationsToFriends: Set<String>.from(map['pendingInvitationsToFriends'] ?? []),
+      receivedInvitationsToFriends: Set<String>.from(map['receivedInvitationsToFriends'] ?? []),
+      receivedInvitationsToCompetitions: Set<String>.from(map['receivedInvitationsToCompetitions'] ?? []),
+      participatedCompetitions: Set<String>.from(map['participatedCompetitions'] ?? []),
       profilePhotoUrl: map['profilePhotoUrl'],
       defaultLocation: location != null
           ? LatLng((location['latitude'] ?? 0.0).toDouble(), (location['longitude'] ?? 0.0).toDouble())
@@ -201,7 +201,7 @@ class UserService {
   // TODO IMPORTANT LIMIT CANNOT BE BIGGER THAN 10
   /// Fetch participants invited to run competition IMPORTANT LIMIT CANNOT BE BIGGER THAN 10
   static Future<List<model.User>> fetchUsersListPage({
-    required List<String> uids,
+    required Set<String> uids,
     DocumentSnapshot? lastDocument,
     int limit = 10,
   }) async {
@@ -354,10 +354,10 @@ class UserService {
           throw Exception("User not found in database");
         }
 
-        final senderFriendsList = List<String>.from(senderSnap['friendsUid'] ?? []);
-        final senderPendingInvitationsList = List<String>.from(senderSnap['pendingInvitationsToFriends'] ?? []);
-        final receiverFriendsList = List<String>.from(senderSnap['friendsUid'] ?? []);
-        final receiverReceivedInvitationsList = List<String>.from(senderSnap['receivedInvitationsToFriends'] ?? []);
+        final senderFriendsList = Set<String>.from(senderSnap['friendsUid'] ?? []);
+        final senderPendingInvitationsList = Set<String>.from(senderSnap['pendingInvitationsToFriends'] ?? []);
+        final receiverFriendsList = Set<String>.from(senderSnap['friendsUid'] ?? []);
+        final receiverReceivedInvitationsList = Set<String>.from(senderSnap['receivedInvitationsToFriends'] ?? []);
 
         if(action == UserAction.inviteToFriends){// Do action
           if(!senderFriendsList.contains(receiverUid)){ // Sender it is me
@@ -450,7 +450,7 @@ class UserService {
         dateOfBirth: dateOfBirth,
         profilePhotoUrl: "",
         activityNames: AppUtils.getDefaultActivities(),
-        friendsUid: [],
+        friendsUid: {},
       ),
     );
 
@@ -472,11 +472,11 @@ class UserService {
         u1.userDefaultLocation.latitude == u2.userDefaultLocation.latitude &&
         u1.userDefaultLocation.longitude == u2.userDefaultLocation.longitude &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
-        AppUtils.listsEqual(u1.friendsUid, u2.friendsUid) &&
-        AppUtils.listsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&
-        AppUtils.listsEqual(u1.receivedInvitationsToFriends, u2.receivedInvitationsToFriends) &&
-        AppUtils.listsEqual(u1.receivedInvitationsToCompetitions, u2.receivedInvitationsToCompetitions) &&
-        AppUtils.listsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
+        AppUtils.setsEqual(u1.friendsUid, u2.friendsUid) &&
+        AppUtils.setsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&
+        AppUtils.setsEqual(u1.receivedInvitationsToFriends, u2.receivedInvitationsToFriends) &&
+        AppUtils.setsEqual(u1.receivedInvitationsToCompetitions, u2.receivedInvitationsToCompetitions) &&
+        AppUtils.setsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
   }
 
 

@@ -20,8 +20,8 @@ class Competition {
   int? maxTimeToCompleteActivityHours; // Max time to complete activity
   int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
   final DateTime? createdAt; // Date of creation
-  List<String> participantsUid;
-  List<String> invitedParticipantsUid;
+  Set<String> participantsUid;
+  Set<String> invitedParticipantsUid;
   enums.ComVisibility visibility; // Visibility of competition
   Map<String, String>? results; // result of run first is the uid of the user and second is activity id
   String? activityType; // Allowed activity types of competition
@@ -45,8 +45,8 @@ class Competition {
     this.registrationDeadline,
     this.maxTimeToCompleteActivityHours,
     this.maxTimeToCompleteActivityMinutes,
-    List<String>? participantsUid,
-    List<String>? invitedParticipantsUid,
+    Set<String>? participantsUid,
+    Set<String>? invitedParticipantsUid,
     this.description,
     this.activityType,
     this.results,
@@ -56,6 +56,6 @@ class Competition {
     List<String>? photos,
   }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
         photos = photos ?? [],
-  participantsUid = participantsUid ?? [],
-  invitedParticipantsUid = invitedParticipantsUid ?? [];
+  participantsUid = participantsUid ?? {},
+  invitedParticipantsUid = invitedParticipantsUid ?? {};
 }

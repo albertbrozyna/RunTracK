@@ -2,19 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/enter_context.dart';
 import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../models/user.dart';
 import '../../theme/colors.dart';
 
-class UserSearcher extends SearchDelegate<List<String>?> {
-  final List<String> invitedUsers;  // Invited to participate or to friends
-  final List<String> listUsers; // Participants list or friends list
+class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
+  final Set<String> listUsers; // Participants list or friends list
+  final Set<String> invitedUsers;  // Invited to participate or to friends
+  final Set<String> receivedInvitations; // Participants list or friends list
   EnterContextSearcher enterContext;
   final List<User>suggestedUsers = [];
-  UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,});
-  final ValueNotifier<int> rebuildNotifier = ValueNotifier(0);
+  UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,required this.receivedInvitations});
+  final ValueNotifier<int> rebuildNotifier = ValueNotifier(0);  // Notifier to rebuild result list after sending a friend request
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -28,7 +28,10 @@ class UserSearcher extends SearchDelegate<List<String>?> {
       return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
     }
     if(invitedUsers.contains(uid)){
-      return Icon(Icons.mail_outline, color: Colors.green); // Participate in or is on our friend list
+      return Icon(Icons.mail_outline, color:AppColors.secondary); // We send a request
+    }
+    if(receivedInvitations.contains(uid)) {
+      return Icon(Icons.mark_email_unread, color: AppColors.secondary);
     }
 
     return Icon(Icons.person_add);
@@ -36,14 +39,17 @@ class UserSearcher extends SearchDelegate<List<String>?> {
 
   /// Add user uid to list
   void onPressedPersonAdd(String uid,BuildContext context)async{
+    if(listUsers.contains(uid) || invitedUsers.contains(uid) || receivedInvitations.contains(uid)){  // We can't do action from this look
+      showResults(context);
+      return;
+    }
+
     if(enterContext == EnterContextSearcher.friends){
       bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", uid, UserAction.inviteToFriends);
       if (added) {
         invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
-
-
       }
     }else{
       invitedUsers.add(uid);
@@ -53,24 +59,28 @@ class UserSearcher extends SearchDelegate<List<String>?> {
     }
   }
 
-  /// Navigate to user profile
+  /// Navigate to user profile and return list of users
   void onTapUser(BuildContext context,String uid) async {
-    final result = await Navigator.pushNamed(context, AppRoutes.profile,arguments: {
+    final result = await Navigator.pushNamed(context, AppRoutes.profile,arguments: {  // Navigate to profile and pass this list
       'uid': uid,
+      'usersList': listUsers,
+      'invitedUsers': invitedUsers,
+      'receivedInvites': receivedInvitations,
     });
 
     if(result != null && result is Map){
-      final List<String> usersUid = result['usersUid'];
-      final List<String> usersUid2 = result['usersUid2'];
+      final Set<String> usersUid = result['usersUid'];
+      final Set<String> usersUid2 = result['usersUid2'];
+      final Set<String> usersUid3 = result['usersUid3'];
       // Set invited participants
-      invitedUsers.clear();
-      invitedUsers.addAll(usersUid);
       listUsers.clear();
-      listUsers.addAll(usersUid2);
+      listUsers.addAll(usersUid);
+      invitedUsers.clear();
+      invitedUsers.addAll(usersUid2);
+      receivedInvitations.clear();
+      receivedInvitations.addAll(usersUid3);
       rebuildNotifier.value++;
     }
-
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProfilePage(uid: uid)));
   }
 
   @override
@@ -91,7 +101,11 @@ class UserSearcher extends SearchDelegate<List<String>?> {
   Widget? buildLeading(BuildContext context) {
     return IconButton(  // Return with invited users
       icon: Icon(Icons.arrow_back),
-      onPressed: () => close(context,invitedUsers),
+      onPressed: () => close(context,{
+        'usersUid': listUsers,
+        'usersUid2': invitedUsers,
+        'usersUid3': receivedInvitations,
+      }),
     );
   }
 

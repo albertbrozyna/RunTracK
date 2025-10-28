@@ -109,6 +109,14 @@ class AppUtils {
     return true;
   }
 
+  /// Comp sets
+  static bool setsEqual(Set<String>? s1, Set<String>? s2) {
+    if (s1 == null && s2 == null) return true;
+    if (s1 == null || s2 == null) return false;
+    if (s1.length != s2.length) return false;
+    return s1.containsAll(s2);
+  }
+
   static bool mapsEqual(Map<String, double>? map1, Map<String, double>? map2) {
     if (map1 == null && map2 == null) {
       return true;

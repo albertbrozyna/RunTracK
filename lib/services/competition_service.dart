@@ -56,8 +56,8 @@ class CompetitionService {
       maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
-      participantsUid: map['participantsUid'] != null ? List<String>.from(map['participantsUid']) : [],
-      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? List<String>.from(map['invitedParticipantsUid']) : [],
+      participantsUid: map['participantsUid'] != null ? Set<String>.from(map['participantsUid']) : {},
+      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? Set<String>.from(map['invitedParticipantsUid']) : {},
       activityType: map['activityType'],
       // TODO
       //results: map['results'] != null
@@ -222,7 +222,7 @@ class CompetitionService {
   static Future<List<Competition>> fetchLastFriendsCompetitionsPage(
     int limit,
     DocumentSnapshot? lastDocument,
-    List<String> friendsUids,
+    Set<String> friendsUids,
   ) async {
     if (friendsUids.isEmpty) {
       return [];
@@ -286,7 +286,7 @@ class CompetitionService {
 
   /// Fetch my competition which I am invited
   static Future<List<Competition>> fetchMyInvitedCompetitions(
-    List<String> competitionsIds,
+    Set<String> competitionsIds,
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
@@ -315,7 +315,7 @@ class CompetitionService {
 
   /// Fetch my competition which I participate
   static Future<List<Competition>> fetchMyParticipatedCompetitions(
-    List<String> competitionsIds,
+    Set<String> competitionsIds,
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
@@ -498,8 +498,8 @@ class CompetitionService {
         c1.maxTimeToCompleteActivityHours == c2.maxTimeToCompleteActivityHours &&
         c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
         c1.activityType == c2.activityType &&
-        AppUtils.listsEqual(c1.participantsUid, c2.participantsUid) &&
-        AppUtils.listsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&
+        AppUtils.setsEqual(c1.participantsUid, c2.participantsUid) &&
+        AppUtils.setsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&
         // TODO
         //AppUtils.mapsEqual(c1.results, c2.results) &&
         c1.locationName == c2.locationName &&

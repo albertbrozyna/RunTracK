@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../config/routes/app_routes.dart';
+
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
 
@@ -8,9 +10,15 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(
-        title
-      ),
+      title: Text(title),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).pushNamed(AppRoutes.notifications);
+          },
+          icon: Icon(Icons.notifications, color: Colors.white),
+        ),
+      ],
     );
   }
 

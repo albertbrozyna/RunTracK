@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/common/pages/notifications.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
@@ -61,8 +62,12 @@ class AppRouter {
       case AppRoutes.profile:
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
-        final passedUser = args?['passedUser'] as User;
-        return MaterialPageRoute(builder: (_) => ProfilePage(uid: uid,));
+        final passedUser = args?['passedUser'] as User?;
+        final usersList = args?['usersList'] ?? [];
+        final invitedUsers = args?['invitedUsers'] ?? [];
+        final receivedInvites = args?['receivedInvites'] ?? [];
+
+        return MaterialPageRoute(builder: (_) => ProfilePage(uid: uid,usersList: usersList,invitedUsers: invitedUsers,receivedInvites: receivedInvites));
 
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => SettingsPage());
@@ -70,9 +75,12 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final usersUid = args?['usersUid'] ?? [];
         final usersUid2 = args?['usersUid2'] ?? [];
+        final usersUid3 = args?['usersUid3'] ?? [];
         final enterContext = args?['enterContext']  as EnterContextUsersList;
 
-        return MaterialPageRoute(builder: (_) => UsersList(usersUid: usersUid,usersUid2: usersUid2,enterContext: enterContext));
+        return MaterialPageRoute(builder: (_) => UsersList(usersUid: usersUid,usersUid2: usersUid2,usersUid3: usersUid3,enterContext: enterContext));
+      case AppRoutes.notifications:
+        return MaterialPageRoute(builder: (_) => NotificationsPage());
 
       default:
         return MaterialPageRoute(
