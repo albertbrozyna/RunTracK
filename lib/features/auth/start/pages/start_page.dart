@@ -13,6 +13,7 @@ import 'package:run_track/models/user.dart' as model;
 import 'package:run_track/services/user_service.dart';
 import '../../../../common/enums/sign_in_status.dart';
 import '../../../../common/utils/app_data.dart';
+import '../../../../config/assets/app_icons.dart';
 import '../../../../theme/ui_constants.dart';
 import '../widgets/additional_info_form.dart';
 
@@ -138,7 +139,7 @@ class StartPageState extends State<StartPage> {
                               ),
                     
                               Image.asset(
-                                "assets/runtrack-app-icon-round.png",
+                                AppImages.runtrackAppIcon,
                                 width: 300,
                               ),
                     
@@ -173,7 +174,7 @@ class StartPageState extends State<StartPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.max,
                                   children: [
-                                    Image.asset('assets/google-icon.png', height: 40, width: 40),
+                                    Image.asset(AppIcons.googleIcon, height: 40, width: 40),
                                     SizedBox(width: 10),
                                     Text(
                                       "Sign in with Google",

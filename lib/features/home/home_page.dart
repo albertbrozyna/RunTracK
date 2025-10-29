@@ -16,6 +16,8 @@ import '../../common/widgets/top_bar.dart';
 import 'package:run_track/common/utils/permission_utils.dart';
 import 'package:run_track/features/track/models/track_state.dart';
 
+import '../track/models/location_update.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -26,7 +28,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Widget> _pages;
   int _selectedIndex = 0;
-  TrackState? trackState;
+  OldTrackState? trackState;
   final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
   List<LatLng> track = [];
   LatLng? currentPosition;
@@ -53,7 +55,7 @@ class _HomePageState extends State<HomePage> {
     isTrackingNotifier.dispose();
     FlutterForegroundTask.removeTaskDataCallback((data) {});
 
-  super.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -76,21 +78,11 @@ class _HomePageState extends State<HomePage> {
 
     FlutterForegroundTask.initCommunicationPort();
 
+    print("test");
     FlutterForegroundTask.addTaskDataCallback((data) {
-      if (data is Map && data.containsKey('lat') && data.containsKey('lng')) {
-        LatLng pos = LatLng(
-          (data['lat'] as num).toDouble(),
-          (data['lng'] as num).toDouble(),
-        );
-
-        setState(() {
-          currentPosition = pos;
-          track.add(pos);
-        });
-
-        print("📍 Otrzymano lokalizację: $pos");
-      } else {
-        print("⚠️ Otrzymano niepoprawne dane: $data");
+      if (data is Map<String, dynamic>) {
+        final update = LocationUpdate.fromJson(data);
+        print('Distance: ${update.totalDistance} meters');
       }
     });
   }
@@ -98,7 +90,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> initializeAsync() async {
     AppData.isLoading.value = true; // Start loading
-    TrackState? lastState = await TrackState.loadFromFile();
+    OldTrackState? lastState = await OldTrackState.loadFromFile();
 
     // Set track state to paused i last state was running
     // if (AppData.trackState.trackingState == TrackingState.running) {

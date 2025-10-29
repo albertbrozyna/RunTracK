@@ -49,22 +49,13 @@ class TrackScreenState extends State<TrackScreen> {
     initialize();
   }
 
-  Future<void> startLocationService() async {
-    bool isRunning = await FlutterForegroundTask.isRunningService;
-    if (!isRunning) {
-      await FlutterForegroundTask.startService(
-        notificationTitle: 'Śledzenie trasy aktywne',
-        notificationText: 'Twoja lokalizacja jest aktualizowana...',
-        callback: startCallback, // wskazuje funkcję z main isolate
-      );
-    }
-  }
+
 
 
   Future<void> initialize() async {
-    _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      AppData.trackState.updateGpsIcon();
-    });
+    // _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    //   AppData.trackState.updateGpsIcon();
+    // });
 
     final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
     setState(() {
@@ -108,7 +99,7 @@ class TrackScreenState extends State<TrackScreen> {
           child: CustomButton(
             backgroundColor: AppColors.secondary,
             text: AppLocalizations.of(context)!.trackScreenStartTraining,
-            onPressed: startLocationService,
+            onPressed: AppData.trackState.startTracking,
           ),
         );
 

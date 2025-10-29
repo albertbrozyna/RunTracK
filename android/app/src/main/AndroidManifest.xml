@@ -31,10 +31,10 @@
             </intent-filter>
         </activity>
 
-<!--        <service-->
-<!--            android:name="com.lyokone.location.FlutterLocationService"-->
-<!--            android:exported="false"-->
-<!--            android:attributionTag="VCN" />-->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="location|dataSync"/>
 
         <meta-data
             android:name="flutterEmbedding"

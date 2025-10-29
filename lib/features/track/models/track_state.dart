@@ -11,9 +11,10 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
+import '../../../main.dart';
 import '../../profile/models/settings.dart';
 
-class TrackState extends ChangeNotifier {
+class OldTrackState extends ChangeNotifier {
   Icon gpsIcon = Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
   MapController? mapController;
   TrackingState trackingState;
@@ -35,7 +36,7 @@ class TrackState extends ChangeNotifier {
   bool activitySaved = false; // State is saved to firestore?
   // TODO make auto save disabled in settings by user
 
-  StreamSubscription<Position>? positionStream;
+  // StreamSubscription<Position>? positionStream;
   final Distance distanceCalculator = Distance(); // To calculate distance between points
   LatLng? currentPosition;
   Position? latestPosition;
@@ -48,7 +49,7 @@ class TrackState extends ChangeNotifier {
     distanceFilter: AppSettings.updateLocationDistance,
   );
 
-  TrackState({
+  OldTrackState({
     this.mapController,
     List<LatLng>? trackedPath,
     double? totalDistance,
@@ -80,8 +81,8 @@ class TrackState extends ChangeNotifier {
   void dispose() {
     timer?.cancel();
     timer = null;
-    positionStream?.cancel();
-    positionStream = null;
+    // positionStream?.cancel();
+    // positionStream = null;
     super.dispose();
   }
 
@@ -125,55 +126,76 @@ class TrackState extends ChangeNotifier {
     timer = null;
   }
 
-  void _createPositionStream() {
-    positionStream?.cancel();
+  // void _createPositionStream() {
+  //   positionStream?.cancel();
+  //
+  //   positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
+  //       .listen((Position position) {
+  //     final DateTime now = DateTime.now();
+  //     final LatLng latLng = LatLng(position.latitude, position.longitude);
+  //
+  //     latestPosition = position;
+  //
+  //     if (currentPosition != null) {
+  //       final double distance = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
+  //       totalDistance += distance; D
+  //
+  //       final double deltaTime = lastPositionTime != null
+  //           ? now.difference(lastPositionTime!).inSeconds.toDouble()
+  //           : 1.0;
+  //
+  //       if (deltaTime > 0) {
+  //         currentSpeedValue = (distance / deltaTime) * 3.6;
+  //       }
+  //
+  //       final double deltaAltitude = position.altitude - (latestPosition!.altitude);
+  //       if (deltaAltitude > 0) elevationGain += deltaAltitude;
+  //
+  //       avgSpeed = elapsedTime.inSeconds > 0 ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600) : 0.0;
+  //       pace = avgSpeed > 0 ? (60 / avgSpeed) : 0.0;
+  //
+  //       steps = (totalDistance / 0.78).round();
+  //     }
+  //
+  //     lastPositionTime = now;
+  //     currentPosition = latLng;
+  //
+  //     if (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, latLng) > 2) {
+  //       trackedPath.add(latLng);
+  //     }
+  //
+  //     if (followUser && mapController != null) {
+  //       mapController?.move(latLng, mapController!.camera.zoom);
+  //     }
+  //
+  //     notifyListeners();
+  //   });
+  // }
 
-    positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position position) {
-      final DateTime now = DateTime.now();
-      final LatLng latLng = LatLng(position.latitude, position.longitude);
-
-      latestPosition = position;
-
-      if (currentPosition != null) {
-        final double distance = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
-        totalDistance += distance;
-
-        final double deltaTime = lastPositionTime != null
-            ? now.difference(lastPositionTime!).inSeconds.toDouble()
-            : 1.0;
-
-        if (deltaTime > 0) {
-          currentSpeedValue = (distance / deltaTime) * 3.6;
-        }
-
-        final double deltaAltitude = position.altitude - (latestPosition!.altitude);
-        if (deltaAltitude > 0) elevationGain += deltaAltitude;
-
-        avgSpeed = elapsedTime.inSeconds > 0 ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600) : 0.0;
-        pace = avgSpeed > 0 ? (60 / avgSpeed) : 0.0;
-
-        steps = (totalDistance / 0.78).round();
-      }
-
-      lastPositionTime = now;
-      currentPosition = latLng;
-
-      if (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, latLng) > 2) {
-        trackedPath.add(latLng);
-      }
-
-      if (followUser && mapController != null) {
-        mapController?.move(latLng, mapController!.camera.zoom);
-      }
-
-      notifyListeners();
-    });
+  void updateFromForeground(LatLng pos, double distance) {
+    currentPosition = pos;
+    totalDistance = distance;
+    trackedPath.add(pos);
+    notifyListeners();
   }
 
+  Future<void> startLocationService() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (!isRunning) {
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'Śledzenie trasy aktywne',
+        notificationText: 'Twoja lokalizacja jest aktualizowana...',
+        callback: startCallback, // wskazuje funkcję z main isolate
+      );
+    }
+  }
 
   /// Start tracking route
   void startTracking() {
+
+    startLocationService();
+
+
     // Setting starting parameters
     trackedPath.clear();
     totalDistance = 0.0;
@@ -189,7 +211,7 @@ class TrackState extends ChangeNotifier {
     steps = 0;
     lastPositionTime = DateTime.now();
     _startTimer();
-    _createPositionStream();
+    // _createPositionStream();
     notifyListeners();
     _startAutoSave();
   }
@@ -197,12 +219,12 @@ class TrackState extends ChangeNotifier {
   // Function to resume tracking
   void resumeTracking() {
     // Resume tracking
-    if (positionStream?.isPaused == true) {
-      positionStream!.resume();
-    } else {
-      positionStream?.cancel();
-      _createPositionStream();
-    }
+    // if (positionStream?.isPaused == true) {
+    //   positionStream!.resume();
+    // } else {
+    //   positionStream?.cancel();
+    //   _createPositionStream();
+    // }
 
     startTime = DateTime.now().subtract(accumulatedTime);
     // Restart timer
@@ -215,11 +237,11 @@ class TrackState extends ChangeNotifier {
   }
 
   void pauseTracking() {
-    if (positionStream == null) {
-      return;
-    }
+    // if (positionStream == null) {
+    //   return;
+    // }
     // Pause stream
-    positionStream!.pause();
+    // positionStream!.pause();
     // Pause timer
     _stopTimer();
     accumulatedTime += DateTime.now().difference(startTime);
@@ -233,8 +255,8 @@ class TrackState extends ChangeNotifier {
   /// Stop tracking
   void stopTracking() {
     trackingState = TrackingState.stopped;
-    positionStream?.cancel();
-    positionStream = null;
+    // positionStream?.cancel();
+    // positionStream = null;
     _stopTimer();
     trackingState = TrackingState.stopped;
     autoSaveTimer?.cancel();  // Cancel save timer
@@ -274,7 +296,7 @@ class TrackState extends ChangeNotifier {
     };
   }
 
-  static Future<TrackState?> loadFromFile() async {
+  static Future<OldTrackState?> loadFromFile() async {
     try {
       final dir = await getApplicationDocumentsDirectory(); // App documents
       final file = File('${dir.path}/track_state.json');
@@ -284,7 +306,7 @@ class TrackState extends ChangeNotifier {
         final jsonStr = await file.readAsString();
         final data = jsonDecode(jsonStr);
 
-        return TrackState(
+        return OldTrackState(
           mapController: null,
           trackedPath: (data['trackedPath'] as List)
               .map((e) => LatLng(e['lat'], e['lng']))
@@ -338,8 +360,8 @@ class TrackState extends ChangeNotifier {
 
   /// Initialize track state
   static Future<void> initializeTrackState() async {
-    TrackState? lastState = await TrackState.loadFromFile();
-    AppData.trackState = lastState ?? TrackState();
+    OldTrackState? lastState = await OldTrackState.loadFromFile();
+    AppData.trackState = lastState ?? OldTrackState();
 
     if(AppData.trackState.trackingState == TrackingState.running){
       AppData.trackState.trackingState = TrackingState.paused;
@@ -347,6 +369,6 @@ class TrackState extends ChangeNotifier {
 
     // Set current position null, to avoid calculating distance
     AppData.trackState.currentPosition = null;
-    AppData.trackState._createPositionStream();
+    //AppData.trackState._createPositionStream();
   }
 }

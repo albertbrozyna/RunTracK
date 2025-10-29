@@ -13,6 +13,6 @@ class AppData{
 
   // When no internet activities which we need to add
   List<String>activities = [];
-  static TrackState trackState = TrackState();
+  static OldTrackState trackState = OldTrackState();
 
 }
