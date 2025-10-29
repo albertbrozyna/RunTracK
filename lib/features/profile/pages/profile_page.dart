@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/user_relationship.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/content_container.dart';
 import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/common/widgets/stat_card.dart';
@@ -46,9 +45,9 @@ class _ProfilePageState extends State<ProfilePage> {
   late Set<String> usersList;
   late Set<String> invitedUsers;
   late Set<String> receivedInvitations;
-  bool loaded = false; // This tells us if we loaded a user
   model.User? user; // User which we are showing
-  UserRelationshipStatus relationshipStatus = UserRelationshipStatus.notConnected;
+  UserRelationshipStatus relationshipStatus =
+      UserRelationshipStatus.notConnected;
 
   @override
   void initState() {
@@ -60,7 +59,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void initialize() {
     if (!UserService.isUserLoggedIn()) {
       UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
+        }
+      });
       return;
     }
 
@@ -72,31 +76,25 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Initialize async data
   Future<void> initializeAsync() async {
     // Load user data
-    if (widget.uid == AppData.currentUser?.uid) {
-      // check if this profile is my profile
-      user = AppData.currentUser;
-      loaded = true;
-    } else if (widget.passedUser != null) {
-      user = widget.passedUser;
-      loaded = true;
-    } else if (widget.uid != null) {
+    if (widget.uid != null) {
       user = await UserService.fetchUser(widget.uid!);
-      if (user != null) {
-        loaded = true;
-      } else {
-        loaded = false;
-      }
-    } else {
-      loaded = false;
     }
 
-    if (loaded == true && user != null) {
+
+
+    if (user != null) {
       // Check user relationship
       if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(user!.uid) ?? false) {
+      } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(
+            user!.uid,
+          ) ??
+          false) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(user!.uid) ?? false) {
+      } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(
+            user!.uid,
+          ) ??
+          false) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
       } else if (user!.uid == AppData.currentUser?.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
@@ -121,7 +119,11 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Error accepting invitation",
+          messageType: MessageType.error,
+        );
       }
     }
   }
@@ -140,14 +142,22 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, "Error declining invitation", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Error declining invitation",
+          messageType: MessageType.error,
+        );
       }
     }
   }
 
   /// Invite to friends
   void onPressedAddFriend() async {
-    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.inviteToFriends);
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.inviteToFriends,
+    );
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.pendingSent;
@@ -155,14 +165,22 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, "Error sending invitation", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Error sending invitation",
+          messageType: MessageType.error,
+        );
       }
     }
   }
 
   /// Remove invite to friends
   void onPressedRemoveInviteToFriends() async {
-    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.removeInvitation);
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.removeInvitation,
+    );
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.notConnected;
@@ -170,13 +188,21 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, "Error removing invitation", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Error removing invitation",
+          messageType: MessageType.error,
+        );
       }
     }
   }
 
   void onPressedDeleteFriend() async {
-    bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", user!.uid, UserAction.deleteFriend);
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.deleteFriend,
+    );
     if (added) {
       setState(() {
         relationshipStatus = UserRelationshipStatus.notConnected;
@@ -184,7 +210,11 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, "Error deleting friend", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Error deleting friend",
+          messageType: MessageType.error,
+        );
       }
     }
   }
@@ -207,7 +237,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     // Set changes to current user if it me
-    if (enterContext == EnterContextUsersList.friendsModify && result != null && result is Map) {
+    if (enterContext == EnterContextUsersList.friendsModify &&
+        result != null &&
+        result is Map) {
       final Set<String> usersUid = result['usersUid'];
       final Set<String> usersUid2 = result['usersUid2'];
       final Set<String> usersUid3 = result['usersUid3'];
@@ -222,7 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loaded == false) {
+    if (user == null) {
       // No user data found
       return NoItemsMsg(textMessage: "No user data");
     }
@@ -232,11 +264,17 @@ class _ProfilePageState extends State<ProfilePage> {
       onPopInvokedWithResult: (didPop, result) => {
         if (!didPop)
           {
-            Navigator.pop(context, {'usersUid': usersList, 'usersUid2': invitedUsers, 'usersUid3': receivedInvitations}),
+            Navigator.pop(context, {
+              'usersUid': usersList,
+              'usersUid2': invitedUsers,
+              'usersUid3': receivedInvitations,
+            }),
           },
       },
       child: Scaffold(
-        appBar: !(relationshipStatus == UserRelationshipStatus.myProfile) ? AppBar(title: Text("Profile")) : null,
+        appBar: !(relationshipStatus == UserRelationshipStatus.myProfile)
+            ? AppBar(title: Text("Profile"))
+            : null,
         body: PageContainer(
           assetPath: AppImages.appBg4,
           backgroundColor: Colors.white60,
@@ -247,11 +285,19 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-                    color: AppColors.secondary
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                    color: AppColors.secondary,
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 10,bottom: 10,left: 20.0,right: 20.0),
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      bottom: 10,
+                      left: 20.0,
+                      right: 20.0,
+                    ),
                     child: ProfileActionButton(
                       userRelationshipStatus: relationshipStatus,
                       onPressedRemoveFriends: onPressedDeleteFriend,
@@ -267,7 +313,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 3,
+                      style: BorderStyle.solid,
+                    ),
                   ),
                   child: ClipOval(
                     child: Image.asset(
@@ -287,17 +337,37 @@ class _ProfilePageState extends State<ProfilePage> {
                   backgroundColor: AppColors.secondary,
                   child: Column(
                     children: [
-                      ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
+                      ListInfoTile(
+                        icon: Icons.person,
+                        title: "${user?.firstName} ${user?.lastName}",
+                      ),
                       ListInfoTile(icon: Icons.email, title: "${user?.email}"),
-                      ListInfoTile(icon: user!.gender! == 'male' ? Icons.male : Icons.female, title: "${user?.gender}"),
-                      ListInfoTile(icon: Icons.cake, title: "${AppUtils.formatDateTime(user!.dateOfBirth, onlyDate: true)}"),
+                      ListInfoTile(
+                        icon: user!.gender! == 'male'
+                            ? Icons.male
+                            : Icons.female,
+                        title: "${user?.gender}",
+                      ),
+                      ListInfoTile(
+                        icon: Icons.cake,
+                        title: AppUtils.formatDateTime(
+                          user!.dateOfBirth,
+                          onlyDate: true,
+                        ),
+                      ),
                       ListInfoTile(
                         icon: Icons.card_membership,
-                        title: "Member since: ${AppUtils.formatDateTime(user!.createdAt, onlyDate: true)}",
+                        title:
+                            "Member since: ${AppUtils.formatDateTime(user!.createdAt, onlyDate: true)}",
                       ),
                       InkWell(
                         onTap: onTapFriends,
-                        child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}", endDivider: false),
+                        child: ListInfoTile(
+                          icon: Icons.people,
+                          title:
+                              "Friends: ${user!.friendsUid.length.toString()}",
+                          endDivider: false,
+                        ),
                       ),
                     ],
                   ),
@@ -311,7 +381,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       Text(
                         "Activity & Stats",
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
 
                       SizedBox(height: AppUiConstants.verticalSpacingButtons),

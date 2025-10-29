@@ -70,4 +70,9 @@ class GoogleService {
       );
     }
   }
+
+  static void signOutFromGoogle(){
+    _googleSignIn.signOut();
+  }
+
 }

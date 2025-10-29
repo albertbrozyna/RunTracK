@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/assets/app_images.dart';
+import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/l10n/app_localizations.dart';
@@ -33,7 +36,7 @@ class StartPageState extends State<StartPage> {
       AppData.googleLogin = false;
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, AppRoutes.home);
         });
       }
       return;
@@ -41,8 +44,8 @@ class StartPageState extends State<StartPage> {
       model.User? newUser = result.user;
 
       if (newUser == null) {
-        // TODO SIGN OUT FROM GOOGLE
         AppData.googleLogin = false;
+        GoogleService.signOutFromGoogle();
         return;
       }
 
@@ -54,10 +57,15 @@ class StartPageState extends State<StartPage> {
           builder: (context) => Dialog(
             backgroundColor: Colors.transparent,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Padding(padding: const EdgeInsets.all(16.0), child: AdditionalInfo()),
+            child: AdditionalInfo(),
           ),
         );
-        newUser.dateOfBirth = DateTime.parse(additionalData!["dob"]!);
+
+        if(additionalData == null){
+          return;
+        }
+
+        newUser.dateOfBirth = DateTime.parse(additionalData["dob"]!.trim());
         newUser.gender = additionalData["gender"]!;
         String message = await UserService.createUserInFirestore(
           newUser.uid,
@@ -72,7 +80,7 @@ class StartPageState extends State<StartPage> {
             AppData.googleLogin = false;
             AppUtils.showMessage(context, "Registered successfully!");
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacementNamed(context, '/home');
+              Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(route) => false);
             });
           } else {
             AppData.googleLogin = false;
@@ -99,12 +107,8 @@ class StartPageState extends State<StartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(image: AssetImage("assets/appBg4.jpg"), fit: BoxFit.cover),
-        ),
+      body: PageContainer(
+        assetPath: AppImages.appBg4,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -127,15 +131,14 @@ class StartPageState extends State<StartPage> {
                                   style: const TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white, // change if needed
+                                    color: Colors.white,
                                     shadows: [Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2))],
                                   ),
                                 ),
                               ),
                     
-                              // Logo
                               Image.asset(
-                                "assets/runtrack-app-icon-round.png", // your logo path
+                                "assets/runtrack-app-icon-round.png",
                                 width: 300,
                               ),
                     

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/config/routes/app_router.dart';
@@ -19,6 +20,11 @@ void main() async {
   // It is needed for flutter to use a async in main
   WidgetsFlutterBinding.ensureInitialized();
 
+  await SystemChrome.setPreferredOrientations([ // Block rotation
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   await TrackState.initializeTrackState();  // Init track state
 
   await Firebase.initializeApp(
@@ -34,8 +40,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Run TracK',
       theme: AppTheme.lightTheme,
+
+
       onGenerateRoute: AppRouter.onGenerateRoute,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -43,6 +51,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+
       supportedLocales: const [
         Locale('en'), // English
         Locale('pl'), // Polish (example)

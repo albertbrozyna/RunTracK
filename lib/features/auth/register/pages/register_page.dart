@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_constants.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/form_container.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
@@ -203,13 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.textFieldsBackground,
-                        borderRadius: AppUiConstants.borderRadiusForm,
-                        boxShadow: AppUiConstants.boxShadowForm,
-                      ),
+                    FormContainer(
                       child: Column(
                         children: [
                           // First Name
@@ -219,15 +214,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             keyboardType: TextInputType.text,
                             style: AppUiConstants.textStyleTextFields,
                             decoration: InputDecoration(
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              fillColor: AppColors.textFieldsBackground,
                               labelText: "First Name",
                               labelStyle: AppUiConstants.labelStyleTextFields,
                               prefixIcon: Icon(Icons.person,color: AppColors.white,),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                               contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                             ),
                           ),
@@ -260,12 +249,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             decoration: InputDecoration(
                               labelText: "Date of Birth",
                               labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
                               prefixIcon: Icon(Icons.calendar_today,color: AppColors.white,),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
                               contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                             onTap: () async {

@@ -10,7 +10,13 @@ import 'package:run_track/models/notification.dart';
 import 'package:run_track/models/user.dart' as model;
 import 'package:run_track/services/notification_service.dart';
 
-enum UserAction { inviteToFriends, removeInvitation, acceptInvitationToFriends, declineInvitationToFriends, deleteFriend }
+enum UserAction {
+  inviteToFriends,
+  removeInvitation,
+  acceptInvitationToFriends,
+  declineInvitationToFriends,
+  deleteFriend,
+}
 
 class UserService {
   /// Check if current user i logged in to app
@@ -34,7 +40,8 @@ class UserService {
     DateTime today = DateTime.now();
     int age = today.year - birthDate.year;
 
-    if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
       age--;
     }
 
@@ -48,14 +55,21 @@ class UserService {
       firstName: sourceUser.firstName,
       lastName: sourceUser.lastName,
       gender: sourceUser.gender,
-      activityNames: sourceUser.activityNames != null ? List.from(sourceUser.activityNames!) : null,
+      activityNames: sourceUser.activityNames != null
+          ? List.from(sourceUser.activityNames!)
+          : null,
       friendsUid: Set.from(sourceUser.friendsUid),
       email: sourceUser.email,
       profilePhotoUrl: sourceUser.profilePhotoUrl,
       dateOfBirth: sourceUser.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(sourceUser.dateOfBirth!.millisecondsSinceEpoch)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              sourceUser.dateOfBirth!.millisecondsSinceEpoch,
+            )
           : null,
-      defaultLocation: LatLng(sourceUser.userDefaultLocation.latitude, sourceUser.userDefaultLocation.longitude),
+      defaultLocation: LatLng(
+        sourceUser.userDefaultLocation.latitude,
+        sourceUser.userDefaultLocation.longitude,
+      ),
     );
   }
 
@@ -70,7 +84,10 @@ class UserService {
         return false;
       }
       final uid = user.uid;
-      await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).delete();
+      await FirebaseFirestore.instance
+          .collection(FirestoreCollections.users)
+          .doc(uid)
+          .delete();
       await user.delete();
 
       return true;
@@ -89,15 +106,21 @@ class UserService {
       'fullName': user.fullName,
       'email': user.email,
       'activityNames': user.activityNames ?? [],
-      'dateOfBirth': user.dateOfBirth != null ? Timestamp.fromDate(user.dateOfBirth!) : null,
+      'dateOfBirth': user.dateOfBirth != null
+          ? Timestamp.fromDate(user.dateOfBirth!)
+          : null,
       'gender': user.gender,
       'friendsUid': user.friendsUid,
       'pendingInvitationsToFriends': user.pendingInvitationsToFriends,
       'receivedInvitationsToFriends': user.receivedInvitationsToFriends,
-      'receivedInvitationsToCompetitions': user.receivedInvitationsToCompetitions,
+      'receivedInvitationsToCompetitions':
+          user.receivedInvitationsToCompetitions,
       'participatedCompetitions': user.participatedCompetitions,
       'profilePhotoUrl': user.profilePhotoUrl,
-      'userDefaultLocation': {'latitude': user.userDefaultLocation.latitude, 'longitude': user.userDefaultLocation.longitude},
+      'userDefaultLocation': {
+        'latitude': user.userDefaultLocation.latitude,
+        'longitude': user.userDefaultLocation.longitude,
+      },
       'kilometers': user.kilometers,
       'burnedCalories': user.burnedCalories,
       'hoursOfActivity': user.hoursOfActivity,
@@ -114,15 +137,28 @@ class UserService {
       email: map['email'],
       activityNames: List<String>.from(map['activityNames'] ?? []),
       friendsUid: Set<String>.from(map['friendsUid'] ?? []),
-      pendingInvitationsToFriends: Set<String>.from(map['pendingInvitationsToFriends'] ?? []),
-      receivedInvitationsToFriends: Set<String>.from(map['receivedInvitationsToFriends'] ?? []),
-      receivedInvitationsToCompetitions: Set<String>.from(map['receivedInvitationsToCompetitions'] ?? []),
-      participatedCompetitions: Set<String>.from(map['participatedCompetitions'] ?? []),
+      pendingInvitationsToFriends: Set<String>.from(
+        map['pendingInvitationsToFriends'] ?? [],
+      ),
+      receivedInvitationsToFriends: Set<String>.from(
+        map['receivedInvitationsToFriends'] ?? [],
+      ),
+      receivedInvitationsToCompetitions: Set<String>.from(
+        map['receivedInvitationsToCompetitions'] ?? [],
+      ),
+      participatedCompetitions: Set<String>.from(
+        map['participatedCompetitions'] ?? [],
+      ),
       profilePhotoUrl: map['profilePhotoUrl'],
       defaultLocation: location != null
-          ? LatLng((location['latitude'] ?? 0.0).toDouble(), (location['longitude'] ?? 0.0).toDouble())
+          ? LatLng(
+              (location['latitude'] ?? 0.0).toDouble(),
+              (location['longitude'] ?? 0.0).toDouble(),
+            )
           : LatLng(0.0, 0.0),
-      dateOfBirth: map['dateOfBirth'] != null ? (map['dateOfBirth'] as Timestamp).toDate() : null,
+      dateOfBirth: map['dateOfBirth'] != null
+          ? (map['dateOfBirth'] as Timestamp).toDate()
+          : null,
       gender: map['gender'],
       kilometers: map['kilometers'] ?? 0,
       burnedCalories: map['burnedCalories'] ?? 0,
@@ -135,7 +171,10 @@ class UserService {
     if (uid.isEmpty) {
       return null;
     }
-    final docSnapshot = await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).get();
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection(FirestoreCollections.users)
+        .doc(uid)
+        .get();
 
     if (docSnapshot.exists) {
       final userData = docSnapshot.data();
@@ -148,7 +187,10 @@ class UserService {
 
   /// Fetch  user firstName LastName and profile photo uri data
   static Future<model.User?> fetchUserForBlock(String uid) async {
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
 
     if (userDoc.exists) {
       final data = userDoc.data();
@@ -159,7 +201,10 @@ class UserService {
         final email = data['email'] as String?;
         final profilePhotoUrl = data['profilePhotoUrl'] as String?;
 
-        if (firstName == null || lastName == null || gender == null || email == null) {
+        if (firstName == null ||
+            lastName == null ||
+            gender == null ||
+            email == null) {
           return null;
         }
 
@@ -177,7 +222,10 @@ class UserService {
   }
 
   /// Fetch users list from firestore
-  static Future<List<model.User>> fetchUsers({required List<String> uids, int limit = 20}) async {
+  static Future<List<model.User>> fetchUsers({
+    required List<String> uids,
+    int limit = 20,
+  }) async {
     if (uids.isEmpty) {
       return [];
     }
@@ -194,10 +242,17 @@ class UserService {
       }
 
       for (List<String> chunk in chunkedUids) {
-        Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: chunk).limit(limit);
+        Query queryUsers = FirebaseFirestore.instance
+            .collection(FirestoreCollections.users)
+            .where("uid", whereIn: chunk)
+            .limit(limit);
 
         final querySnapshot = await queryUsers.get();
-        final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+        final users = querySnapshot.docs
+            .map(
+              (doc) => UserService.fromMap(doc.data() as Map<String, dynamic>),
+            )
+            .toList();
 
         allUsers.addAll(users);
       }
@@ -212,7 +267,11 @@ class UserService {
   }
 
   /// Search users in firestore
-  static Future<List<model.User>> searchUsers(String query, {bool exceptMe = false, String myUid = ""}) async {
+  static Future<List<model.User>> searchUsers(
+    String query, {
+    bool exceptMe = false,
+    String myUid = "",
+  }) async {
     if (query.isEmpty) {
       return [];
     }
@@ -260,13 +319,20 @@ class UserService {
   }
 
   /// Fetch list of users
-  static Future<List<model.User>> fetchParticipants({required List<String> uids, DocumentSnapshot? lastDocument, int limit = 10}) async {
+  static Future<List<model.User>> fetchParticipants({
+    required List<String> uids,
+    DocumentSnapshot? lastDocument,
+    int limit = 10,
+  }) async {
     if (uids.isEmpty) {
       return [];
     }
 
     try {
-      Query queryUsers = FirebaseFirestore.instance.collection(FirestoreCollections.users).where("uid", whereIn: uids).limit(limit);
+      Query queryUsers = FirebaseFirestore.instance
+          .collection(FirestoreCollections.users)
+          .where("uid", whereIn: uids)
+          .limit(limit);
 
       if (lastDocument != null) {
         queryUsers = queryUsers.startAfterDocument(lastDocument);
@@ -277,7 +343,9 @@ class UserService {
         //lastFetchedDocumentParticipants = querySnapshot.docs.last;
       }
 
-      final users = querySnapshot.docs.map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      final users = querySnapshot.docs
+          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
       return users;
     } catch (e) {
       print("Error: $e");
@@ -296,7 +364,9 @@ class UserService {
       print("User not logged in!");
     }
     try {
-      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       await docRef.set(UserService.toMap(user));
       return user;
     } catch (e) {
@@ -311,7 +381,9 @@ class UserService {
       if (user.uid.isEmpty) {
         return null;
       }
-      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       await docRef.set(UserService.toMap(user));
       return user;
     } catch (e) {
@@ -321,18 +393,25 @@ class UserService {
   }
 
   /// Do action in one transaction to users depending on action type
-  static Future<bool> actionToUsers(String senderUid, String receiverUid, UserAction action) async {
-    if (senderUid.isEmpty || receiverUid.isEmpty) {
+  static Future<bool> actionToUsers(
+    String senderUid,
+    String receiverUid,
+    UserAction action,
+  ) async {
+    if (senderUid.isEmpty || receiverUid.isEmpty || senderUid == receiverUid) {
       return false;
     }
 
-    // Przypadek ze obydwoje wysyłają sobie zaproszenie
     AppNotification? notification;
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final userSenderReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(senderUid);
+        final userSenderReference = FirebaseFirestore.instance
+            .collection(FirestoreCollections.users)
+            .doc(senderUid);
 
-        final userReceiverReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(receiverUid);
+        final userReceiverReference = FirebaseFirestore.instance
+            .collection(FirestoreCollections.users)
+            .doc(receiverUid);
 
         final senderSnap = await transaction.get(userSenderReference);
         if (!senderSnap.exists) {
@@ -344,87 +423,109 @@ class UserService {
           throw Exception("User not found in database");
         }
 
-        final senderFriendsList = Set<String>.from(senderSnap['friendsUid'] ?? []);
-        final senderPendingInvitationsList = Set<String>.from(senderSnap['pendingInvitationsToFriends'] ?? []);
-        final receiverFriendsList = Set<String>.from(receiverSnap['friendsUid'] ?? []);
-        final receiverReceivedInvitationsList = Set<String>.from(receiverSnap['receivedInvitationsToFriends'] ?? []);
+        final senderFriendsList = Set<String>.from(
+          senderSnap['friendsUid'] ?? [],
+        );
+        final senderPendingInvitationsList = Set<String>.from(
+          senderSnap['pendingInvitationsToFriends'] ?? [],
+        );
+        final senderReceivedInvitationList = Set<String>.from(
+          senderSnap['receivedInvitationsToFriends'],
+        );
+
+        final receiverFriendsList = Set<String>.from(
+          receiverSnap['friendsUid'] ?? [],
+        );
+        final receiverPendingInvitationsList = Set<String>.from(
+          receiverSnap['pendingInvitationsToFriends'] ?? [],
+        );
+        final receiverReceivedInvitationsList = Set<String>.from(
+          receiverSnap['receivedInvitationsToFriends'] ?? [],
+        );
 
         final senderFirstName = senderSnap['firstName'] ?? '';
         final senderLastName = senderSnap['lastName'] ?? '';
         final receiverFirstName = receiverSnap['firstName'] ?? '';
         final receiverLastName = receiverSnap['lastName'] ?? '';
 
-        if (action == UserAction.inviteToFriends) {
-          if(senderFriendsList.contains(receiverUid)) {
-            return false;
-          }
-          if(receiverFriendsList.contains(senderUid)) {
-            return false;
-          }
+        switch (action) {
+          case UserAction.inviteToFriends:
+            // Check if we are not already friends
+            if (senderFriendsList.contains(receiverUid) ||
+                receiverFriendsList.contains(senderUid)) {
+              return false;
+            }
 
-          if(senderPendingInvitationsList.contains(receiverUid)) {
-            return false;
-          }
+            // Check if receiver do not send us request to friends before
+            if (receiverPendingInvitationsList.contains(senderUid)) {
+              senderFriendsList.add(receiverUid);
+              receiverFriendsList.add(senderUid);
+              receiverPendingInvitationsList.remove(senderUid);
+              receiverReceivedInvitationsList.remove(senderUid);
+              senderReceivedInvitationList.remove(receiverUid);
+              senderPendingInvitationsList.remove(receiverUid);
+              notification = AppNotification(
+                notificationId: "",
+                uid: receiverUid,
+                title:
+                    "$receiverFirstName $receiverLastName accepted your friend request",
+                createdAt: DateTime.now(),
+                seen: false,
+                type: NotificationType.inviteFriends,
+              );
 
-          if(receiverReceivedInvitationsList.contains(senderUid)) {
-            return false;
-          }
-
-          if(senderReceivedInvitationsList.contains(receiverUid)) {
-            return false;
-          }
-
+              break;
+            }
 
             senderPendingInvitationsList.add(receiverUid);
-          AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
-          receiverReceivedInvitationsList.add(senderUid);
-          notification = AppNotification(
-            notificationId: "",
-            uid: receiverUid,
-            title: "$senderFirstName $senderLastName wants to be your friend",
-            createdAt: DateTime.now(),
-            seen: false,
-            type: NotificationType.inviteFriends,
-          );
-        } else if (action == UserAction.removeInvitation) {
-          receiverReceivedInvitationsList.remove(senderUid);
-          senderPendingInvitationsList.remove(receiverUid);
-          AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
-        } else if (action == UserAction.acceptInvitationToFriends) {
-          senderFriendsList.add(receiverUid);
-          receiverFriendsList.add(senderUid);
-
-          AppNotification(
-            notificationId: "",
-            uid: receiverUid,
-            title: "$receiverFirstName $receiverLastName accepted your friend request",
-            createdAt: DateTime.now(),
-            seen: false,
-            type: NotificationType.inviteFriends,
-          );
-
-          AppData.currentUser?.friendsUid = receiverFriendsList;
-          AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
-
-          senderPendingInvitationsList.remove(receiverUid);
-          receiverReceivedInvitationsList.remove(senderUid);
-        } else if (action == UserAction.declineInvitationToFriends) {
-          receiverReceivedInvitationsList.remove(receiverUid);
-
-          AppData.currentUser?.receivedInvitationsToFriends = receiverReceivedInvitationsList;
-        } else if (action == UserAction.deleteFriend) {
-          senderFriendsList.remove(receiverUid);
-          receiverFriendsList.remove(senderUid);
-          AppData.currentUser?.friendsUid = senderFriendsList;
+            receiverReceivedInvitationsList.add(senderUid);
+            notification = AppNotification(
+              notificationId: "",
+              uid: receiverUid,
+              title: "$senderFirstName $senderLastName wants to be your friend",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.inviteFriends,
+            );
+            break;
+          case UserAction.removeInvitation:
+            receiverReceivedInvitationsList.remove(senderUid);
+            senderPendingInvitationsList.remove(receiverUid);
+            break;
+          case UserAction.acceptInvitationToFriends:
+            senderFriendsList.add(receiverUid);
+            receiverFriendsList.add(senderUid);
+            senderPendingInvitationsList.remove(receiverUid);
+            receiverReceivedInvitationsList.remove(senderUid);
+            notification = AppNotification(
+              notificationId: "",
+              uid: receiverUid,
+              title:
+                  "$receiverFirstName $receiverLastName accepted your friend request",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.inviteFriends,
+            );
+            break;
+          case UserAction.declineInvitationToFriends:
+            receiverReceivedInvitationsList.remove(senderUid);
+            senderPendingInvitationsList.remove(receiverUid);
+            break;
+          case UserAction.deleteFriend:
+            senderFriendsList.remove(receiverUid);
+            receiverFriendsList.remove(senderUid);
+            break;
         }
 
         transaction.update(userSenderReference, {
           'pendingInvitationsToFriends': senderPendingInvitationsList,
           'friendsUid': senderFriendsList,
+          'receivedInvitationsToFriends': senderReceivedInvitationList,
         });
         transaction.update(userReceiverReference, {
-          'receivedInvitationsToFriends': receiverReceivedInvitationsList,
+          'pendingInvitationsToFriends': receiverPendingInvitationsList,
           'friendsUid': receiverFriendsList,
+          'receivedInvitationsToFriends': receiverReceivedInvitationsList,
         });
       });
 
@@ -440,14 +541,21 @@ class UserService {
   }
 
   /// Create a user in firebase auth
-  static Future<AuthResponse> createUserInFirebaseAuth(String email, String password) async {
+  static Future<AuthResponse> createUserInFirebaseAuth(
+    String email,
+    String password,
+  ) async {
     try {
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password.trim(),
-      );
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: email.trim().toLowerCase(),
+            password: password.trim(),
+          );
 
-      return AuthResponse(message: "User created", userCredential: userCredential);
+      return AuthResponse(
+        message: "User created",
+        userCredential: userCredential,
+      );
     } on FirebaseAuthException catch (e) {
       return AuthResponse(message: "Auth error ${e.message}");
     } catch (e) {
@@ -497,17 +605,32 @@ class UserService {
         u1.userDefaultLocation.longitude == u2.userDefaultLocation.longitude &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
         AppUtils.setsEqual(u1.friendsUid, u2.friendsUid) &&
-        AppUtils.setsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&
-        AppUtils.setsEqual(u1.receivedInvitationsToFriends, u2.receivedInvitationsToFriends) &&
-        AppUtils.setsEqual(u1.receivedInvitationsToCompetitions, u2.receivedInvitationsToCompetitions) &&
-        AppUtils.setsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
+        AppUtils.setsEqual(
+          u1.pendingInvitationsToFriends,
+          u2.pendingInvitationsToFriends,
+        ) &&
+        AppUtils.setsEqual(
+          u1.receivedInvitationsToFriends,
+          u2.receivedInvitationsToFriends,
+        ) &&
+        AppUtils.setsEqual(
+          u1.receivedInvitationsToCompetitions,
+          u2.receivedInvitationsToCompetitions,
+        ) &&
+        AppUtils.setsEqual(
+          u1.participatedCompetitions,
+          u2.participatedCompetitions,
+        );
   }
 
   /// Check if the user account exists in firestore
   // TODO TO FIX THIS with returning true
   static Future<bool> checkIfUserAccountExists(String uid) async {
     try {
-      final docSnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       return docSnapshot.exists;
     } catch (e) {
       return true;

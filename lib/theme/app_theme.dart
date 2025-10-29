@@ -12,12 +12,12 @@ class AppTheme {
       // App font
       fontFamily: "sans-serif",
       textTheme: TextTheme(
-        bodySmall: TextStyle(fontSize: 12),
+        bodySmall: TextStyle(fontSize: 16),
         bodyMedium: TextStyle(fontSize: 16),
-        bodyLarge: TextStyle(fontSize: 20),
-        headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        bodyLarge: TextStyle(fontSize: 16),
         headlineSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
@@ -59,6 +59,46 @@ class AppTheme {
         hintStyle: TextStyle(fontSize: 16,color: Colors.white24),
       ),
 
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            borderSide: BorderSide(color: Colors.white24),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            borderSide: BorderSide(color: Colors.redAccent),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            borderSide: BorderSide(color: AppColors.white),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            borderSide: BorderSide(color: AppColors.danger),
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            borderSide: BorderSide(color: Colors.white24),
+          ),
+        ),
+        textStyle: TextStyle(
+          color: AppColors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w400
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.primary),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+            ),
+          ),
+        ),
+      ),
+
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.secondary,
@@ -72,6 +112,9 @@ class AppTheme {
           ),
         ),
       ),
+
+
+
 
     );
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
+import 'package:run_track/common/widgets/form_container.dart';
+import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/app_constants.dart';
 import '../../../../common/widgets/custom_button.dart';
-import '../../../../theme/colors.dart';
 
 class AdditionalInfo extends StatefulWidget {
   const AdditionalInfo({super.key});
@@ -22,6 +23,14 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
     if (value == null || value.isEmpty) {
       return "Please enter your $fieldName";
     }
+
+    if(fieldName == 'DateOfBirth'){
+      DateTime? date = DateTime.tryParse(value.trim());
+      if(date == null){
+        return "Please enter a valid date";
+      }
+    }
+
     return null;
   }
 
@@ -32,18 +41,13 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
       child: Center(
         child: Form(
           key: _formKey,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.formBackgroundOverlay,
-              borderRadius: AppUiConstants.borderRadiusForm,
-            ),
-            child: Padding(
-              padding: AppUiConstants.paddingInsideForm,
+          child: FormContainer(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     // Date of birth
+                    style: TextStyle(color: Colors.white,fontSize: 16),
                     readOnly: true,
                     controller: _dateController,
                     validator: (value) => validateFields(value, "DateOfBirth"),
@@ -59,6 +63,8 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                   // Gender
                   DropdownButtonFormField<String>(
+                    dropdownColor: AppColors.primary,
+                    style: TextStyle(color: Colors.white,),
                     initialValue: _selectedGender,
                     validator: (value) => validateFields(value, "gender"),
                     decoration: InputDecoration(
@@ -78,10 +84,8 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                     },
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 60,
-                    child: CustomButton(
+
+                    CustomButton(
                       text: "Register",
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
@@ -99,11 +103,9 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       },
                       textSize: 20,
 
-                    ),
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ),
