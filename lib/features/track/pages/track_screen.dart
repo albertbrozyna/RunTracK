@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/profile/models/settings.dart';
@@ -18,6 +19,7 @@ import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/common/enums/visibility.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
+import '../../../main.dart';
 import '../../../theme/colors.dart';
 
 class TrackScreen extends StatefulWidget {
@@ -46,6 +48,18 @@ class TrackScreenState extends State<TrackScreen> {
     super.initState();
     initialize();
   }
+
+  Future<void> startLocationService() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (!isRunning) {
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'Śledzenie trasy aktywne',
+        notificationText: 'Twoja lokalizacja jest aktualizowana...',
+        callback: startCallback, // wskazuje funkcję z main isolate
+      );
+    }
+  }
+
 
   Future<void> initialize() async {
     _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -94,7 +108,7 @@ class TrackScreenState extends State<TrackScreen> {
           child: CustomButton(
             backgroundColor: AppColors.secondary,
             text: AppLocalizations.of(context)!.trackScreenStartTraining,
-            onPressed: AppData.trackState.startTracking,
+            onPressed: startLocationService,
           ),
         );
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -125,48 +126,51 @@ class TrackState extends ChangeNotifier {
   }
 
   void _createPositionStream() {
-    positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) async {
-      final latLng = LatLng(position.latitude, position.longitude);
-      latestPosition = position;
-      if (currentPosition != null) {
-        // Calculate distance from last position
-        double dist = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
-        totalDistance += dist;
+    positionStream?.cancel();
 
-        final deltaTime = lastPositionTime != null ? DateTime.now().difference(lastPositionTime!).inSeconds.toDouble() : 1.0;
+    positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      final DateTime now = DateTime.now();
+      final LatLng latLng = LatLng(position.latitude, position.longitude);
+
+      latestPosition = position;
+
+      if (currentPosition != null) {
+        final double distance = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
+        totalDistance += distance;
+
+        final double deltaTime = lastPositionTime != null
+            ? now.difference(lastPositionTime!).inSeconds.toDouble()
+            : 1.0;
 
         if (deltaTime > 0) {
-          // to km/h from meters
-          currentSpeedValue = (dist / deltaTime) * 3.6;
+          currentSpeedValue = (distance / deltaTime) * 3.6;
         }
 
-        if (position.altitude > (latestPosition?.altitude ?? 0)) {
-          // Elevation gain
-          elevationGain += position.altitude - (latestPosition?.altitude ?? 0);
-        }
+        final double deltaAltitude = position.altitude - (latestPosition!.altitude);
+        if (deltaAltitude > 0) elevationGain += deltaAltitude;
 
-        avgSpeed = (elapsedTime.inSeconds > 0)
-            ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600)
-            : 0.0;
-        steps = (totalDistance / 0.78).round(); // Steps
+        avgSpeed = elapsedTime.inSeconds > 0 ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600) : 0.0;
+        pace = avgSpeed > 0 ? (60 / avgSpeed) : 0.0;
 
-        pace = (avgSpeed > 0) ? (60 / avgSpeed) : 0.0; // min/km
+        steps = (totalDistance / 0.78).round();
       }
 
-
-
-      lastPositionTime = DateTime.now();
-
+      lastPositionTime = now;
       currentPosition = latLng;
-      trackedPath.add(latLng);
 
-      // Move map to follow current location
-      if (trackingState == TrackingState.running && followUser && mapController != null ) {
+      if (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, latLng) > 2) {
+        trackedPath.add(latLng);
+      }
+
+      if (followUser && mapController != null) {
         mapController?.move(latLng, mapController!.camera.zoom);
       }
+
       notifyListeners();
     });
   }
+
 
   /// Start tracking route
   void startTracking() {
@@ -228,16 +232,6 @@ class TrackState extends ChangeNotifier {
 
   /// Stop tracking
   void stopTracking() {
-    // TODO TO DELETE
-      trackedPath.addAll([
-        LatLng(51.7592, 19.4560),
-        LatLng(51.7611, 19.4585),
-        LatLng(51.7635, 19.4500),
-        LatLng(51.7680, 19.4850),
-        LatLng(51.7750, 19.4880),
-        LatLng(51.7592, 19.4560),
-      ]);
-
     trackingState = TrackingState.stopped;
     positionStream?.cancel();
     positionStream = null;
@@ -353,5 +347,6 @@ class TrackState extends ChangeNotifier {
 
     // Set current position null, to avoid calculating distance
     AppData.trackState.currentPosition = null;
+    AppData.trackState._createPositionStream();
   }
 }

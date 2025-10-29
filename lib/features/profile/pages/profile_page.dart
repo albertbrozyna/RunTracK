@@ -56,17 +56,10 @@ class _ProfilePageState extends State<ProfilePage> {
     initializeAsync();
   }
 
-  void initialize() {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
-        }
-      });
-      return;
-    }
+
+  void initialize() {
+    UserService.checkAppUseState(context);
 
     usersList = Set.from(widget.usersList);
     invitedUsers = Set.from(widget.invitedUsers);

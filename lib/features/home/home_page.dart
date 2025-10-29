@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/tracking_state.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
@@ -26,6 +28,8 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   TrackState? trackState;
   final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
+  List<LatLng> track = [];
+  LatLng? currentPosition;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -47,7 +51,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     isTrackingNotifier.dispose();
-    super.dispose();
+    FlutterForegroundTask.removeTaskDataCallback((data) {});
+
+  super.dispose();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -68,24 +74,43 @@ class _HomePageState extends State<HomePage> {
 
   void initialize(){
 
+    FlutterForegroundTask.initCommunicationPort();
+
+    FlutterForegroundTask.addTaskDataCallback((data) {
+      if (data is Map && data.containsKey('lat') && data.containsKey('lng')) {
+        LatLng pos = LatLng(
+          (data['lat'] as num).toDouble(),
+          (data['lng'] as num).toDouble(),
+        );
+
+        setState(() {
+          currentPosition = pos;
+          track.add(pos);
+        });
+
+        print("📍 Otrzymano lokalizację: $pos");
+      } else {
+        print("⚠️ Otrzymano niepoprawne dane: $data");
+      }
+    });
   }
+
 
   Future<void> initializeAsync() async {
     AppData.isLoading.value = true; // Start loading
     TrackState? lastState = await TrackState.loadFromFile();
-    AppData.trackState = lastState ?? TrackState();
 
     // Set track state to paused i last state was running
-    if (AppData.trackState.trackingState == TrackingState.running) {
-      AppData.trackState.trackingState = TrackingState.paused;
-    }
+    // if (AppData.trackState.trackingState == TrackingState.running) {
+    //   AppData.trackState.trackingState = TrackingState.paused;
+    // }
     AppData.isLoading.value = false;
 
     // Add listener
-    AppData.trackState.addListener(() {
-      isTrackingNotifier.value =
-          AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused;
-    });
+    // AppData.trackState.addListener(() {
+    //   isTrackingNotifier.value =
+    //       AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused;
+    // });
     _askLocation();
   }
 

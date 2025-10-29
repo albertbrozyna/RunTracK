@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
@@ -9,6 +10,8 @@ import 'package:run_track/features/auth/models/auth_response.dart';
 import 'package:run_track/models/notification.dart';
 import 'package:run_track/models/user.dart' as model;
 import 'package:run_track/services/notification_service.dart';
+
+import '../config/routes/app_routes.dart';
 
 enum UserAction {
   inviteToFriends,
@@ -30,6 +33,19 @@ class UserService {
   static Future<void> signOutUser() async {
     await FirebaseAuth.instance.signOut();
     AppData.currentUser = null;
+  }
+
+  static void checkAppUseState(BuildContext context) {
+    if (!isUserLoggedIn()) {
+      signOutUser();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
+        }
+      });
+    }
   }
 
   /// Method used to calculate age of User

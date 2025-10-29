@@ -216,7 +216,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
-      AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
+      //AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
       saveLastVisibility();
       if (mounted) {
         AppUtils.showMessage(context, 'Activity saved successfully!');
@@ -329,7 +329,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
-                    AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
+                    //AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
 
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
