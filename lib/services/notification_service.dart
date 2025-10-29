@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/constans/firestore_names.dart';
+import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/models/notification.dart';
 
 class NotificationService {

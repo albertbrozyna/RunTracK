@@ -14,7 +14,7 @@ class PageContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor != null ? backgroundColor : Colors.transparent,
+        color: backgroundColor ?? Colors.transparent,
         image: assetPath == null
             ? null
             : DecorationImage(

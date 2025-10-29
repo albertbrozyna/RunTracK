@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/user_relationship.dart';
 
+import '../../../common/widgets/alert_dialog.dart';
+import '../../../services/user_service.dart';
 import '../../../theme/colors.dart';
 
 class ProfileActionButton extends StatefulWidget {
@@ -23,16 +25,66 @@ class ProfileActionButton extends StatefulWidget {
 
   @override
   State<ProfileActionButton> createState() => _ProfileActionButtonState();
-
 }
 
-class _ProfileActionButtonState extends State<ProfileActionButton>
-{
+class _ProfileActionButtonState extends State<ProfileActionButton> {
+  /// Logout button action
+  void logoutButtonPressed(BuildContext context) {
+    AppAlertDialog alert = AppAlertDialog(
+      titleText: "Logout",
+      contentText: "Are you sure you want to log out?",
+      textLeft: "Cancel",
+      textRight: "Log out",
+      colorBackgroundButtonRight: AppColors.danger,
+      colorButtonForegroundRight: AppColors.white,
+      onPressedLeft: () {
+        Navigator.of(context).pop();
+      },
+      onPressedRight: () {
+        Navigator.of(context).pop();
+        UserService.signOutUser();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Logged out")));
+        Navigator.of(context).pushNamedAndRemoveUntil('/start', (Route<dynamic> route) => false);
+      },
+    );
 
+    showDialog(
+      context: context,
+      barrierDismissible: true, // Allow closing by outside tap
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  // TODO REFACTOR
   @override
   Widget build(BuildContext context) {
     if (widget.userRelationshipStatus == UserRelationshipStatus.myProfile) {
-      return SizedBox(height: 1);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          InkWell(
+            onTap: () => logoutButtonPressed(context),
+            child: Row(
+              children: [
+                Icon(Icons.logout, color: Colors.white, size: 26),
+
+                Text("Logout", style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () => {Navigator.pushNamed(context, '/settings')},
+            child: Row(
+              children: [
+                Text("Settings", style: TextStyle(color: Colors.white)),
+                Icon(Icons.settings, color: Colors.white, size: 26),
+              ],
+            ),
+          ),
+        ],
+      );
     }
 
     if (widget.userRelationshipStatus == UserRelationshipStatus.friend) {
@@ -126,7 +178,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton>
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Icon(Icons.close, color: Colors.red, size: 26),
-                    ),
+                  ),
                   Text("Decline", style: TextStyle(color: Colors.red)),
                 ],
               ),

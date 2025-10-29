@@ -106,36 +106,6 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {});
   }
 
-  /// Logout button action
-  void logoutButtonPressed(BuildContext context) {
-    AppAlertDialog alert = AppAlertDialog(
-      titleText: "Logout",
-      contentText: "Are you sure you want to log out?",
-      textLeft: "Cancel",
-      textRight: "Log out",
-      colorBackgroundButtonRight: AppColors.danger,
-      colorButtonForegroundRight: AppColors.white,
-      onPressedLeft: () {
-        Navigator.of(context).pop();
-      },
-      onPressedRight: () {
-        Navigator.of(context).pop();
-        UserService.signOutUser();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Logged out")));
-        UserService.signOutUser();
-        Navigator.of(context).pushNamedAndRemoveUntil('/start', (Route<dynamic> route) => false);
-      },
-    );
-
-    showDialog(
-      context: context,
-      barrierDismissible: true, // Allow closing by outside tap
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
-  }
-
   /// Accept invitation
   void onPressedAcceptInvitation() async {
     bool added = await UserService.actionToUsers(
@@ -277,54 +247,20 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.secondary,
-                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                    color: AppColors.secondary
                   ),
-
-                  child: Column(
-                    children: [
-                      if (relationshipStatus == UserRelationshipStatus.myProfile)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: IconButton(
-                                    onPressed: () => logoutButtonPressed(context),
-                                    icon: Icon(Icons.logout, color: Colors.white, size: 26),
-                                  ),
-                                ),
-                                Text("Logout", style: TextStyle(color: Colors.white)),
-                              ],
-                            ),
-
-                            Row(
-                              children: [
-                                Text("Settings", style: TextStyle(color: Colors.white)),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: IconButton(
-                                    onPressed: () => {Navigator.pushNamed(context, '/settings')},
-                                    icon: Icon(Icons.settings, color: Colors.white, size: 26),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10,bottom: 10,left: 20.0,right: 20.0),
+                    child: ProfileActionButton(
+                      userRelationshipStatus: relationshipStatus,
+                      onPressedRemoveFriends: onPressedDeleteFriend,
+                      onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
+                      onPressedSendInvitation: onPressedAddFriend,
+                      onPressedAcceptInvitation: onPressedAcceptInvitation,
+                      onPressedDeclineInvitation: onPressedDeclineInvitation,
+                    ),
                   ),
-                ),
-
-                ProfileActionButton(
-                  userRelationshipStatus: relationshipStatus,
-                  onPressedRemoveFriends: onPressedDeleteFriend,
-                  onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
-                  onPressedSendInvitation: onPressedAddFriend,
-                  onPressedAcceptInvitation: onPressedAcceptInvitation,
-                  onPressedDeclineInvitation: onPressedDeclineInvitation,
                 ),
                 SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
@@ -354,8 +290,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
                       ListInfoTile(icon: Icons.email, title: "${user?.email}"),
                       ListInfoTile(icon: user!.gender! == 'male' ? Icons.male : Icons.female, title: "${user?.gender}"),
-                      ListInfoTile(icon: Icons.cake, title: "${user?.dateOfBirth}"),
-                      ListInfoTile(icon: Icons.card_membership, title: "Member since: ${AppUtils.formatDateTime(user!.createdAt)}"),
+                      ListInfoTile(icon: Icons.cake, title: "${AppUtils.formatDateTime(user!.dateOfBirth, onlyDate: true)}"),
+                      ListInfoTile(
+                        icon: Icons.card_membership,
+                        title: "Member since: ${AppUtils.formatDateTime(user!.createdAt, onlyDate: true)}",
+                      ),
                       InkWell(
                         onTap: onTapFriends,
                         child: ListInfoTile(icon: Icons.people, title: "Friends: ${user!.friendsUid.length.toString()}", endDivider: false),

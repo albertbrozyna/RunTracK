@@ -20,8 +20,8 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   bool _isLoading = false;
   bool _hasMore = true;
-  int _limit = 20;
-  ScrollController _scrollController = ScrollController();
+  final int _limit = 20;
+  final ScrollController _scrollController = ScrollController();
   DocumentSnapshot? _lastPageNotifications;
   late List<AppNotification> _notifications;
 

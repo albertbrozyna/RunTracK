@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
-import 'package:run_track/constans/firestore_names.dart';
+import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/models/competition.dart';
 
 import '../common/enums/visibility.dart' as enums;

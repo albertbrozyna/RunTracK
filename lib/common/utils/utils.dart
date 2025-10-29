@@ -23,9 +23,13 @@ enum MessageType{
 }
 
 class AppUtils {
-  static String formatDateTime(DateTime? time) {
+  static String formatDateTime(DateTime? time, {bool onlyDate = false}) {
     if (time == null) {
       return "";
+    }
+
+    if(onlyDate){
+      return "${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} ";
     }
 
     return "${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} "

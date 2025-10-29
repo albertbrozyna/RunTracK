@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/constans/firestore_names.dart';
+import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
 import 'package:run_track/models/notification.dart';
 import 'package:run_track/models/user.dart' as model;
@@ -73,9 +73,6 @@ class UserService {
       await FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(uid).delete();
       await user.delete();
 
-      if (kDebugMode) {
-        print("User deleted successfully.");
-      }
       return true;
     } catch (e) {
       print("Error deleting user: $e");
@@ -329,6 +326,7 @@ class UserService {
       return false;
     }
 
+    // Przypadek ze obydwoje wysyłają sobie zaproszenie
     AppNotification? notification;
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -357,7 +355,27 @@ class UserService {
         final receiverLastName = receiverSnap['lastName'] ?? '';
 
         if (action == UserAction.inviteToFriends) {
-          senderPendingInvitationsList.add(receiverUid);
+          if(senderFriendsList.contains(receiverUid)) {
+            return false;
+          }
+          if(receiverFriendsList.contains(senderUid)) {
+            return false;
+          }
+
+          if(senderPendingInvitationsList.contains(receiverUid)) {
+            return false;
+          }
+
+          if(receiverReceivedInvitationsList.contains(senderUid)) {
+            return false;
+          }
+
+          if(senderReceivedInvitationsList.contains(receiverUid)) {
+            return false;
+          }
+
+
+            senderPendingInvitationsList.add(receiverUid);
           AppData.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
           receiverReceivedInvitationsList.add(senderUid);
           notification = AppNotification(
