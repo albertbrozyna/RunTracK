@@ -9,6 +9,7 @@ import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
+import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../common/widgets/navigation_bar.dart';
@@ -28,7 +29,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Widget> _pages;
   int _selectedIndex = 0;
-  OldTrackState? trackState;
+  TrackState? trackState;
   final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
   List<LatLng> track = [];
   LatLng? currentPosition;
@@ -42,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   /// Ask user for location
   Future<void> _askLocation() async {
     try {
-      await LocationService.determinePosition();
+      await PermissionUtils.determinePosition();
     } catch (e) {
       if (mounted) {
         AppUtils.showMessage(context, e.toString());
@@ -75,22 +76,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void initialize(){
-
-    FlutterForegroundTask.initCommunicationPort();
-
-    print("test");
-    FlutterForegroundTask.addTaskDataCallback((data) {
-      if (data is Map<String, dynamic>) {
-        final update = LocationUpdate.fromJson(data);
-        print('Distance: ${update.totalDistance} meters');
-      }
-    });
+      TrackService.getCurrentState(); // Get current state from foreground service to update a state data
   }
 
 
   Future<void> initializeAsync() async {
     AppData.isLoading.value = true; // Start loading
-    OldTrackState? lastState = await OldTrackState.loadFromFile();
 
     // Set track state to paused i last state was running
     // if (AppData.trackState.trackingState == TrackingState.running) {

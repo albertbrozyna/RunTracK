@@ -5,13 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/common/utils/permission_utils.dart';
 import 'package:run_track/config/routes/app_router.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/auth/start/widgets/additional_info_form.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
+import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/l10n/app_localizations.dart';
-import 'package:run_track/services/location_foreground_service.dart';
+import 'package:run_track/features/track/services/track_foreground_service.dart';
 import 'package:run_track/theme/app_theme.dart';
 
 import 'common/enums/tracking_state.dart';
@@ -19,7 +21,6 @@ import 'config/firebase_options.dart';
 import 'features/track/models/track_state.dart';
 
 void main() async {
-  // It is needed for flutter to use a async in main
   WidgetsFlutterBinding.ensureInitialized();
 
   await SystemChrome.setPreferredOrientations([ // Block rotation
@@ -27,29 +28,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  FlutterForegroundTask.init(
-    androidNotificationOptions: AndroidNotificationOptions(
-      channelId: 'location_foreground_channel',
-      channelName: 'Location Tracking',
-      channelDescription: 'Śledzenie lokalizacji w tle',
-      channelImportance: NotificationChannelImportance.HIGH,
-      priority: NotificationPriority.HIGH,
-
-    ),
-    iosNotificationOptions: const IOSNotificationOptions(
-      showNotification: true,
-      playSound: false,
-    ),
-    foregroundTaskOptions: ForegroundTaskOptions(
-
-      autoRunOnBoot: false,
-      allowWakeLock: true,
-      allowWifiLock: true,
-      eventAction: ForegroundTaskEventAction.repeat(
-        5000
-      )
-    ),
-  );
+  TrackService.initForegroundTask();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -60,7 +39,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -111,5 +89,5 @@ class MyApp extends StatelessWidget {
 
 @pragma('vm:entry-point')
 void startCallback() {
-  FlutterForegroundTask.setTaskHandler(LocationTaskHandler());
+  FlutterForegroundTask.setTaskHandler(TrackingTaskHandler());
 }

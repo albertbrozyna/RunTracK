@@ -24,14 +24,10 @@ class _TrackMapState extends State<TrackMap> {
       appBar: AppBar(
         title: Text(
           "Activity map",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
         ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
       ),
       body: FlutterMap(
         mapController: _mapController,
-
         options: MapOptions(
           initialCenter: widget.activity?.trackedPath?.first ?? LatLng(0, 0),
           initialZoom: 15.0,
