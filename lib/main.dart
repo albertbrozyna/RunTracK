@@ -11,7 +11,6 @@ import 'package:run_track/features/auth/start/pages/start_page.dart';
 import 'package:run_track/features/auth/start/widgets/additional_info_form.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
-import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/features/track/services/track_foreground_service.dart';
 import 'package:run_track/theme/app_theme.dart';
@@ -23,16 +22,19 @@ import 'features/track/models/track_state.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   await SystemChrome.setPreferredOrientations([ // Block rotation
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  TrackService.initForegroundTask();
+  TrackState.initForegroundTask();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  AppData.trackState = TrackState();
+
   runApp(const MyApp());
 }
 

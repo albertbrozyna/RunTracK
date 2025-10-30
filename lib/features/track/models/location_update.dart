@@ -1,11 +1,12 @@
 import 'package:latlong2/latlong.dart';
-import '../../../common/enums/tracking_state.dart'; // import enum
+import '../../../common/enums/tracking_state.dart';
 
 class LocationUpdate {
+  final String type;
   final double lat;
   final double lng;
   final double totalDistance;
-  final Duration elapsedTime;
+  final Duration? elapsedTime;
   final double elevationGain;
   final double avgSpeed;
   final double pace;
@@ -16,10 +17,11 @@ class LocationUpdate {
   final TrackingState? trackingState;
 
   LocationUpdate({
+    required this.type,
     required this.lat,
     required this.lng,
     required this.totalDistance,
-    required this.elapsedTime,
+    this.elapsedTime,
     required this.elevationGain,
     required this.avgSpeed,
     required this.pace,
@@ -32,10 +34,11 @@ class LocationUpdate {
 
   Map<String, dynamic> toJson() {
     return {
+      'type':type,
       'lat': lat,
       'lng': lng,
       'totalDistance': totalDistance,
-      'elapsedTime': elapsedTime.inSeconds,
+      'elapsedTime': elapsedTime?.inSeconds,
       'elevationGain': elevationGain,
       'avgSpeed': avgSpeed,
       'pace': pace,
@@ -56,6 +59,7 @@ class LocationUpdate {
     }
 
     return LocationUpdate(
+      type: json['type'] ?? '',
       lat: (json['lat'] ?? 0).toDouble(),
       lng: (json['lng'] ?? 0).toDouble(),
       totalDistance: (json['totalDistance'] ?? 0).toDouble(),
@@ -68,8 +72,7 @@ class LocationUpdate {
       trackedPath: path,
       positionAccuracy: (json['positionAccuracy'] ?? 0).toDouble(),
       trackingState: json['trackingState'] != null
-          ? TrackingState.values.firstWhere((e) => e.name == json['trackingState'])
-          : TrackingState.stopped,
+          ? TrackingState.values.firstWhere((e) => e.name == json['trackingState']) : null,
     );
   }
 }

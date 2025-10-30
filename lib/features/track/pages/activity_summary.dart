@@ -9,6 +9,8 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/assets/app_images.dart';
 import 'package:run_track/features/track/pages/map.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
@@ -380,23 +382,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         appBar: AppBar(
           title: Text(
             "Activity summary",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
           ),
-          centerTitle: true,
-          backgroundColor: AppColors.primary,
         ),
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/appBg2.jpg"),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
+        body: PageContainer(
+          assetPath: AppImages.appBg5,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -642,7 +631,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ],
               ),
             ),
-          ),
         ),
       ),
     );

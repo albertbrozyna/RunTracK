@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,7 +11,7 @@ import 'package:run_track/common/utils/app_constants.dart';
 
 import '../models/location_update.dart';
 
-class TrackingTaskHandler extends TaskHandler {
+class TrackingTaskHandler extends TaskHandler{
   TrackingState trackingState;
   List<LatLng> trackedPath;
   bool _granted = false;
@@ -19,18 +20,23 @@ class TrackingTaskHandler extends TaskHandler {
   double totalDistance;
   DateTime startTime;
   Duration elapsedTime;
+  Timer? _elapsedTimer;
   double elevationGain;
   double calories;
   double avgSpeed;
   double currentSpeedValue;
   int steps;
   double pace; // min/km
+  Duration totalTime;
+  int secondsSinceLastSave;
+
 
   TrackingTaskHandler({
     this.trackingState = TrackingState.running,
     List<LatLng>? trackedPath,
     this.totalDistance = 0,
     this.elapsedTime = Duration.zero,
+    this.totalTime = Duration.zero,
     DateTime? startTime,
     this.calories = 0,
     this.avgSpeed = 0,
@@ -38,6 +44,7 @@ class TrackingTaskHandler extends TaskHandler {
     this.elevationGain = 0,
     this.steps = 0,
     this.pace = 0,
+    this.secondsSinceLastSave = 0,
   }) : trackedPath = trackedPath ?? [],
        startTime = startTime ?? DateTime.now();
 
@@ -54,9 +61,10 @@ class TrackingTaskHandler extends TaskHandler {
     return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
   }
 
-  void sendAllDataToMain() {
+  void sendAllDataToMain(String type) {
     FlutterForegroundTask.sendDataToMain(
       LocationUpdate(
+        type: type,  //  Data on the end
         trackingState: trackingState,
         lat: latestPosition?.latitude ?? 0.0,
         lng: latestPosition?.longitude ?? 0.0,
@@ -76,48 +84,71 @@ class TrackingTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     _granted = await checkPermissions();
+    print("hereGT1");
 
-    TrackingTaskHandlerFile.loadFromFile()
-        .then((trackingHandler) {
-          if (trackingHandler != null) {
-            trackingState = trackingHandler.trackingState;
-            trackedPath = List<LatLng>.from(trackingHandler.trackedPath);
-            totalDistance = trackingHandler.totalDistance;
-            startTime = trackingHandler.startTime;
-            elapsedTime = trackingHandler.elapsedTime;
-            latestPosition = trackingHandler.latestPosition;
-            elevationGain = trackingHandler.elevationGain;
-            calories = trackingHandler.calories;
-            avgSpeed = trackingHandler.avgSpeed;
-            currentSpeedValue = trackingHandler.currentSpeedValue;
-            steps = trackingHandler.steps;
-            pace = trackingHandler.pace;
+    if(_granted == false){
+      print("no permissions");
+    }
 
-            sendAllDataToMain();
-          } else {
-            trackingState = TrackingState.running;
-            trackedPath.clear();
-            totalDistance = 0;
-            startTime = DateTime.now();
-            elapsedTime = Duration.zero;
-            latestPosition = null;
-            elevationGain = 0;
-            calories = 0;
-            avgSpeed = 0;
-            currentSpeedValue = 0;
-            currentSpeedValue = 0;
-            pace = 0;
-            steps = 0;
-          }
-        })
-        .catchError((error) {
-          print('Error loading tracking data: $error');
-        });
+    // TrackingTaskHandlerFile.loadFromFile()
+    //     .then((trackingHandler) {
+    //       if (trackingHandler != null && false &&  (trackingHandler.trackingState == TrackingState.running || trackingHandler.trackingState == TrackingState.paused)) {
+    //         trackingState = trackingHandler.trackingState;
+    //         trackedPath = List<LatLng>.from(trackingHandler.trackedPath);
+    //         totalDistance = trackingHandler.totalDistance;
+    //         startTime = trackingHandler.startTime;
+    //         elapsedTime = trackingHandler.elapsedTime;
+    //         latestPosition = trackingHandler.latestPosition;
+    //         elevationGain = trackingHandler.elevationGain;
+    //         calories = trackingHandler.calories;
+    //         avgSpeed = trackingHandler.avgSpeed;
+    //         currentSpeedValue = trackingHandler.currentSpeedValue;
+    //         steps = trackingHandler.steps;
+    //         pace = trackingHandler.pace;
+    //
+    //         sendAllDataToMain('S'); // S means synchroize
+    //       } else {
+    //         trackingState = TrackingState.running;
+    //         trackedPath.clear();
+    //         totalDistance = 0;
+    //         startTime = DateTime.now();
+    //         elapsedTime = Duration.zero;
+    //         latestPosition = null;
+    //         elevationGain = 0;
+    //         calories = 0;
+    //         avgSpeed = 0;
+    //         currentSpeedValue = 0;
+    //         pace = 0;
+    //         steps = 0;
+    //         sendAllDataToMain('S');
+    //       }
+    //     })
+    //     .catchError((error) {
+    //       print('Error loading tracking data: $error');
+    //     });
+
+    sendAllDataToMain('S');
+    _elapsedTimer?.cancel();
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (trackingState == TrackingState.running) {
+        elapsedTime += const Duration(seconds: 1);
+        print("timerSecond ${elapsedTime.inSeconds}");
+
+
+        secondsSinceLastSave++;
+
+        if (secondsSinceLastSave >= 30) {
+          //saveToFile();
+          secondsSinceLastSave = 0;
+        }
+      }
+    });
+    print("Foreground service started!");
   }
 
   @override
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
-    saveToFile();
+    _elapsedTimer?.cancel();
     return;
   }
 
@@ -125,7 +156,7 @@ class TrackingTaskHandler extends TaskHandler {
   void onNotificationPressed() {}
 
   @override
-  void onReceiveData(Object data) {
+  void onReceiveData(Object data)async {
     final map = data as Map<String, dynamic>;
     switch (map['action']) {
       case 'pause':
@@ -136,10 +167,16 @@ class TrackingTaskHandler extends TaskHandler {
         break;
       case 'stop':
         trackingState = TrackingState.stopped;
-        onDestroy(DateTime.now(), false);
+        _elapsedTimer?.cancel();
+        totalTime = DateTime.now().difference(startTime);
+        sendAllDataToMain("E"); // On the end
+        await deleteFile();
+        await Future.delayed(const Duration(milliseconds: 500)); // Pause before sending to main
+        await FlutterForegroundTask.stopService();
         break;
       case 'sendAllData':
-        sendAllDataToMain();
+        sendAllDataToMain("S"); // send with synchronize flag
+        await deleteFile();
         break;
     }
     super.onReceiveData(data);
@@ -147,10 +184,12 @@ class TrackingTaskHandler extends TaskHandler {
 
   @override
   Future<void> onRepeatEvent(DateTime timestamp) async {
+      print("Repeat outside");
     if (_granted && trackingState == TrackingState.running) {
+      print("enteered inside");
       try {
         LatLng latestLatLng;
-        Position position = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.best));
+        Position position = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.best,distanceFilter: 10));
         latestLatLng = LatLng(position.latitude, position.longitude);
 
         if (latestPosition != null) {
@@ -161,9 +200,6 @@ class TrackingTaskHandler extends TaskHandler {
           );
           totalDistance += distanceBetweenPositions;
 
-          // Calc time difference and sum it to total elapsed time
-          final deltaTime = DateTime.now().difference(latestPosition!.timestamp);
-          elapsedTime += deltaTime;
 
           final double deltaAltitude = position.altitude - (latestPosition!.altitude);
           if (deltaAltitude > 0) elevationGain += deltaAltitude;
@@ -174,16 +210,16 @@ class TrackingTaskHandler extends TaskHandler {
         }
 
         latestPosition = position;
-        if (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, latestLatLng) > 2) {
+        if (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, latestLatLng) > 1) {
           trackedPath.add(latestLatLng);
         }
 
         FlutterForegroundTask.sendDataToMain(
           LocationUpdate(
+            type: 'U', // Time update
             lat: position.latitude,
             lng: position.longitude,
             totalDistance: totalDistance,
-            elapsedTime: elapsedTime,
             elevationGain: elevationGain,
             avgSpeed: avgSpeed,
             pace: pace,
@@ -193,7 +229,6 @@ class TrackingTaskHandler extends TaskHandler {
           ).toJson(),
         );
 
-        saveToFile(); // Save current state to file
       } catch (e) {
         print("Error fetching location: $e");
       }

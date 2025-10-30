@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/profile/models/settings.dart';
+import 'package:run_track/features/track/models/track_state.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
@@ -17,7 +18,6 @@ import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
 import '../../../theme/colors.dart';
-import '../services/track_service.dart';
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -46,19 +46,17 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
-    // _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-    //   AppData.trackState.updateGpsIcon();
-    // });
-
     final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
     setState(() {
       activityName = lastActivity;
       activityController.text = lastActivity;
     });
+
+    AppData.trackState.mapController = _mapController; // Assign map controller to move the map
   }
 
   void handleStopTracking() {
-    TrackService.stopLocationService();
+    AppData.trackState.stopLocationService();
 
     Navigator.push(
       context,
@@ -74,9 +72,10 @@ class TrackScreenState extends State<TrackScreen> {
             elevationGain: AppData.trackState.elevationGain,
             trackedPath: AppData.trackState.trackedPath,
             elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
-            totalDistance: AppData.trackState.totalDistance,
-            startTime: AppData.trackState.startOfTheActivity,
-            createdAt: AppData.trackState.startOfTheActivity,
+            totalDistance: AppData.trackState.totalDistance / 1000,
+            pace: AppData.trackState.pace,
+            startTime: AppData.trackState.startTime,
+            createdAt: DateTime.now(),
           ),
         ),
       ),
@@ -90,11 +89,11 @@ class TrackScreenState extends State<TrackScreen> {
         return CustomButton(
           backgroundColor: AppColors.secondary,
           text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: TrackService.resumeLocationService,
+          onPressed: AppData.trackState.startLocationService,
         );
 
       case TrackingState.running:
-        return CustomButton(width: 50, text: "Stop", onPressed: TrackService.pauseLocationService);
+        return CustomButton(width: 50, text: "Stop", onPressed: AppData.trackState.pauseLocationService);
 
       case TrackingState.paused:
         return Column(
@@ -103,7 +102,7 @@ class TrackScreenState extends State<TrackScreen> {
               children: [
                 // Resume Button
                 Expanded(
-                  child: CustomButton(height: 50, text: "Resume", onPressed: TrackService.resumeLocationService),
+                  child: CustomButton(height: 50, text: "Resume", onPressed: AppData.trackState.resumeLocationService),
                 ),
                 const SizedBox(width: AppUiConstants.horizontalSpacingButtons),
 
@@ -123,36 +122,38 @@ class TrackScreenState extends State<TrackScreen> {
                       _finishTimer?.cancel();
                       _finishProgressNotifier.value = 0.0;
                     },
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CustomButton(
-                          width: 60,
-                          text: "",
-                          onPressed: () {}, // Normal tap disabled
-                        ),
-                        ValueListenableBuilder<double>(
-                          valueListenable: _finishProgressNotifier,
-                          builder: (context, progress, _) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusButtons),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 50,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.third),
-                                backgroundColor: Colors.transparent,
-                              ),
-                            );
-                          },
-                        ),
-                        // Text overlay
-                        const Center(
-                          child: Text(
-                            "Finish",
-                            style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: AppUiConstants.textSizeApp),
+                    child: SizedBox(
+                      height: 50,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CustomButton(
+                            text: "",
+                            onPressed: () {}, // Normal tap disabled
                           ),
-                        ),
-                      ],
+                          ValueListenableBuilder<double>(
+                            valueListenable: _finishProgressNotifier,
+                            builder: (context, progress, _) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusButtons),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  minHeight: 50,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.third),
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              );
+                            },
+                          ),
+                          // Text overlay
+                          const Center(
+                            child: Text(
+                              "Finish",
+                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -253,8 +254,8 @@ class TrackScreenState extends State<TrackScreen> {
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: RunStats(
-                      totalDistance: AppData.trackState.totalDistance,
-                      pace: TrackService.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
+                      totalDistance: (AppData.trackState.totalDistance / 1000),
+                      pace: TrackState.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
                       elapsedTime: AppData.trackState.elapsedTime,
                       startTime: AppData.trackState.startTime,
                       avgSpeed: AppData.trackState.avgSpeed,

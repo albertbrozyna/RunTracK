@@ -9,7 +9,6 @@ import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/features/track/pages/track_screen.dart';
-import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../common/widgets/navigation_bar.dart';
@@ -71,13 +70,14 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initialize();
     initializeAsync();
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
     _loadCurrentUser();
   }
 
-  void initialize(){
-      TrackService.getCurrentState(); // Get current state from foreground service to update a state data
+  void initialize() {
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
   }
+
+
 
 
   Future<void> initializeAsync() async {
