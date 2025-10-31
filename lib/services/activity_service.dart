@@ -4,11 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/visibility.dart';
+import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 
 import '../common/utils/app_data.dart';
+import '../constants/firestore_names.dart';
 
 class ActivityService {
   static DocumentSnapshot? lastFetchedDocumentMyActivities;
@@ -42,7 +44,7 @@ class ActivityService {
       startTime: (map['startTime'] as Timestamp?)?.toDate(),
       title: map['title'],
       description: map['description'],
-      visibility: parseVisibility(map['visibility']) ?? Visibility.me,
+      visibility: parseVisibility(map['visibility']) ?? ComVisibility.me,
       photos: List<String>.from(map['photos'] ?? []),
       avgSpeed: map['avgSpeed']?.toDouble(),
       calories: map['calories']?.toDouble(),
@@ -106,7 +108,7 @@ class ActivityService {
 
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", whereIn: friendsUids)
           .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
           .orderBy('createdAt', descending: true)
@@ -137,7 +139,7 @@ class ActivityService {
   static Future<List<Activity>> fetchLatestUserActivities(String uid, int limit) async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit)
@@ -156,7 +158,7 @@ class ActivityService {
   static Future<List<Activity>> fetchLatestActivitiesPage(int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("visibility", isEqualTo: "Visibility.everyone")
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -183,14 +185,14 @@ class ActivityService {
   }
 
   /// Fetch pages of friends activities
-  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, List<String> friendsUids) async {
+  static Future<List<Activity>> fetchLastFriendsActivitiesPage(int limit, DocumentSnapshot? lastDocument, Set<String> friendsUids) async {
     if (friendsUids.isEmpty) {
       return [];
     }
 
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", whereIn: friendsUids)
           .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
           .orderBy('createdAt', descending: true)
@@ -221,7 +223,7 @@ class ActivityService {
   static Future<List<Activity>> fetchMyLatestActivitiesPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryActivities = FirebaseFirestore.instance
-          .collection('activities')
+          .collection(FirestoreCollections.activities)
           .where("uid", isEqualTo: uid.trim())
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -246,12 +248,12 @@ class ActivityService {
     }
   }
 
-  /// Save activity to database
+  /// Save activity to database or update if activity id is not empty
   static Future<bool> saveActivity(Activity activity) async {
     try {
       if (activity.activityId.isNotEmpty) {
         // Activity exists, edit it
-        final docRef = FirebaseFirestore.instance.collection('activities').doc(activity.activityId); // Fetch existing document
+        final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.activities).doc(activity.activityId); // Fetch existing document
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
           await docRef.set(ActivityService.toMap(activity));
@@ -259,7 +261,7 @@ class ActivityService {
         }
       }
       // New activity, save it
-      final docRef = FirebaseFirestore.instance.collection('activities').doc(); // Generate id
+      final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.activities).doc(); // Generate id
       activity.activityId = docRef.id;
       await docRef.set(ActivityService.toMap(activity));
       return true;
@@ -299,45 +301,9 @@ class ActivityService {
         a1.elevationGain == a2.elevationGain &&
         a1.steps == a2.steps &&
         a1.pace == a2.pace &&
-        pathEquals(a1.trackedPath, a2.trackedPath) &&
-        listsEqual(a1.photos, a2.photos);
+        AppUtils.pathEquals(a1.trackedPath, a2.trackedPath) &&
+        AppUtils.listsEqual(a1.photos, a2.photos);
   }
 
-  /// Compare paths
-  static bool pathEquals(List<LatLng>? p1, List<LatLng>? p2) {
-    if (p1 == null && p2 == null) {
-      return true;
-    }
-    if (p1 == null || p2 == null) {
-      return false;
-    }
-    if (p1.length != p2.length) {
-      return false;
-    }
-    for (int i = 0; i < p1.length; i++) {
-      if (p1[i].latitude != p2[i].latitude || p1[i].longitude != p2[i].longitude) {
-        return false;
-      }
-    }
-    return true;
-  }
 
-  /// Comp any lists
-  static bool listsEqual(List<String>? l1, List<String>? l2) {
-    if (l1 == null && l2 == null) {
-      return true;
-    }
-    if (l1 == null || l2 == null) {
-      return false;
-    }
-    if (l1.length != l2.length) {
-      return false;
-    }
-    for (int i = 0; i < l1.length; ++i) {
-      if (l1[i] != l2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
 }

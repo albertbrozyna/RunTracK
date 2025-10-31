@@ -1,32 +1,61 @@
-import 'package:flutter/cupertino.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:run_track/common/enums/competition_goal.dart';
 import '../common/enums/visibility.dart' as enums;
 
-class Competition{
-  String? competitionId; // Competition id // Done
-  String organizerUid; // Event organizer user // Done
-  DateTime? startDate;  // Start of the event // done
-  DateTime? endDate; // End of the event // done
+class CompetitionResult {
+  final int distance;
+  final int time;
+
+  const CompetitionResult({required this.distance, required this.time});
+}
+
+class Competition {
+  String competitionId; // Competition id
+  String organizerUid; // Event organizer user
+  String name; // Name of competition
+  String? description; // Description of competition
+  DateTime? startDate; // Start of the event
+  DateTime? endDate; // End of the event
+  DateTime? registrationDeadline; // Deadline to register for the event
+  int? maxTimeToCompleteActivityHours; // Max time to complete activity
+  int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
   final DateTime? createdAt; // Date of creation
-  String name; // Done
-  String? description; // Done
-  List<String>?participantsUids;
-  List<String>?invitedParticipantsUids;
-  enums.Visibility visibility; // Done
-  String? competitionType; // Activity type of competition // Done
-  List<String>?resultsUids;  // List of winners
+  Set<String> participantsUid;
+  Set<String> invitedParticipantsUid;
+  enums.ComVisibility visibility; // Visibility of competition
+  Map<String, String>? results; // result of run first is the uid of the user and second is activity id
+  String? activityType; // Allowed activity types of competition
+  String? locationName; // Location name
+  LatLng? location; // Location
+  CompetitionGoal competitionGoalType;
+  double goal; // Goal  depends what type is // distance, steps or time
+  List<String> photos;  // Photos from competitions
+  bool closedBeforeEndTime;
 
   Competition({
+    this.competitionId = '',
     required this.organizerUid,
     required this.name,
     required this.visibility,
+    required this.competitionGoalType,
+    required this.goal,
     this.createdAt,
-    this.competitionId,
     this.startDate,
     this.endDate,
-    this.participantsUids,
-    this.invitedParticipantsUids,
-    this.resultsUids,
+    this.registrationDeadline,
+    this.maxTimeToCompleteActivityHours,
+    this.maxTimeToCompleteActivityMinutes,
+    Set<String>? participantsUid,
+    Set<String>? invitedParticipantsUid,
     this.description,
-    this.competitionType
-  });
+    this.activityType,
+    this.results,
+    this.locationName,
+    this.location,
+    bool? closedBeforeEndTime,
+    List<String>? photos,
+  }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
+        photos = photos ?? [],
+  participantsUid = participantsUid ?? {},
+  invitedParticipantsUid = invitedParticipantsUid ?? {};
 }

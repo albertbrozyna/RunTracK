@@ -9,7 +9,7 @@ import 'package:run_track/services/activity_service.dart';
 import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
 import '../../track/pages/activity_summary.dart';
-import '../../track/widgets/stat_card.dart';
+import '../../../common/widgets/stat_card.dart';
 
 class ActivityBlock extends StatefulWidget {
   final String? profilePhotoUrl;
@@ -23,7 +23,9 @@ class ActivityBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const ActivityBlock({super.key, required this.firstName, required this.lastName, required this.activity, this.profilePhotoUrl});
+  const ActivityBlock({super.key, required this.activity,String? firstName, String? lastName,  this.profilePhotoUrl}):
+  firstName = firstName ?? "",
+  lastName = lastName ?? "";
 
   @override
   _ActivityBlockState createState() => _ActivityBlockState();
@@ -58,7 +60,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
   Future<void> initializeAsync() async {
     if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
       // If there is no name and last name fetch it from firestore
-      return UserService.fetchUserForActivity(widget.activity.uid)
+      return UserService.fetchUserForBlock(widget.activity.uid)
           .then((user) {
             setState(() {
               firstname = user?.firstName;
@@ -160,9 +162,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           widget.activity.title!,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                         ),
-
                       SizedBox(height: 4),
-
                       // Stats on the left and map on the right
                       Container(
                         width: double.infinity,
@@ -266,13 +266,17 @@ class _ActivityBlockState extends State<ActivityBlock> {
                               ? widget.activity.trackedPath!.first
                               : LatLng(37.7749, -122.4194),
                           // default location
-                          onMapReady: () => AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController),
+                            onMapReady: () async {
+                            // Delay to load a tiles properly
+                            Future.delayed(const Duration(milliseconds: 100), () {
+                                  AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController);
+                              });
+                            },
                           onTap: (tapPosition, point) {
                             onTapBlock(context);
                           },
                           initialZoom: 15.0,
-                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
-                        ),
+                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none)),
                         children: [
                           TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

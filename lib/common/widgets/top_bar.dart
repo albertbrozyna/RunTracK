@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../config/routes/app_routes.dart';
+
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
-  final Color backgroundColor;
 
-  const TopBar({this.title = "", required this.backgroundColor});
-
-  void handleMenuButton(BuildContext context) {}
+  const TopBar({super.key, this.title = ""});
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: backgroundColor,
-      centerTitle: true,
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 23,
-          fontWeight: FontWeight.w700,
+      title: Text(title),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).pushNamed(AppRoutes.notifications);
+          },
+          icon: Icon(Icons.notifications, color: Colors.white),
         ),
-      ),
+      ],
     );
   }
 

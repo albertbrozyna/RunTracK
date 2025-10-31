@@ -13,9 +13,6 @@ class AppData{
 
   // When no internet activities which we need to add
   List<String>activities = [];
-
-  // List of current LatLng
-  static late TrackState trackState;
-
+  static late  TrackState trackState;
 
 }

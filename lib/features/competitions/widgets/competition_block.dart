@@ -1,246 +1,337 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:run_track/models/activity.dart';
+import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/features/competitions/pages/competition_details.dart';
 import 'package:run_track/models/competition.dart';
-import 'package:run_track/services/activity_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/ui_constants.dart';
 
-class CompetitionBlock extends StatelessWidget {
-  final String? profilePhotoUrl; // Profile photo url
+import '../../../common/enums/competition_goal.dart';
+import '../../../common/enums/competition_role.dart';
+import '../../../common/utils/utils.dart';
+import '../../../services/user_service.dart';
+import '../../../common/widgets/stat_card.dart';
+
+class CompetitionBlock extends StatefulWidget {
   final String firstName;
   final String lastName;
+  final String? profilePhotoUrl;
   final Competition competition;
+  final int initIndex;
+  final double titleFontSizeBlock = 14;
+  final double valueFontSizeBlock = 14;
+  final double innerPaddingBlock = 10;
+  final double blockWidth = 120;
+  final double blockHeight = 100;
+  final double iconSize = 26;
 
   const CompetitionBlock({
     super.key,
-    required this.firstName,
-    required this.lastName,
     required this.competition,
-    this.profilePhotoUrl,
-  });
+    required this.initIndex,
+    String? firstName,
+    String? lastName,
+    String? profilePhotoUrl,
+  }) : firstName = firstName ?? "",
+       lastName = lastName ?? "",
+       profilePhotoUrl = profilePhotoUrl ?? "";
+
+  @override
+  State<StatefulWidget> createState() {
+    return _CompetitionBlockState();
+  }
+}
+
+class _CompetitionBlockState extends State<CompetitionBlock> {
+  CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
+  String firstName = "";
+  String lastName = "";
+  String profilePhotoUrl = "";
+  String goalType = "";
+  String goalFormatted = "";
+  String? meetingPlace;
+  String? maxTimeToCompleteActivity;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    initialize();
+    initializeAsync();
+  }
+
+  void initialize() {
+    if (widget.initIndex == 0) {
+      // Set enter context
+      enterContext = CompetitionContext.ownerModify;
+    } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
+    } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerAbleToJoin;
+    } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerAbleToJoin;
+    } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
+    } else if (widget.initIndex == 3 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.participant;
+    } else if (widget.initIndex == 4 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.invited;
+    }
+
+    firstName = widget.firstName;
+    lastName = widget.lastName;
+
+    // Parse activity type
+
+    if (widget.competition.competitionGoalType == CompetitionGoal.distance) {
+      goalType = "Distance";
+      goalFormatted = '${widget.competition.goal} km';
+    } else if (widget.competition.competitionGoalType == CompetitionGoal.longestDistance) {
+      goalType = "Longest\ndistance";
+      goalFormatted = '${widget.competition.goal} km';
+    } else if (widget.competition.competitionGoalType == CompetitionGoal.timedActivity) {
+      goalType = "Timed activity";
+      goalFormatted = '${widget.competition.goal} minutes';
+    } else if (widget.competition.competitionGoalType == CompetitionGoal.steps) {
+      goalType = "Amount of steps";
+      goalFormatted = '${widget.competition.goal} steps';
+    } else {
+      goalType = "Unknown";
+    }
+
+    if (widget.competition.location != null) {
+      String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
+      String? lngStr = widget.competition.location?.longitude.toStringAsFixed(4);
+
+      if (widget.competition.locationName != null) {
+        meetingPlace = "${widget.competition.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+      } else {
+        meetingPlace = "Lat: $latStr, Lng: $lngStr";
+      }
+    }
+
+    if (widget.competition.maxTimeToCompleteActivityHours != null && widget.competition.maxTimeToCompleteActivityMinutes != null) {
+      maxTimeToCompleteActivity =
+          '${widget.competition.maxTimeToCompleteActivityHours}h ${widget.competition.maxTimeToCompleteActivityMinutes}m';
+    }
+  }
+
+  Future<void> initializeAsync() async {
+    if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
+      // If there is no name and last name fetch it from firestore
+      return UserService.fetchUserForBlock(widget.competition.organizerUid)
+          .then((user) {
+            setState(() {
+              firstName = user?.firstName ?? "User";
+              lastName = user?.lastName ?? "Unknown";
+              profilePhotoUrl = user?.profilePhotoUrl ?? "";
+            });
+          })
+          .catchError((error) {
+            print("Error fetching user data: $error");
+          });
+    }
+  }
+
+  /// On competition block tap
+  void onTapBlock(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CompetitionDetails(enterContext: enterContext, competitionData: widget.competition, initTab: widget.initIndex),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: 16.0,
-          right: 16.0,
-          top: 8.0,
-          bottom: 8.0,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Color(0xFFFFA726).withOpacity(0.9),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Colors.white24,
-              width: 1,
-              style: BorderStyle.solid,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4.0,
-                spreadRadius: 2.0,
-                offset: Offset(2, 2),
+    return InkWell(
+      onTap: () => onTapBlock(context),
+      child: Container(
+        decoration: AppUiConstants.decorationBlock,
+        child: Padding(
+          // Inside padding
+          padding: const EdgeInsets.all(AppUiConstants.blockInsideContentPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with name, date  and profile page
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile photo
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.0),
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundImage: widget.profilePhotoUrl != null && widget.profilePhotoUrl!.isNotEmpty
+                          ? NetworkImage(widget.profilePhotoUrl!)
+                          : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  // First name and date
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "$firstName $lastName",
+                        textAlign: TextAlign.left,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      if (widget.competition.createdAt != null)
+                        Text(
+                          "Created At: ${DateFormat('dd-MM-yyyy hh:mm').format(widget.competition.createdAt!)}",
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+                        ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.white24,
-                  width: 1,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
+              SizedBox(height: 6),
+              // Title
+              Padding(
+                padding: EdgeInsets.only(left: 15),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header with name, date  and profile page
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Profile photo
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.0),
-                          ),
-                          child: CircleAvatar(
-                            radius: 18,
-                            backgroundImage: profilePhotoUrl != null
-                                ? NetworkImage(profilePhotoUrl!)
-                                : AssetImage('assets/DefaultProfilePhoto.png')
-                                      as ImageProvider,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          // tekst wyrównany do lewej
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "$firstName $lastName",
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              "CreatedAt: Time: ${DateFormat('dd-MM-yyyy hh:mm').format(competition.createdAt ?? DateTime.now())}",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Date
-                        // TODO Think about it what if start time is null
-                      ],
+                    Text(
+                      widget.competition.name,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                     ),
-                    // Title + Stats Block
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white, // białe tło
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
+                    if (widget.competition.description != null)
+                      Text(
+                        widget.competition.description!,
+                        textAlign: TextAlign.left,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w300, color: Colors.grey[800]),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title on top
-                          if (competition.name != null &&
-                              competition.name!.isNotEmpty)
-                            Text(
-                              competition.name!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-
-                          SizedBox(height: 4),
-
-                          if (competition.description != null &&
-                              competition.description!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                competition.description!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-
-                          // Time and Distance row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Time
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    size: 22,
-                                    color: Colors.grey[600],
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    competition.startDate.toString(),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(width: 16),
-
-                              // Distance
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.map,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Text",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          // Optional Description under stats
-                        ],
-                      ),
-                    ),
-
-                    // TODO TO THINK ABOUT IT WITH C# BACKEND
-                    // Photos from the run
-                    // if (competition.photos.isNotEmpty)
-                    //   SizedBox(
-                    //     height: 120,
-                    //     child: ListView.builder(
-                    //       // From left to right
-                    //       scrollDirection: Axis.horizontal,
-                    //       itemCount: activity.photos.length,
-                    //       itemBuilder: (context, index) {
-                    //         return Padding(
-                    //           padding: const EdgeInsets.all(4.0),
-                    //           child: ClipRRect(
-                    //             borderRadius: BorderRadius.circular(10),
-                    //             child: Image.network(
-                    //               activity.photos[index],
-                    //               width: 120,
-                    //               height: 120,
-                    //               fit: BoxFit.cover,
-                    //             ),
-                    //           ),
-                    //         );
-                    //       },
-                    //     ),
-                    //   ),
-                    // Map with activity map
                   ],
                 ),
               ),
-            ),
+
+              SizedBox(height: 7),
+              // Stats scrollable
+              Container(
+                width: double.infinity,
+                alignment: Alignment.center,
+                child: Scrollbar(
+                  thumbVisibility: true,
+                  controller: _scrollController,
+                  thickness: 4,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      spacing: 10,
+                      children: [
+                        if (widget.competition.activityType != null)
+                          StatCard(
+                            title: "Activity",
+                            value: widget.competition.activityType.toString(),
+                            icon: Icon(Icons.directions_run, size: widget.iconSize),
+                            titleFontSize: widget.titleFontSizeBlock,
+                            valueFontSize: widget.valueFontSizeBlock,
+                            innerPadding: widget.innerPaddingBlock,
+                          ),
+                        // Goal formatted - amount of kilometers minutes
+                        StatCard(
+                          title: goalType,
+                          value: goalFormatted,
+                          icon: Icon(Icons.timeline),
+                          titleFontSize: widget.titleFontSizeBlock,
+                          valueFontSize: widget.valueFontSizeBlock,
+                          innerPadding: widget.innerPaddingBlock,
+                        ),
+                        // Max time to complete activity
+                        if (maxTimeToCompleteActivity != null)
+                          StatCard(
+                            title: "Max time to\n complete activity",
+                            value: maxTimeToCompleteActivity!,
+                            icon: Icon(Icons.timer, size: widget.iconSize),
+                            titleFontSize: widget.titleFontSizeBlock,
+                            valueFontSize: widget.valueFontSizeBlock,
+                            innerPadding: widget.innerPaddingBlock,
+                          ),
+                        if (widget.competition.startDate != null)
+                          StatCard(
+                            title: "Start time",
+                            value: AppUtils.formatDateTime(widget.competition.startDate),
+                            icon: Icon(Icons.play_arrow),
+                            titleFontSize: widget.titleFontSizeBlock,
+                            valueFontSize: widget.valueFontSizeBlock,
+                            innerPadding: widget.innerPaddingBlock,
+                          ),
+                        if (widget.competition.endDate != null)
+                          StatCard(
+                            title: "End date",
+                            value: AppUtils.formatDateTime(widget.competition.endDate),
+                            icon: Icon(Icons.calendar_today, size: widget.iconSize),
+                            titleFontSize: widget.titleFontSizeBlock,
+                            valueFontSize: widget.valueFontSizeBlock,
+                            innerPadding: widget.innerPaddingBlock,
+                          ),
+                        if (widget.competition.registrationDeadline != null)
+                          StatCard(
+                            title: "Register to",
+                            value: AppUtils.formatDateTime(widget.competition.registrationDeadline),
+                            icon: Icon(Icons.app_registration, size: widget.iconSize),
+                            titleFontSize: widget.titleFontSizeBlock,
+                            valueFontSize: widget.valueFontSizeBlock,
+                            innerPadding: widget.innerPaddingBlock,
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Map with activity
+                ),
+                // Optional Description under stats
+              ),
+              SizedBox(height: 7),
+              if (meetingPlace != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: DefaultTextStyle.of(context).style,
+                      children: [
+                        TextSpan(
+                          text: "Meeting place: ",
+                          style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
+                        ),
+                        TextSpan(
+                          text: meetingPlace,
+                          style: const TextStyle(fontWeight: FontWeight.normal,fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // Photos from the run
+              if (widget.competition.photos.isNotEmpty && AppData.images)
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    // From left to right
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.competition.photos.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(widget.competition.photos[index], width: 120, height: 120, fit: BoxFit.cover),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
       ),

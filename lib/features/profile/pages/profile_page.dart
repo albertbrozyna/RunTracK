@@ -1,286 +1,308 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/enums/user_relationship.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/common/widgets/content_container.dart';
+import 'package:run_track/common/widgets/no_items_msg.dart';
+import 'package:run_track/common/widgets/stat_card.dart';
+import 'package:run_track/features/profile/widgets/info_tile.dart';
+import 'package:run_track/features/profile/widgets/profile_action_button.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;
-import 'dart:math';
+
+import '../../../common/enums/enter_context.dart';
+import '../../../common/utils/utils.dart';
+import '../../../common/widgets/page_container.dart';
+import '../../../config/assets/app_images.dart';
+import '../../../config/routes/app_routes.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String? uid;
+  final String? uid; // uid of the user which we need to show a profile
+  final model.User? passedUser; // Data of user which we are showing
+  final Set<String> usersList;
+  final Set<String> invitedUsers;
+  final Set<String> receivedInvites;
 
-  const ProfilePage({super.key, this.uid});
+  const ProfilePage({
+    super.key,
+    this.uid,
+    this.passedUser,
+    this.usersList = const {},
+    this.invitedUsers = const {},
+    this.receivedInvites = const {},
+  });
 
   @override
-  State<StatefulWidget> createState() {
-    return _ProfilePageState();
-  }
+  State<StatefulWidget> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  bool edit = false;
-  bool changes = false;
-  bool search = false;
-  bool myProfile =
-      false; // Variable that tells us if we are viewing our own profile or not
+  final double cardHeight = 150;
+  final double cardWidth = 150;
+
+  late Set<String> usersList;
+  late Set<String> invitedUsers;
+  late Set<String> receivedInvitations;
   model.User? user; // User which we are showing
-  model.User? userBeforeChange;
-  model.User? userAfterChange;
-  List<String> randomFriends = [];
-  TextEditingController firstNameController = TextEditingController();
-  TextEditingController lastNameController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
+  UserRelationshipStatus relationshipStatus =
+      UserRelationshipStatus.notConnected;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     initialize();
+    initializeAsync();
   }
 
-  Future<void> initialize()  async{
-    if (!UserService.isUserLoggedIn() || widget.uid == null) {
-      await UserService.signOutUser();
+
+
+  void initialize() {
+    UserService.checkAppUseState(context);
+
+    usersList = Set.from(widget.usersList);
+    invitedUsers = Set.from(widget.invitedUsers);
+    receivedInvitations = Set.from(widget.receivedInvites);
+  }
+
+  /// Initialize async data
+  Future<void> initializeAsync() async {
+    // Load user data
+    if (widget.uid != null) {
+      user = await UserService.fetchUser(widget.uid!);
     }
 
-    if (widget.uid == AppData.currentUser?.uid) {
-      myProfile = true;
+
+
+    if (user != null) {
+      // Check user relationship
+      if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
+        relationshipStatus = UserRelationshipStatus.friend;
+      } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(
+            user!.uid,
+          ) ??
+          false) {
+        relationshipStatus = UserRelationshipStatus.pendingReceived;
+      } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(
+            user!.uid,
+          ) ??
+          false) {
+        relationshipStatus = UserRelationshipStatus.pendingSent;
+      } else if (user!.uid == AppData.currentUser?.uid) {
+        relationshipStatus = UserRelationshipStatus.myProfile;
+      }
     }
 
-    initFields();
-    randomFriends.addAll(
-      getRandomFriends(AppData.currentUser?.friendsUids ?? [], 6),
+    setState(() {});
+  }
+
+  /// Accept invitation
+  void onPressedAcceptInvitation() async {
+    bool added = await UserService.actionToUsers(
+      user!.uid,
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      UserAction.acceptInvitationToFriends,
     );
-  }
-
-
-  void initData() {
-    if (myProfile) {
-      userBeforeChange = UserService.cloneUserData(AppData.currentUser!);
-    }
-  }
-
-  // Pick a count random friends from user friends
-  List<String> getRandomFriends(List<String> friends, int count) {
-    if (friends.isEmpty) return [];
-
-    final random = Random();
-    final friendsCopy = List<String>.from(
-      friends,
-    ); // make a copy to avoid modifying original
-    final result = <String>[];
-
-    // Pick up to `count` random friends
-    final pickCount = count <= friendsCopy.length ? count : friendsCopy.length;
-
-    for (int i = 0; i < pickCount; i++) {
-      final index = random.nextInt(friendsCopy.length);
-      result.add(friendsCopy[index]);
-      friendsCopy.removeAt(index); // avoid duplicates
-    }
-
-    return result;
-  }
-  /// Delete account action
-  void deleteAccountButtonPressed(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Confirm Delete", textAlign: TextAlign.center),
-          content: const Text(
-            "Are you sure you want to delete your account? This action cannot be undone.",
-            textAlign: TextAlign.center,
-          ),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // close dialog
-                  },
-                  child: const Text("Cancel"),
-                ),
-                SizedBox(width: 15),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // close dialog
-                    UserService.deleteUserFromFirestore();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Account deleted")),
-                    );
-                    UserService.signOutUser();
-                  },
-                  child: const Text("Delete my account"),
-                ),
-              ],
-            ),
-          ],
+    if (added) {
+      setState(() {
+        usersList.add(user!.uid); // Add to friends or competitions
+        receivedInvitations.remove(user!.uid);
+        relationshipStatus = UserRelationshipStatus.friend;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(
+          context,
+          "Error accepting invitation",
+          messageType: MessageType.error,
         );
+      }
+    }
+  }
+
+  /// Decline invitation
+  void onPressedDeclineInvitation() async {
+    bool added = await UserService.actionToUsers(
+      user!.uid,
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      UserAction.declineInvitationToFriends,
+    );
+    if (added) {
+      setState(() {
+        receivedInvitations.remove(user!.uid);
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(
+          context,
+          "Error declining invitation",
+          messageType: MessageType.error,
+        );
+      }
+    }
+  }
+
+  /// Invite to friends
+  void onPressedAddFriend() async {
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.inviteToFriends,
+    );
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.pendingSent;
+        invitedUsers.add(user!.uid);
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(
+          context,
+          "Error sending invitation",
+          messageType: MessageType.error,
+        );
+      }
+    }
+  }
+
+  /// Remove invite to friends
+  void onPressedRemoveInviteToFriends() async {
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.removeInvitation,
+    );
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+        invitedUsers.remove(user!.uid);
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(
+          context,
+          "Error removing invitation",
+          messageType: MessageType.error,
+        );
+      }
+    }
+  }
+
+  void onPressedDeleteFriend() async {
+    bool added = await UserService.actionToUsers(
+      FirebaseAuth.instance.currentUser?.uid ?? "",
+      user!.uid,
+      UserAction.deleteFriend,
+    );
+    if (added) {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+        usersList.remove(user!.uid);
+      });
+    } else {
+      if (mounted) {
+        AppUtils.showMessage(
+          context,
+          "Error deleting friend",
+          messageType: MessageType.error,
+        );
+      }
+    }
+  }
+
+  /// Show friends list
+  void onTapFriends() async {
+    EnterContextUsersList enterContext = EnterContextUsersList.friendReadOnly;
+    if (relationshipStatus == UserRelationshipStatus.myProfile) {
+      enterContext = EnterContextUsersList.friendsModify;
+    }
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.usersList,
+      arguments: {
+        'usersUid': user?.friendsUid ?? [],
+        'usersUid2': user?.pendingInvitationsToFriends ?? [],
+        'usersUid3': user?.receivedInvitationsToFriends ?? [],
+        'enterContext': enterContext,
       },
     );
-  }
 
-  // Logout button action
-  void logoutButtonPressed(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Logout", textAlign: TextAlign.center),
-          content: const Text(
-            "Are you sure you want to log out?",
-            textAlign: TextAlign.center,
-          ),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // close dialog
-                  },
-                  child: const Text("Cancel"),
-                ),
-                SizedBox(width: 15),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    UserService.signOutUser();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Logged out")),
-                    );
-                    UserService.signOutUser();
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/start',(Route<dynamic> route) => false,
-                    );
-                  },
-                  child: const Text("Logout"),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-
-
-  }
-
-
-
-  /// Function invoked when edit is finished and changes are saved
-  void onEditFinished() {}
-
-  // Init fields
-  void initFields() {
-    //TODO uncomment
-    // firstNameController.text = AppData.currentUser?.firstName ?? "";
-    // lastNameController.text = AppData.currentUser?.lastName ?? "";
-    firstNameController.text = "Albert";
-    lastNameController.text = "Brożyna";
+    // Set changes to current user if it me
+    if (enterContext == EnterContextUsersList.friendsModify &&
+        result != null &&
+        result is Map) {
+      final Set<String> usersUid = result['usersUid'];
+      final Set<String> usersUid2 = result['usersUid2'];
+      final Set<String> usersUid3 = result['usersUid3'];
+      // Set invited participants
+      setState(() {
+        user?.friendsUid = usersUid;
+        user?.pendingInvitationsToFriends = usersUid2;
+        user?.receivedInvitationsToFriends = usersUid3;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/background-first.jpg"),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.30),
-              BlendMode.darken,
-            ),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
+    if (user == null) {
+      // No user data found
+      return NoItemsMsg(textMessage: "No user data");
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => {
+        if (!didPop)
+          {
+            Navigator.pop(context, {
+              'usersUid': usersList,
+              'usersUid2': invitedUsers,
+              'usersUid3': receivedInvitations,
+            }),
+          },
+      },
+      child: Scaffold(
+        appBar: !(relationshipStatus == UserRelationshipStatus.myProfile)
+            ? AppBar(title: Text("Profile"))
+            : null,
+        body: PageContainer(
+          assetPath: AppImages.appBg4,
+          backgroundColor: Colors.white60,
+          padding: 0,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if(myProfile && search == false)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Searcher
-                      IconButton(
-                        icon: Icon(Icons.search, color: Colors.white),
-                        onPressed: () {
-                          // action for left icon
-                        },
-                      ),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        iconSize: 23,
-                        constraints: BoxConstraints(),
-                        icon: Icon(
-                          !edit ? Icons.edit : Icons.check,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            changes = true;
-                            if (edit) {
-                              onEditFinished();
-                            }
-                            edit = !edit;
-                          });
-                        },
-                      ),
-                    ],
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                    color: AppColors.secondary,
                   ),
-
-                // If this is not my profile, show button add friends
-
-                if(!myProfile)
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: TextButton(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(Colors.red),
-                        side: WidgetStateProperty.all(
-                          BorderSide(
-                            color: Colors.white24,
-                            width: 1,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                      onPressed: () => deleteAccountButtonPressed(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Add friend",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          // TODO icon to change
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.add_circle, color: Colors.white),
-                          ),
-                        ],
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      bottom: 10,
+                      left: 20.0,
+                      right: 20.0,
+                    ),
+                    child: ProfileActionButton(
+                      userRelationshipStatus: relationshipStatus,
+                      onPressedRemoveFriends: onPressedDeleteFriend,
+                      onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
+                      onPressedSendInvitation: onPressedAddFriend,
+                      onPressedAcceptInvitation: onPressedAcceptInvitation,
+                      onPressedDeclineInvitation: onPressedDeclineInvitation,
                     ),
                   ),
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
-
-
-                // My profile
-                // Edit my info button
-
-                // Profile photo
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -300,325 +322,118 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 // Name and last name
-                SizedBox(height: 10),
-                Container(
-                  padding: EdgeInsets.only(),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    border: Border.all(
-                      color: Colors.transparent,
-                      width: 2,
-                      style: BorderStyle.solid,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 15),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            // Name
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                  enabledBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white24,
-                                          ),
-                                        ),
-                                  focusedBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                            width: 2,
-                                          ),
-                                        ),
-                                  hintText: !edit ? "" : "First name",
-                                  label: Text(
-                                    !edit ? "" : "First name",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  filled: edit ? true : false,
-                                  fillColor: Colors.black.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
-                                textAlign: edit
-                                    ? TextAlign.center
-                                    : TextAlign.right,
-                                controller: firstNameController,
-                                readOnly: edit ? false : true,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 24,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 13),
-                            // Last name
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  border: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                  enabledBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white24,
-                                          ),
-                                        ),
-                                  focusedBorder: !edit
-                                      ? InputBorder.none
-                                      : OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                            width: 2,
-                                          ),
-                                        ),
-                                  hintText: !edit ? "" : "Last name",
-                                  label: Text(
-                                    !edit ? "" : "First name",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  filled: edit ? true : false,
-                                  fillColor: Colors.black.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                ),
-                                controller: lastNameController,
-                                readOnly: edit ? false : true,
-                                textAlign: edit
-                                    ? TextAlign.center
-                                    : TextAlign.left,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 24,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              textAlign: TextAlign.center,
-
-                              "Email: ",
-                              style: TextStyle(
-                                color: Colors.white24,
-                                fontSize: 22,
-                              ),
-                            ),
-                            Text(
-                              "${AppData.currentUser?.email}",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Date of birth
-                if (!edit && AppData.currentUser?.dateOfBirth != null)
-                  Text(
-                    "Age: ${UserService.calculateAge(AppData.currentUser?.dateOfBirth)}",
-                  ),
-                if (edit) // Date of birth
-                  TextField(
-                    controller: _dateController,
-                    readOnly: true,
-                    // Makes the field non-editable
-                    textAlign: TextAlign.left,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.black.withValues(alpha: 0.4),
-                      labelText: "Date of Birth",
-                      labelStyle: TextStyle(color: Colors.white),
-                      prefixIcon: Icon(
-                        Icons.calendar_today,
-                        color: Colors.white,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(width: 1, color: Colors.white),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(width: 1, color: Colors.white),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 16,
-                      ),
-                    ),
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (pickedDate != null) {
-                        String formattedDate =
-                            "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
-                        _dateController.text = formattedDate;
-                      }
-                    },
-                  ),
-                SizedBox(height: 10),
                 // Friend list
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Friends: ${user?.friendsUids.length ?? 0}",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 15),
-                    ),
+                ContentContainer(
+                  borderRadius: 30,
+                  backgroundColor: AppColors.secondary,
+                  child: Column(
+                    children: [
+                      ListInfoTile(
+                        icon: Icons.person,
+                        title: "${user?.firstName} ${user?.lastName}",
+                      ),
+                      ListInfoTile(icon: Icons.email, title: "${user?.email}"),
+                      ListInfoTile(
+                        icon: user!.gender! == 'male'
+                            ? Icons.male
+                            : Icons.female,
+                        title: "${user?.gender}",
+                      ),
+                      ListInfoTile(
+                        icon: Icons.cake,
+                        title: AppUtils.formatDateTime(
+                          user!.dateOfBirth,
+                          onlyDate: true,
+                        ),
+                      ),
+                      ListInfoTile(
+                        icon: Icons.card_membership,
+                        title:
+                            "Member since: ${AppUtils.formatDateTime(user!.createdAt, onlyDate: true)}",
+                      ),
+                      InkWell(
+                        onTap: onTapFriends,
+                        child: ListInfoTile(
+                          icon: Icons.people,
+                          title:
+                              "Friends: ${user!.friendsUid.length.toString()}",
+                          endDivider: false,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                ContentContainer(
+                  borderRadius: 30,
+                  backgroundColor: AppColors.secondary,
+                  child: Column(
+                    children: [
+                      Text(
+                        "Activity & Stats",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
-                    // TODO To test
-                    // Pick up to 6 random friends
-                    if ((user?.friendsUids.isNotEmpty ?? false))
-                      Row(
+                      SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
-                          ...getRandomFriends(user!.friendsUids, 3).map(
-                            (friend) => Container(
-                              margin: EdgeInsets.symmetric(horizontal: 4),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                friend,
-                                style: TextStyle(fontSize: 14),
-                              ),
+                          InkWell(
+                            onTap: onTapFriends,
+                            child: StatCard(
+                              title: "Created\ncompetitions",
+                              value: user!.competitionsCount.toString(),
+                              icon: Icon(Icons.run_circle_outlined),
+                              cardWidth: cardWidth,
+                              cardHeight: cardHeight,
                             ),
                           ),
+                          InkWell(
+                            onTap: onTapFriends,
+                            child: StatCard(
+                              title: "Activities",
+                              value: user!.activitiesCount.toString(),
+                              icon: Icon(Icons.run_circle_outlined),
+                              cardWidth: cardWidth,
+                              cardHeight: cardHeight,
+                            ),
+                          ),
+
+                          StatCard(
+                            title: "Total\ndistance",
+                            value: "${user!.kilometers.toString()} km",
+                            icon: Icon(Icons.directions_run),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
+
+                          StatCard(
+                            title: "Total hours\nof activity",
+                            value: "${user!.hoursOfActivity.toString()} h",
+                            icon: Icon(Icons.timer),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
+
+                          StatCard(
+                            title: "Burned\ncalories",
+                            value: "${user!.burnedCalories.toString()} kcal",
+                            icon: Icon(Icons.timer),
+                            cardWidth: cardWidth,
+                            cardHeight: cardHeight,
+                          ),
                         ],
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-
-                // TODO
-                //Run Stats
-                // Container(
-                //   child: ,
-                // )
-
-                // Log out button
-                SizedBox(height: 20),
-
-                if(!edit)
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: TextButton(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(AppColors.primary),
-                        side: WidgetStateProperty.all(
-                          BorderSide(
-                            color: Colors.white24,
-                            width: 1,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                      onPressed: () => logoutButtonPressed(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Log out",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.logout, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-
-                // Delete profile button
-                if (edit)
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width / 1.5,
-                    child: TextButton(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(Colors.red),
-                        side: WidgetStateProperty.all(
-                          BorderSide(
-                            color: Colors.white24,
-                            width: 1,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                      onPressed: () => deleteAccountButtonPressed(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Delete my account",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.delete, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

@@ -13,7 +13,7 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onChanged;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.controller,
     this.labelText = "",
     this.textAlign = TextAlign.start,
@@ -24,7 +24,7 @@ class CustomTextField extends StatelessWidget {
     this.maxLines = 1,
     this.focusNode,
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

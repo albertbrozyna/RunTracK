@@ -1,14 +1,14 @@
-enum Visibility { me, friends, everyone }
+enum ComVisibility { me, friends, everyone }
 
-Visibility? parseVisibility(String? str) {
+ComVisibility? parseVisibility(String? str) {
   if (str == null) return null;
   switch (str) {
     case 'Visibility.me':
-      return Visibility.me;
+      return ComVisibility.me;
     case 'Visibility.friends':
-      return Visibility.friends;
+      return ComVisibility.friends;
     case 'Visibility.everyone':
-      return Visibility.everyone;
+      return ComVisibility.everyone;
   }
   return null;
 }

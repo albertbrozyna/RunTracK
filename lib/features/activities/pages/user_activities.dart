@@ -7,6 +7,8 @@ import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 
 import '../../../common/utils/app_data.dart';
+import '../../../common/widgets/page_container.dart';
+import '../../../config/assets/app_images.dart';
 import '../../../models/activity.dart';
 import '../../../models/user.dart' as model;
 
@@ -46,6 +48,10 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
 
   final int _limit = 10; // Activities per page
 
+  // Reset last page at start
+
+
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -67,6 +73,10 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
       UserService.signOutUser();
       Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
     }
+    // Reset pages
+    ActivityService.lastFetchedDocumentMyActivities = null;
+    ActivityService.lastFetchedDocumentFriendsActivities = null;
+    ActivityService.lastFetchedDocumentAllActivities = null;
     // Load activities on start
     _loadMyActivities();
     _loadFriendsActivities();
@@ -130,7 +140,7 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
     final activities = await ActivityService.fetchLastFriendsActivitiesPage(
       _limit,
       _lastPageFriendsActivities,
-      currentUser?.friendsUids ?? [],
+      currentUser?.friendsUid ?? {},
     );
 
 
@@ -170,14 +180,9 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/background-start.jpg"),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-        ),
-      ),
+    return PageContainer(
+      assetPath: AppImages.appBg4,
+      padding: 0,
       child: Column(
         children: [
           Container(

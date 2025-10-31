@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/profile/models/settings.dart';
+import 'package:run_track/features/track/models/track_state.dart';
 import 'package:run_track/features/track/pages/activity_choose.dart';
 import 'package:run_track/features/track/pages/activity_summary.dart';
-import 'package:run_track/features/track/services/track_service.dart';
 import 'package:run_track/features/track/widgets/activity_stats.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/l10n/app_localizations.dart';
@@ -15,9 +15,9 @@ import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import 'package:run_track/common/enums/visibility.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
+import '../../../theme/colors.dart';
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -33,7 +33,6 @@ class TrackScreenState extends State<TrackScreen> {
   String? activityName = AppData.currentUser?.activityNames?.first; // Assign default on the start
   final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
   Timer? _finishTimer;
-  Timer? _gpsTimer; // Gps timer to refresh gps
 
   @override
   void dispose() {
@@ -47,19 +46,18 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
-    _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      AppData.trackState.updateGpsIcon();
-    });
-
     final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
     setState(() {
       activityName = lastActivity;
       activityController.text = lastActivity;
     });
+
+    AppData.trackState.mapController = _mapController; // Assign map controller to move the map
   }
 
   void handleStopTracking() {
-    AppData.trackState.stopTracking();
+    AppData.trackState.stopLocationService();
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -74,9 +72,10 @@ class TrackScreenState extends State<TrackScreen> {
             elevationGain: AppData.trackState.elevationGain,
             trackedPath: AppData.trackState.trackedPath,
             elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
-            totalDistance: AppData.trackState.totalDistance,
-            startTime: AppData.trackState.startOfTheActivity,
-            createdAt: AppData.trackState.startOfTheActivity,
+            totalDistance: AppData.trackState.totalDistance / 1000,
+            pace: AppData.trackState.pace,
+            startTime: AppData.trackState.startTime,
+            createdAt: DateTime.now(),
           ),
         ),
       ),
@@ -84,33 +83,17 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   // Controls with pace time and start/stop buttons
-  Widget _buildControls() {
+  Widget buildActionButtons() {
     switch (AppData.trackState.trackingState) {
       case TrackingState.stopped:
-        return SizedBox(
-          height: 50.0,
-          width: double.infinity,
-          child: CustomButton(
-            text: AppLocalizations.of(context)!.trackScreenStartTraining,
-            onPressed: AppData.trackState.startTracking,
-            gradientColors: [const Color(0xFFFFA726), const Color(0xFFFF5722)],
-          ),
+        return CustomButton(
+          backgroundColor: AppColors.secondary,
+          text: AppLocalizations.of(context)!.trackScreenStartTraining,
+          onPressed: AppData.trackState.startLocationService,
         );
 
       case TrackingState.running:
-        return Column(
-          children: [
-            SizedBox(
-              height: 50.0,
-              width: double.infinity,
-              child: CustomButton(
-                text: "Stop",
-                onPressed: AppData.trackState.pauseTracking,
-                gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
-              ),
-            ),
-          ],
-        );
+        return CustomButton(width: 50, text: "Stop", onPressed: AppData.trackState.pauseLocationService);
 
       case TrackingState.paused:
         return Column(
@@ -119,14 +102,7 @@ class TrackScreenState extends State<TrackScreen> {
               children: [
                 // Resume Button
                 Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: CustomButton(
-                      text: "Resume",
-                      onPressed: AppData.trackState.resumeTracking,
-                      gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
-                    ),
-                  ),
+                  child: CustomButton(height: 50, text: "Resume", onPressed: AppData.trackState.resumeLocationService),
                 ),
                 const SizedBox(width: AppUiConstants.horizontalSpacingButtons),
 
@@ -135,7 +111,7 @@ class TrackScreenState extends State<TrackScreen> {
                     onLongPressStart: (_) {
                       _finishProgressNotifier.value = 0.0;
                       _finishTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-                        _finishProgressNotifier.value += 0.02;
+                        _finishProgressNotifier.value += 0.04;
                         if (_finishProgressNotifier.value >= 1.0) {
                           _finishTimer?.cancel();
                           handleStopTracking();
@@ -154,18 +130,17 @@ class TrackScreenState extends State<TrackScreen> {
                           CustomButton(
                             text: "",
                             onPressed: () {}, // Normal tap disabled
-                            gradientColors: const [Color(0xFFFFB74D), Color(0xFFFF9800), Color(0xFFF57C00)],
                           ),
                           ValueListenableBuilder<double>(
                             valueListenable: _finishProgressNotifier,
                             builder: (context, progress, _) {
                               return ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusButtons),
                                 child: LinearProgressIndicator(
                                   value: progress,
                                   minHeight: 50,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.third),
                                   backgroundColor: Colors.transparent,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red.withValues(alpha: 0.6)),
                                 ),
                               );
                             },
@@ -174,7 +149,7 @@ class TrackScreenState extends State<TrackScreen> {
                           const Center(
                             child: Text(
                               "Finish",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -209,7 +184,6 @@ class TrackScreenState extends State<TrackScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Custom fab location to set a fab
-      floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       body: AnimatedBuilder(
         animation: AppData.trackState,
         builder: (BuildContext context, _) {
@@ -251,8 +225,9 @@ class TrackScreenState extends State<TrackScreen> {
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.runtrack',
                         ),
-                        if (AppData.trackState.trackedPath.isNotEmpty && (AppData.trackState.trackingState == TrackingState.paused ||
-                            AppData.trackState.trackingState == TrackingState.running))
+                        if (AppData.trackState.trackedPath.isNotEmpty &&
+                            (AppData.trackState.trackingState == TrackingState.paused ||
+                                AppData.trackState.trackingState == TrackingState.running))
                           PolylineLayer(
                             polylines: [Polyline(points: AppData.trackState.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
                           ),
@@ -279,8 +254,8 @@ class TrackScreenState extends State<TrackScreen> {
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: RunStats(
-                      totalDistance: AppData.trackState.totalDistance,
-                      pace: TrackService.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
+                      totalDistance: (AppData.trackState.totalDistance / 1000),
+                      pace: TrackState.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
                       elapsedTime: AppData.trackState.elapsedTime,
                       startTime: AppData.trackState.startTime,
                       avgSpeed: AppData.trackState.avgSpeed,
@@ -314,7 +289,7 @@ class TrackScreenState extends State<TrackScreen> {
                           ? 16
                           : 0,
                     ),
-                    child: _buildControls(),
+                    child: buildActionButtons(),
                   ),
                 ),
               ),
@@ -322,7 +297,9 @@ class TrackScreenState extends State<TrackScreen> {
           );
         },
       ),
+      floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
@@ -331,7 +308,7 @@ class TrackScreenState extends State<TrackScreen> {
             }
           });
         },
-        child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed),
+        child: Icon(_followUser ? Icons.gps_fixed : Icons.gps_not_fixed, color: AppColors.white),
       ),
     );
   }

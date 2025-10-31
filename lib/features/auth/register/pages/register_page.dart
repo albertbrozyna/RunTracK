@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_constants.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/form_container.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
@@ -16,17 +17,14 @@ class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() {
-    return _RegisterPageState();
-  }
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _repeatPasswordController =
-      TextEditingController();
+  final TextEditingController _repeatPasswordController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
@@ -35,9 +33,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordHidden = true;
   bool _isPasswordRepeatHidden = true;
 
-
   @override
-  void dispose(){
+  void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _repeatPasswordController.dispose();
@@ -46,6 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _dateController.dispose();
     super.dispose();
   }
+
   // Method to check password complexity
   bool checkPasswordComplexity(String password) {
     // Minimum 8 characters
@@ -111,6 +109,11 @@ class _RegisterPageState extends State<RegisterPage> {
         if (value == null || value.trim().isEmpty) {
           return 'Please select your date of birth';
         }
+
+        DateTime? date = DateTime.tryParse(value.trim());
+        if (date == null) {
+          return 'Invalid date format';
+        }
         break;
       default:
         return null;
@@ -125,15 +128,11 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     bool error = false;
-    AuthResponse? result = await UserService.createUserInFirebaseAuth(
-      _emailController.text,
-      _passwordController.text,
-    );
+    AuthResponse? result = await UserService.createUserInFirebaseAuth(_emailController.text, _passwordController.text);
 
     if (result.message == null || result.message != "User created") {
       error = true;
     }
-
 
     if (!error) {
       String? resultMessage = await UserService.createUserInFirestore(
@@ -157,10 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
           if (e.code == 'requires-recent-login') {
             // Log in again if there is a this err code
             await firebaseUser.reauthenticateWithCredential(
-              EmailAuthProvider.credential(
-                email: _emailController.text.trim(),
-                password: _passwordController.text.trim(),
-              ),
+              EmailAuthProvider.credential(email: _emailController.text.trim(), password: _passwordController.text.trim()),
             );
             await firebaseUser.delete();
           }
@@ -168,19 +164,19 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       if (mounted) {
-        AppUtils.showMessage(context, "Register failed!", isError: true);
+        AppUtils.showMessage(context, "Register failed : ${result.message}", messageType: MessageType.error);
       }
     } else {
       // Success
       if (mounted) {
-        AppUtils.showMessage(context, "Registered successfully!");
+        AppUtils.showMessage(context, "Registered successfully!",messageType: MessageType.success);
         FirebaseAuth.instance.signOut();
       }
+
       Future.delayed(Duration(seconds: 1), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
+        }
       });
     }
   }
@@ -198,10 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/background-start.jpg"),
-            fit: BoxFit.cover,
-          ),
+          image: DecorationImage(image: AssetImage("assets/appBg6.jpg"), fit: BoxFit.cover),
         ),
         child: Center(
           child: SingleChildScrollView(
@@ -211,108 +204,78 @@ class _RegisterPageState extends State<RegisterPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.formBackgroundOverlay,
-                        borderRadius: AppUiConstants.borderRadiusForm,
-                        boxShadow: AppUiConstants.boxShadowForm,
-                      ),
+                    FormContainer(
                       child: Column(
                         children: [
                           // First Name
                           TextFormField(
                             controller: _firstNameController,
-                            validator: (value) =>
-                                validateFields('firstName', value),
+                            validator: (value) => validateFields('firstName', value),
                             keyboardType: TextInputType.text,
+                            style: AppUiConstants.textStyleTextFields,
                             decoration: InputDecoration(
                               labelText: "First Name",
-                              prefixIcon: Icon(Icons.person),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 16,
-                              ),
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              prefixIcon: Icon(Icons.person,color: AppColors.white,),
+                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                             ),
                           ),
                           SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Last name
                           TextFormField(
                             controller: _lastNameController,
-                            validator: (value) =>
-                                validateFields('lastName', value),
+                            validator: (value) => validateFields('lastName', value),
                             keyboardType: TextInputType.text,
+                            style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
                               labelText: "Last name",
-                              prefixIcon: Icon(Icons.person),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
+                              prefixIcon: Icon(Icons.person,color: AppColors.white,),
+                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
                               contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
-                          SizedBox(
-                            height: AppUiConstants.verticalSpacingTextFields,
-                          ),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Date of birth
                           TextFormField(
                             controller: _dateController,
-                            validator: (value) =>
-                                validateFields('dateOfBirth', value),
+                            validator: (value) => validateFields('dateOfBirth', value),
                             readOnly: true,
+                            style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
                               labelText: "Date of Birth",
-                              prefixIcon: Icon(Icons.calendar_today),
-
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
-                              contentPadding:
-                                  AppUiConstants.contentPaddingTextFields,
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              prefixIcon: Icon(Icons.calendar_today,color: AppColors.white,),
+                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                             onTap: () async {
-                              DateTime? pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(1900),
-                                lastDate: DateTime.now(),
-                              );
-                              if (pickedDate != null) {
-                                String formattedDate = "${pickedDate.year.toString().padLeft(4,'0')}-"
-                                    "${pickedDate.month.toString().padLeft(2,'0')}-"
-                                    "${pickedDate.day.toString().padLeft(2,'0')}";
-                                _dateController.text = formattedDate;
-                              }
+                              AppUtils.pickDate(context, DateTime(1900), DateTime.now(), _dateController, true);
                             },
                           ),
-                          SizedBox(
-                            height: AppUiConstants.verticalSpacingTextFields,
-                          ),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Gender
                           DropdownButtonFormField<String>(
+                            dropdownColor: AppColors.primary,
                             initialValue: _selectedGender,
+                            style: AppUiConstants.textStyleTextFields,
+
                             decoration: InputDecoration(
                               labelText: "Gender",
-                              prefixIcon: Icon(Icons.person_outline),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
-                              contentPadding:
-                                  AppUiConstants.contentPaddingTextFields,
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
+                              prefixIcon: Icon(Icons.person_outline,color: AppColors.white,),
+                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
+                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                             items: AppConstants.genders.map((String gender) {
-                              return DropdownMenuItem<String>(
-                                value: gender,
-                                child: Text(gender),
-                              );
+                              return DropdownMenuItem<String>(value: gender, child: Text(gender));
                             }).toList(),
                             onChanged: (String? newValue) {
                               setState(() {
@@ -320,117 +283,88 @@ class _RegisterPageState extends State<RegisterPage> {
                               });
                             },
                           ),
-                          SizedBox(
-                            height: AppUiConstants.verticalSpacingTextFields,
-                          ),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Email field
                           TextFormField(
                             controller: _emailController,
-                            validator: (value) =>
-                                validateFields('email', value),
+                            validator: (value) => validateFields('email', value),
                             keyboardType: TextInputType.emailAddress,
+                            style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
                               labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
-                              enabledBorder: AppUiConstants.enabledBorderTextfields,
-                              focusedBorder: AppUiConstants.focusedBorderTextfields,
-                              contentPadding:
-                                  AppUiConstants.contentPaddingTextFields,
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
+                              prefixIcon: Icon(Icons.email,color: AppColors.white,),
+                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
+
                             ),
                           ),
-                          SizedBox(height:AppUiConstants.verticalSpacingTextFields),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           TextFormField(
                             controller: _passwordController,
-                            validator: (value) =>
-                                validateFields('password', value),
+                            validator: (value) => validateFields('password', value),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordHidden,
+                            style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
                               labelText: "Password",
-                              prefixIcon: Icon(Icons.password),
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
+                              prefixIcon: Icon(Icons.password,color: AppColors.white,),
                               suffixIcon: IconButton(
                                 onPressed: () {
                                   setState(() {
                                     _isPasswordHidden = !_isPasswordHidden;
                                   });
                                 },
-                                icon: Icon(
-                                  _isPasswordHidden
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
+                                icon: Icon(_isPasswordHidden ? Icons.visibility_off : Icons.visibility,color: AppColors.white,),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
-                              enabledBorder:
-                                  AppUiConstants.enabledBorderTextfields,
-                              focusedBorder:
-                                  AppUiConstants.focusedBorderTextfields,
-                              contentPadding:
-                                  AppUiConstants.contentPaddingTextFields,
+                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
+
+                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
-                          SizedBox(
-                            height: AppUiConstants.verticalSpacingTextFields,
-                          ),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Repeat password
                           TextFormField(
                             controller: _repeatPasswordController,
-                            validator: (value) =>
-                                validateFields('repeatPassword', value),
+                            validator: (value) => validateFields('repeatPassword', value),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordRepeatHidden,
+                            style: TextStyle(color: AppColors.white),
+
                             decoration: InputDecoration(
                               labelText: "Repeat password",
-                              prefixIcon: Icon(Icons.password),
+                              labelStyle: AppUiConstants.labelStyleTextFields,
+                              enabledBorder: AppUiConstants.enabledBorderTextFields,
+                              focusedBorder: AppUiConstants.focusedBorderTextFields,
+                              errorBorder: AppUiConstants.errorBorderTextFields,
+                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
+                              prefixIcon: Icon(Icons.password,color: AppColors.white,),
                               suffixIcon: IconButton(
                                 onPressed: () {
                                   setState(() {
-                                    _isPasswordRepeatHidden =
-                                        !_isPasswordRepeatHidden;
+                                    _isPasswordRepeatHidden = !_isPasswordRepeatHidden;
                                   });
                                 },
-                                icon: Icon(
-                                  _isPasswordRepeatHidden
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
+                                icon: Icon(_isPasswordRepeatHidden ? Icons.visibility_off : Icons.visibility,color: AppColors.white,),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    AppUiConstants.borderRadiusTextFields,
-                              ),
-                              enabledBorder:
-                                  AppUiConstants.enabledBorderTextfields,
-                              focusedBorder:
-                                  AppUiConstants.focusedBorderTextfields,
-                              contentPadding:
-                                  AppUiConstants.contentPaddingTextFields,
+                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
+                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
                           ),
                           // Register button
-                          SizedBox(
-                            height: AppUiConstants.verticalSpacingButtons,
-                          ),
+                          SizedBox(height: AppUiConstants.verticalSpacingButtons),
                           SizedBox(
                             width: double.infinity,
                             height: 60,
-                            child: CustomButton(
-                              text: "Register",
-                              onPressed: handleRegister,
-                              textSize: 20,
-                              gradientColors: [
-                                Color(0xFFFF8C00),
-                                Color(0xFFFFD180),
-                                Color(0xFF64B5F6),
-                              ],
-                            ),
+                            child: CustomButton(text: "Register", onPressed: handleRegister, textSize: 20),
                           ),
                         ],
                       ),

@@ -1,87 +1,181 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../common/enums/tracking_state.dart';
-import '../../../common/utils/app_data.dart';
-import '../../profile/models/settings.dart';
+
+import '../../../main.dart';
+import 'location_update.dart';
 
 class TrackState extends ChangeNotifier {
   Icon gpsIcon = Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
   MapController? mapController;
   TrackingState trackingState;
+
   List<LatLng> trackedPath;
-  double totalDistance;
-  Duration accumulatedTime = Duration.zero;
-  DateTime startOfTheActivity;  // Time when activity starts
+  final Distance distanceCalculator = Distance();
+  Position? latestPosition;
+  double totalDistance; // In meters
   DateTime startTime;
   Duration elapsedTime;
-  Timer? autoSaveTimer; // Timer to save a data to a local storage
-  Timer? timer;
-  DateTime? lastPositionTime; // Time of the last position
+  double elevationGain;
   double calories;
-  double avgSpeed; // km/h
-  double currentSpeedValue; // km/h
-  double elevationGain; // m
+  double avgSpeed;
+  double currentSpeedValue;
   int steps;
-  double pace; // min/km
-  bool activitySaved = false; // State is saved to firestore?
-  // TODO make auto save disabled in settings by user
-
-  StreamSubscription<Position>? positionStream;
-  final Distance distanceCalculator = Distance(); // To calculate distance between points
+  double pace;
+  bool followUser;
   LatLng? currentPosition;
-  Position? latestPosition;
-  bool followUser = true;
-
-  final locationSettings = LocationSettings(
-    // Get the best accuracy
-    accuracy: AppSettings.locationAccuracy,
-    // The location will update after at least 5 meters
-    distanceFilter: AppSettings.updateLocationDistance,
-  );
+  DateTime startOfTheActivity;
+  double positionAccuracy;
+  bool clearFields = false;
+  Timer? _gpsTimer; // Gps timer to fetch gps signal if we are not received data from background service
+  DateTime _lastUpdateFromTask = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _setupInitalized = false;
+  bool timerStartAdd = false; // Start adding time to elapsed time to sync timers
 
   TrackState({
     this.mapController,
     List<LatLng>? trackedPath,
-    double? totalDistance,
-    TrackingState? trackingState,
+    this.trackingState = TrackingState.stopped,
+    this.totalDistance = 0.0,
     DateTime? startTime,
     Duration? elapsedTime,
-    double? calories,
-    double? avgSpeed, // km/h
-    double? currentSpeedValue, // km/h
-    double? elevationGain, // m
-    int? steps,
-    double? pace,
+    this.calories = 0.0,
+    this.avgSpeed = 0.0,
+    this.currentSpeedValue = 0.0,
+    this.elevationGain = 0.0,
+    this.steps = 0,
+    this.pace = 0.0,
+    this.followUser = true,
     this.currentPosition,
+    this.positionAccuracy = 0.0,
   }) : trackedPath = trackedPath ?? [],
-       trackingState = trackingState ?? TrackingState.stopped,
-       totalDistance = totalDistance ?? 0.0,
-       elapsedTime = elapsedTime ?? Duration.zero,
        startTime = startTime ?? DateTime.now(),
-       calories = calories ?? 0.0,
-       avgSpeed = avgSpeed ?? 0.0,
-       currentSpeedValue = currentSpeedValue ?? 0.0,
-       elevationGain = elevationGain ?? 0.0,
-       steps = steps ?? 0,
-        pace = pace ?? 0.0,
-        startOfTheActivity = DateTime.now();
-
+       elapsedTime = elapsedTime ?? Duration.zero,
+       startOfTheActivity = DateTime.now() {
+    initialize();
+    getCurrentState();
+  }
 
   @override
   void dispose() {
-    timer?.cancel();
-    timer = null;
-    positionStream?.cancel();
-    positionStream = null;
     super.dispose();
+    _gpsTimer?.cancel();
+    _gpsTimer = null;
+  }
+
+  Future<void> _setupCommunication() async {
+    if(_setupInitalized ==  false){
+      FlutterForegroundTask.initCommunicationPort();
+      FlutterForegroundTask.addTaskDataCallback((data) {
+        if (data is Map<String, dynamic>) {
+          final update = LocationUpdate.fromJson(data);
+
+          if(update.type == 'S'){ // Init all data
+            trackingState = update.trackingState ?? TrackingState.stopped;
+            trackedPath.addAll(update.trackedPath!);
+            elapsedTime = update.elapsedTime ?? Duration.zero;
+            totalDistance = update.totalDistance;
+            calories = update.calories;
+            avgSpeed = update.avgSpeed;
+            elevationGain = update.elevationGain;
+            steps = update.steps;
+            pace = update.pace;
+            positionAccuracy = update.positionAccuracy;
+            _lastUpdateFromTask = DateTime.now();
+            timerStartAdd = true;
+          }else if(update.type == 'U'){ // Normal update
+            trackedPath.add(LatLng(update.lat, update.lng));
+            totalDistance = update.totalDistance;
+            calories = update.calories;
+            avgSpeed = update.avgSpeed;
+            elevationGain = update.elevationGain;
+            steps = update.steps;
+            pace = update.pace;
+            positionAccuracy = update.positionAccuracy;
+            _lastUpdateFromTask = DateTime.now();
+          }else if(update.type == 'E') { // End of activity
+            trackingState = update.trackingState ?? TrackingState.stopped;
+            trackedPath.addAll(update.trackedPath!);
+            elapsedTime = update.elapsedTime ?? Duration.zero;
+            totalDistance = update.totalDistance;
+            calories = update.calories;
+            avgSpeed = update.avgSpeed;
+            elevationGain = update.elevationGain;
+            steps = update.steps;
+            pace = update.pace;
+            positionAccuracy = update.positionAccuracy;
+            _lastUpdateFromTask = DateTime.now();
+          }
+
+          updateGpsIcon();
+          notifyListeners();
+
+          if(followUser && mapController != null){  // Move map
+            mapController?.move(LatLng(update.lat, update.lng),mapController?.camera.zoom ?? 15);
+          }
+        }
+      });
+      _setupInitalized = true;
+    }
+    }
+
+
+
+
+  void initialize()async  {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+
+    if(isRunning){  // If service is running, set communication
+      _setupCommunication();
+      getCurrentState();
+    }
+
+    _gpsTimer?.cancel();  // Timer to fetch check a gps signal if service is off
+    _gpsTimer = Timer.periodic(Duration(seconds: 1), (_) async {
+      if(trackingState == TrackingState.running && timerStartAdd){
+        elapsedTime += const Duration(seconds: 1);  // Add seconds here to make timer smooth
+      }
+      print("timerMain ${elapsedTime.inSeconds}");
+      notifyListeners();
+
+      final now = DateTime.now();
+      if (now.difference(_lastUpdateFromTask) > Duration(seconds: 5)) {
+        await _fetchLocation(); // Get gps location
+      }
+    });
+
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(
+          accuracy: LocationAccuracy.best,
+        ),
+      );
+
+      latestPosition = position;
+      positionAccuracy = position.accuracy;
+
+      if(followUser && mapController != null){
+        mapController?.move(LatLng(latestPosition!.latitude, latestPosition!.longitude),mapController?.camera.zoom ?? 15);
+      }
+
+      updateGpsIcon();  // Update gps
+
+      notifyListeners(); // Notify Ui about all changes
+    } catch (e) {
+      print('GPS error: $e');
+    }
   }
 
   void updateGpsIcon() async {
@@ -89,269 +183,168 @@ class TrackState extends ChangeNotifier {
 
     if (!gpsEnabled) {
       gpsIcon = Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
-    } else if (latestPosition == null) {
-      gpsIcon = Icon(Icons.signal_cellular_0_bar_outlined, color: Colors.grey, size: 24);
-    } else {
-      double accuracy = latestPosition!.accuracy;
-      if (accuracy <= 5) {
-        gpsIcon = Icon(Icons.signal_cellular_alt, size: 24, color: Colors.green);
-      } else if (accuracy <= 15) {
-        gpsIcon = Icon(Icons.signal_cellular_alt_2_bar_sharp, size: 24, color: Colors.orange);
-      } else if (accuracy <= 25) {
-        gpsIcon = Icon(Icons.signal_cellular_alt_1_bar_sharp, size: 24, color: Colors.red);
-      } else {
-        gpsIcon = Icon(Icons.signal_cellular_0_bar, color: Colors.redAccent, size: 24);
-      }
-    }
-
-    notifyListeners();
-  }
-
-  /// Function to start timer
-  void _startTimer() {
-    // Cancel previous timer if running
-    timer?.cancel();
-
-    timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      elapsedTime = accumulatedTime + DateTime.now().difference(startTime);
-      notifyListeners();
-    });
-  }
-
-  /// Stop timer
-  void _stopTimer() {
-    timer?.cancel();
-    timer = null;
-  }
-
-  void _createPositionStream() {
-    positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) async {
-      final latLng = LatLng(position.latitude, position.longitude);
-      latestPosition = position;
-      if (currentPosition != null) {
-        // Calculate distance from last position
-        double dist = distanceCalculator.as(LengthUnit.Meter, currentPosition!, latLng);
-        totalDistance += dist;
-
-        final deltaTime = lastPositionTime != null ? DateTime.now().difference(lastPositionTime!).inSeconds.toDouble() : 1.0;
-
-        if (deltaTime > 0) {
-          // to km/h from meters
-          currentSpeedValue = (dist / deltaTime) * 3.6;
-        }
-
-        if (position.altitude > (latestPosition?.altitude ?? 0)) {
-          // Elevation gain
-          elevationGain += position.altitude - (latestPosition?.altitude ?? 0);
-        }
-
-        avgSpeed = (elapsedTime.inSeconds > 0)
-            ? (totalDistance / 1000) / (elapsedTime.inSeconds / 3600)
-            : 0.0;
-        steps = (totalDistance / 0.78).round(); // Steps
-
-        pace = (avgSpeed > 0) ? (60 / avgSpeed) : 0.0; // min/km
-      }
-
-
-
-      lastPositionTime = DateTime.now();
-
-      currentPosition = latLng;
-      trackedPath.add(latLng);
-
-      // Move map to follow current location
-      if (trackingState == TrackingState.running && followUser && mapController != null ) {
-        mapController?.move(latLng, mapController!.camera.zoom);
-      }
-      notifyListeners();
-    });
-  }
-
-  /// Start tracking route
-  void startTracking() {
-    // Setting starting parameters
-    trackedPath.clear();
-    totalDistance = 0.0;
-    elapsedTime = Duration.zero;
-    accumulatedTime = Duration.zero;
-    startTime = DateTime.now();
-    startOfTheActivity = DateTime.now();
-    trackingState = TrackingState.running;
-    calories = 0.0;
-    avgSpeed = 0.0;
-    currentSpeedValue = 0.0;
-    elevationGain = 0.0;
-    steps = 0;
-    lastPositionTime = DateTime.now();
-    _startTimer();
-    _createPositionStream();
-    notifyListeners();
-    _startAutoSave();
-  }
-
-  // Function to resume tracking
-  void resumeTracking() {
-    // Resume tracking
-    if (positionStream?.isPaused == true) {
-      positionStream!.resume();
-    } else {
-      positionStream?.cancel();
-      _createPositionStream();
-    }
-
-    startTime = DateTime.now().subtract(accumulatedTime);
-    // Restart timer
-    _startTimer();
-    {
-      trackingState = TrackingState.running;
-    }
-    _startAutoSave();
-    notifyListeners();
-  }
-
-  void pauseTracking() {
-    if (positionStream == null) {
       return;
     }
-    // Pause stream
-    positionStream!.pause();
-    // Pause timer
-    _stopTimer();
-    accumulatedTime += DateTime.now().difference(startTime);
+    if (positionAccuracy <= 5) {
+      gpsIcon = Icon(Icons.signal_cellular_alt, size: 24, color: Colors.green);
+    } else if (positionAccuracy <= 15) {
+      gpsIcon = Icon(Icons.signal_cellular_alt_2_bar_sharp, size: 24, color: Colors.orange);
+    } else if (positionAccuracy <= 25) {
+      gpsIcon = Icon(Icons.signal_cellular_alt_1_bar_sharp, size: 24, color: Colors.red);
+    } else {
+      gpsIcon = Icon(Icons.signal_cellular_0_bar, color: Colors.redAccent, size: 24);
+    }
+  }
 
+  void clearAllFields() {
+      trackedPath.clear();
+      totalDistance = 0.0;
+      startTime = DateTime.now();
+      elapsedTime = Duration.zero;
+      latestPosition = null;
+      elevationGain = 0.0;
+      calories = 0.0;
+      avgSpeed = 0.0;
+      currentSpeedValue = 0.0;
+      steps = 0;
+      pace = 0.0;
+      followUser = true;
+      currentPosition = null;
+  }
+
+  static Future<Position> determinePosition() async {
+    // Check permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception("Location permissions are denied");
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception(
+        "Location permissions are permanently denied. Enable them in settings.",
+      );
+    }
+
+    // Check GPS is enabled
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception("Location services are disabled. Enable GPS.");
+    }
+
+    // Get location
+    return await Geolocator.getCurrentPosition(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 10,
+      ),
+    );
+  }
+
+  static void initForegroundTask(){
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'run_track_channel_gps_track',
+        channelName: 'Location Tracking',
+        channelDescription: 'Tracking location in background',
+        channelImportance: NotificationChannelImportance.HIGH,
+        priority: NotificationPriority.HIGH,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: true,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+          autoRunOnBoot: true,
+          allowWakeLock: true,
+          allowWifiLock: true,
+          eventAction: ForegroundTaskEventAction.repeat(
+              5000 // 5 s
+          )
+      ),
+    );
+  }
+
+  /// Calculate and format pace
+  static String formatPace(double totalDistance, Duration elapsedTime) {
+    if (totalDistance < 10) return "--"; // Not enough data
+    double km = totalDistance / 1000;
+    double pace = elapsedTime.inSeconds / km;
+    int paceMin = (pace / 60).floor();
+    int paceSec = (pace % 60).round();
+    return "$paceMin:${paceSec.toString().padLeft(2, '0')} min/km";
+  }
+
+  /// Start foreground location service
+  Future<void> startLocationService() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    clearAllFields();
+    notifyListeners();
+    if (!isRunning) {
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'Activity tracking',
+        notificationText: 'RunTracK tracks your activity!',
+        callback: startCallback,
+      );
+    }
+    trackingState = TrackingState.running;
+    _setupCommunication();
+  }
+
+  /// Pause the foreground service
+   Future<void> pauseLocationService() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
     trackingState = TrackingState.paused;
-    autoSaveTimer?.cancel();  // Cancel save timer
-    saveToFile();
     notifyListeners();
+    if (isRunning) {
+      FlutterForegroundTask.sendDataToTask({
+        'action': 'pause'
+      });
+
+      await FlutterForegroundTask.updateService(
+        notificationTitle: 'Tracking paused',
+        notificationText: 'Location tracking is temporarily paused',
+      );
+    }
   }
 
-  /// Stop tracking
-  void stopTracking() {
-    // TODO TO DELETE
-      trackedPath.addAll([
-        LatLng(51.7592, 19.4560),
-        LatLng(51.7611, 19.4585),
-        LatLng(51.7635, 19.4500),
-        LatLng(51.7680, 19.4850),
-        LatLng(51.7750, 19.4880),
-        LatLng(51.7592, 19.4560),
-      ]);
-
+  /// Stop the foreground service
+  Future<void> stopLocationService() async {
     trackingState = TrackingState.stopped;
-    positionStream?.cancel();
-    positionStream = null;
-    _stopTimer();
-    trackingState = TrackingState.stopped;
-    autoSaveTimer?.cancel();  // Cancel save timer
-    saveToFile(); // Save to file to save a state of the run as as stopped
     notifyListeners();
-  }
-
-
-  // Auto save to a file
-
-  /// Start saving a state to a file
-  void _startAutoSave() {
-    autoSaveTimer?.cancel();
-    if(AppSettings.saveIntervalTime > 0){
-      autoSaveTimer = Timer.periodic(Duration(seconds: AppSettings.saveIntervalTime), (_) => saveToFile());
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (isRunning) {
+      timerStartAdd = false;
+      FlutterForegroundTask.sendDataToTask({
+        'action':'stop'
+      });
     }
   }
 
-
-  /// Map this run state to json
-  Map<String, dynamic> toJson() {
-    return {
-      'trackingState': trackingState.toString(),
-      'trackedPath': trackedPath.map((e) => {'lat': e.latitude, 'lng': e.longitude}).toList(),
-      'totalDistance': totalDistance,
-      'accumulatedTime': accumulatedTime.inSeconds,
-      'startTime': startTime.toIso8601String(),
-      'elapsedTime': elapsedTime.inSeconds,
-      'calories': calories,
-      'avgSpeed': avgSpeed,
-      'currentSpeedValue': currentSpeedValue,
-      'elevationGain': elevationGain,
-      'steps': steps,
-      'currentPosition': currentPosition != null
-          ? {'lat': currentPosition!.latitude, 'lng': currentPosition!.longitude}
-          : null,
-    };
-  }
-
-  static Future<TrackState?> loadFromFile() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory(); // App documents
-      final file = File('${dir.path}/track_state.json');
-      if (!await file.exists()) {
-        return null;
-      }
-        final jsonStr = await file.readAsString();
-        final data = jsonDecode(jsonStr);
-
-        return TrackState(
-          mapController: null,
-          trackedPath: (data['trackedPath'] as List)
-              .map((e) => LatLng(e['lat'], e['lng']))
-              .toList(),
-          totalDistance: (data['totalDistance'] ?? 0).toDouble(),
-          trackingState: TrackingState.values.firstWhere(
-                  (e) => e.toString() == data['trackingState'],
-              orElse: () => TrackingState.stopped),
-          startTime: DateTime.parse(data['startTime']),
-          elapsedTime: Duration(seconds: data['elapsedTime'] ?? 0),
-          calories: (data['calories'] ?? 0).toDouble(),
-          avgSpeed: (data['avgSpeed'] ?? 0).toDouble(),
-          currentSpeedValue: (data['currentSpeedValue'] ?? 0).toDouble(),
-          elevationGain: (data['elevationGain'] ?? 0).toDouble(),
-          steps: data['steps'] ?? 0,
-          currentPosition: data['currentPosition'] != null
-              ? LatLng(data['currentPosition']['lat'], data['currentPosition']['lng'])
-              : null,
-        );
-    } catch (e) {
-      print('Error loading track state: $e');
-      return null;
+  /// Resume location service
+  Future<void> resumeLocationService() async {
+    trackingState = TrackingState.running;
+    notifyListeners();
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (isRunning) {
+      FlutterForegroundTask.sendDataToTask({
+        'action':'resume'
+      });
     }
   }
 
-  /// Save a file with a tracking state to local memory
-  Future<void> saveToFile() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/track_state.json');
-      await file.writeAsString(jsonEncode(toJson()), flush: true); // Write it immediately to the file, not wait
-    } catch (e) {
-      print("Error: " + e.toString());
+  /// Check if service is active on start and if it is, request data from it
+  Future<void> getCurrentState()async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    if (isRunning) {
+      clearAllFields();
+      FlutterForegroundTask.sendDataToTask({
+        'action':'sendAllData'
+      });
     }
   }
 
-  /// Delete a file with a tracking state from memory
-  Future<void> deleteFile() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/track_state.json');
-      if (await file.exists()) {
-        await file.delete();
-      } else {
-        print('File not found.');
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
-  }
-
-  /// Initialize track state
-  static Future<void> initializeTrackState() async {
-    TrackState? lastState = await TrackState.loadFromFile();
-    AppData.trackState = lastState ?? TrackState();
-
-    if(AppData.trackState.trackingState == TrackingState.running){
-      AppData.trackState.trackingState = TrackingState.paused;
-    }
-
-    // Set current position null, to avoid calculating distance
-    AppData.trackState.currentPosition = null;
-  }
 }

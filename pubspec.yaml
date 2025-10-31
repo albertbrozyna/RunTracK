@@ -13,6 +13,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+  flutter_foreground_task: ^9.1.0
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   location: ^8.0.1
@@ -29,6 +30,10 @@ dependencies:
   google_sign_in: ^6.2.1 # Google sign in
   rxdart: ^0.27.7
   path_provider: ^2.1.2
+  geocoding: ^4.0.0
+  google_fonts: ^6.3.2
+  background_locator_2: ^2.0.6
+
 
 dev_dependencies:
   flutter_test:
@@ -46,8 +51,5 @@ flutter:
   generate: true
   assets:
     - lib/l10n/
-    - assets/background-start.jpg
-    - assets/runtrack-app-icon-round.png
-    - assets/background-first.jpg
-    - assets/DefaultProfilePhoto.png
-    - assets/google-icon.png
+    - assets/images/
+    - assets/icons/

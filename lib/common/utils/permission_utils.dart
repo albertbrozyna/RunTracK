@@ -1,6 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
-class LocationService {
+class PermissionUtils {
   // Request permission and return current position
   static Future<Position?> determinePosition() async {
     bool serviceEnabled;
@@ -9,7 +9,7 @@ class LocationService {
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // TODO show better error here
+
       return Future.error('Location services are disabled.');
     }
 
@@ -31,4 +31,16 @@ class LocationService {
       desiredAccuracy: LocationAccuracy.high,
     );
   }
+
+  Future<bool> checkPermissions() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
+    return true;
+  }
+
 }

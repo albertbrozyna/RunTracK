@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/colors.dart';
+import '../../theme/colors.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -9,7 +9,7 @@ class StatCard extends StatelessWidget {
   final double valueFontSize;
   final double titleFontSize;
   final double innerPadding;
-  final double cardWidth;
+  final double? cardWidth;
   final double cardHeight;
 
   const StatCard({
@@ -17,16 +17,12 @@ class StatCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.icon,
-    double? valueFontSize,
-    double? titleFontSize,
-    double? innerPadding,
-    double? cardWidth,
-    double? cardHeight,
-  }) : valueFontSize = valueFontSize ?? 18.0,
-       titleFontSize = titleFontSize ?? 14.0,
-       innerPadding = innerPadding ?? 12.0,
-       cardWidth = cardWidth ?? 120,
-       cardHeight = cardHeight ?? 120;
+    this.valueFontSize = 18,
+    this.titleFontSize = 14,
+    this.innerPadding = 12,
+    this.cardWidth,
+    this.cardHeight = 120,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +30,7 @@ class StatCard extends StatelessWidget {
       width: cardWidth,
       height: cardHeight,
       padding: EdgeInsets.all(innerPadding),
-      decoration: BoxDecoration(color: AppColors.statCardBackground, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -45,11 +41,13 @@ class StatCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: titleFontSize, color: Colors.grey),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: titleFontSize, color: Colors.grey),
               ),
               SizedBox(height: 4),
               Text(
                 value,
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: valueFontSize, fontWeight: FontWeight.bold),
               ),
             ],

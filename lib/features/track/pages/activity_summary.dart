@@ -9,16 +9,17 @@ import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/add_photos.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
+import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/assets/app_images.dart';
 import 'package:run_track/features/track/pages/map.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import 'package:intl/intl.dart';
-import '../widgets/stat_card.dart';
+import '../../../common/widgets/stat_card.dart';
 import 'activity_choose.dart';
-import 'package:run_track/common/enums/visibility.dart' as vb;
+import 'package:run_track/common/enums/visibility.dart' as enums;
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 
@@ -34,7 +35,7 @@ class ActivitySummary extends StatefulWidget {
       editMode = editMode ?? false;
 
   @override
-  _ActivitySummaryState createState() => _ActivitySummaryState();
+  State<ActivitySummary> createState() => _ActivitySummaryState();
 }
 
 class _ActivitySummaryState extends State<ActivitySummary> {
@@ -44,10 +45,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   TextEditingController notesController = TextEditingController();
   TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
-  vb.Visibility _visibility = vb.Visibility.me;
+  enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   List<XFile> _pickedImages = [];
-  MapController _mapController = MapController();
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -57,7 +58,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     setState(() {
       activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
+      titleController.text =
+          widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
       descriptionController.text = widget.activityData.description ?? "";
       _visibility = widget.activityData.visibility;
     });
@@ -71,6 +73,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
+  /// Get text for save button
   String getSaveButtonText() {
     if (widget.editMode) {
       return "Save changes";
@@ -82,6 +85,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     return "Unknown";
   }
 
+  /// Get callback function for save button
   VoidCallback? getSaveButtonCallback() {
     if (activitySaved && !widget.editMode) {
       return null; // No action if activity saved after training
@@ -98,17 +102,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     String? visibilityS = await PreferencesService.loadString(PreferenceNames.lastVisibility);
 
     if (visibilityS != null && visibilityS.isNotEmpty) {
-      if (visibilityS == 'me') {
+      if (visibilityS == enums.ComVisibility.me.toString()) {
         setState(() {
-          _visibility = vb.Visibility.me;
+          _visibility = enums.ComVisibility.me;
         });
-      } else if (visibilityS == 'friends') {
+      } else if (visibilityS == enums.ComVisibility.friends.toString()) {
         setState(() {
-          _visibility = vb.Visibility.friends;
+          _visibility = enums.ComVisibility.friends;
         });
-      } else if (visibilityS == 'everyone') {
+      } else if (visibilityS == enums.ComVisibility.everyone.toString()) {
         setState(() {
-          _visibility = vb.Visibility.everyone;
+          _visibility = enums.ComVisibility.everyone;
         });
       }
     }
@@ -214,7 +218,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
-      AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
+      //AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
       saveLastVisibility();
       if (mounted) {
         AppUtils.showMessage(context, 'Activity saved successfully!');
@@ -327,7 +331,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
-                    AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
+                    //AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
 
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
@@ -378,23 +382,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         appBar: AppBar(
           title: Text(
             "Activity summary",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
           ),
-          centerTitle: true,
-          backgroundColor: AppColors.primary,
         ),
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/background-first.jpg"),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
+        body: PageContainer(
+          assetPath: AppImages.appBg5,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -489,7 +480,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             width: double.infinity,
                             textAlign: TextAlign.left,
                             // Selecting visibility
-                            onSelected: (vb.Visibility? visibility) {
+                            onSelected: (enums.ComVisibility? visibility) {
                               setState(() {
                                 if (visibility != null) {
                                   _visibility = visibility;
@@ -504,17 +495,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
                               alignment: Alignment.bottomLeft,
                             ),
-                            dropdownMenuEntries: <DropdownMenuEntry<vb.Visibility>>[
+                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
                               DropdownMenuEntry(
-                                value: vb.Visibility.me,
+                                value: enums.ComVisibility.me,
                                 label: "Only Me",
 
                                 // style: ButtonStyle(
                                 //   backgroundColor:
                                 // ),
                               ),
-                              DropdownMenuEntry(value: vb.Visibility.friends, label: "Friends"),
-                              DropdownMenuEntry(value: vb.Visibility.everyone, label: "Everyone"),
+                              DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
+                              DropdownMenuEntry(value: enums.ComVisibility.everyone, label: "Everyone"),
                             ],
                           ),
                         ),
@@ -581,13 +572,18 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             options: MapOptions(
                               initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
                               initialZoom: 15.0,
-                              onMapReady: () => AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController),
-                              interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                              onMapReady: () async {
+                                // Delay to load a tiles properly
+                                Future.delayed(const Duration(milliseconds: 100), () {
+                                  AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController);
+                                });
+                              },
+                              interactionOptions: InteractionOptions(flags:  InteractiveFlag.none),
                               onTap: (tapPosition, point) => {onTapMap(context)},
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.runtrack',
                               ),
                               PolylineLayer(
@@ -626,24 +622,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     },
                   ),
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  if (!widget.readonly)
+                  if (!widget.readonly || !activitySaved)
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: CustomButton(
-                        text: getSaveButtonText(),
-                        onPressed: getSaveButtonCallback(),
-                        gradientColors: [
-                          activitySaved ? Colors.grey : Color(0xFFFFB74D),
-                          activitySaved ? Colors.grey : Color(0xFFFF9800),
-                          activitySaved ? Colors.grey : Color(0xFFF57C00),
-                        ],
-                      ),
+                      child: CustomButton(text: getSaveButtonText(), onPressed: getSaveButtonCallback()),
                     ),
                 ],
               ),
             ),
-          ),
         ),
       ),
     );
