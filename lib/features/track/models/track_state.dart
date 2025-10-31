@@ -133,6 +133,7 @@ class TrackState extends ChangeNotifier {
 
     if(isRunning){  // If service is running, set communication
       _setupCommunication();
+      getCurrentState();
     }
 
     _gpsTimer?.cancel();  // Timer to fetch check a gps signal if service is off

@@ -90,42 +90,42 @@ class TrackingTaskHandler extends TaskHandler{
       print("no permissions");
     }
 
-    // TrackingTaskHandlerFile.loadFromFile()
-    //     .then((trackingHandler) {
-    //       if (trackingHandler != null && false &&  (trackingHandler.trackingState == TrackingState.running || trackingHandler.trackingState == TrackingState.paused)) {
-    //         trackingState = trackingHandler.trackingState;
-    //         trackedPath = List<LatLng>.from(trackingHandler.trackedPath);
-    //         totalDistance = trackingHandler.totalDistance;
-    //         startTime = trackingHandler.startTime;
-    //         elapsedTime = trackingHandler.elapsedTime;
-    //         latestPosition = trackingHandler.latestPosition;
-    //         elevationGain = trackingHandler.elevationGain;
-    //         calories = trackingHandler.calories;
-    //         avgSpeed = trackingHandler.avgSpeed;
-    //         currentSpeedValue = trackingHandler.currentSpeedValue;
-    //         steps = trackingHandler.steps;
-    //         pace = trackingHandler.pace;
-    //
-    //         sendAllDataToMain('S'); // S means synchroize
-    //       } else {
-    //         trackingState = TrackingState.running;
-    //         trackedPath.clear();
-    //         totalDistance = 0;
-    //         startTime = DateTime.now();
-    //         elapsedTime = Duration.zero;
-    //         latestPosition = null;
-    //         elevationGain = 0;
-    //         calories = 0;
-    //         avgSpeed = 0;
-    //         currentSpeedValue = 0;
-    //         pace = 0;
-    //         steps = 0;
-    //         sendAllDataToMain('S');
-    //       }
-    //     })
-    //     .catchError((error) {
-    //       print('Error loading tracking data: $error');
-    //     });
+    TrackingTaskHandlerFile.loadFromFile()
+        .then((trackingHandler) {
+          if (trackingHandler != null &&   (trackingHandler.trackingState == TrackingState.running || trackingHandler.trackingState == TrackingState.paused)) {
+            trackingState = trackingHandler.trackingState;
+            trackedPath = List<LatLng>.from(trackingHandler.trackedPath);
+            totalDistance = trackingHandler.totalDistance;
+            startTime = trackingHandler.startTime;
+            elapsedTime = trackingHandler.elapsedTime;
+            latestPosition = trackingHandler.latestPosition;
+            elevationGain = trackingHandler.elevationGain;
+            calories = trackingHandler.calories;
+            avgSpeed = trackingHandler.avgSpeed;
+            currentSpeedValue = trackingHandler.currentSpeedValue;
+            steps = trackingHandler.steps;
+            pace = trackingHandler.pace;
+
+            sendAllDataToMain('S'); // S means synchroize
+          } else {
+            trackingState = TrackingState.running;
+            trackedPath.clear();
+            totalDistance = 0;
+            startTime = DateTime.now();
+            elapsedTime = Duration.zero;
+            latestPosition = null;
+            elevationGain = 0;
+            calories = 0;
+            avgSpeed = 0;
+            currentSpeedValue = 0;
+            pace = 0;
+            steps = 0;
+            sendAllDataToMain('S');
+          }
+        })
+        .catchError((error) {
+          print('Error loading tracking data: $error');
+        });
 
     sendAllDataToMain('S');
     _elapsedTimer?.cancel();
@@ -199,6 +199,7 @@ class TrackingTaskHandler extends TaskHandler{
             latestLatLng,
           );
           totalDistance += distanceBetweenPositions;
+          print("Total distancr in meters $totalDistance");
 
 
           final double deltaAltitude = position.altitude - (latestPosition!.altitude);
