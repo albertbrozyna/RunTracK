@@ -1,3 +1,6 @@
+import 'dart:isolate';
+import 'dart:ui';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +34,8 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  TrackState.initForegroundTask();
+  await ForegroundTrackService.initializeService();
+
 
   AppData.trackState = TrackState();
 
@@ -88,8 +92,3 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-@pragma('vm:entry-point')
-void startCallback() {
-  FlutterForegroundTask.setTaskHandler(TrackingTaskHandler());
-}

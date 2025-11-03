@@ -18,6 +18,7 @@ import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
 import '../../../theme/colors.dart';
+import '../services/track_foreground_service.dart';
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -56,7 +57,7 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   void handleStopTracking() {
-    AppData.trackState.stopLocationService();
+    AppData.trackState.stopRun();
 
     Navigator.push(
       context,
@@ -89,11 +90,11 @@ class TrackScreenState extends State<TrackScreen> {
         return CustomButton(
           backgroundColor: AppColors.secondary,
           text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: AppData.trackState.startLocationService,
+          onPressed: ForegroundTrackService.startTracking,
         );
 
       case TrackingState.running:
-        return CustomButton(width: 50, text: "Stop", onPressed: AppData.trackState.pauseLocationService);
+        return CustomButton(width: 50, text: "Stop", onPressed: AppData.trackState.stopRun);
 
       case TrackingState.paused:
         return Column(
@@ -102,7 +103,8 @@ class TrackScreenState extends State<TrackScreen> {
               children: [
                 // Resume Button
                 Expanded(
-                  child: CustomButton(height: 50, text: "Resume", onPressed: AppData.trackState.resumeLocationService),
+                  child: CustomButton(height: 50, text: "Resume",         onPressed: ForegroundTrackService.stopTracking,
+                  ),
                 ),
                 const SizedBox(width: AppUiConstants.horizontalSpacingButtons),
 

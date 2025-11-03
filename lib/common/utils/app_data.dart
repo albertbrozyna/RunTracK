@@ -15,4 +15,7 @@ class AppData{
   List<String>activities = [];
   static late  TrackState trackState;
 
+
+
+
 }
