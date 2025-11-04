@@ -35,7 +35,9 @@ class TrackState extends ChangeNotifier {
   Icon gpsIcon = Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
   MapController? mapController;
   TrackingState trackingState = TrackingState.stopped;
-  //
+
+  final double averageStepLength = 0.78; // Avg steps length
+
   List<LatLng> trackedPath = [];
   // final Distance distanceCalculator = Distance();
   Position? latestPosition;
@@ -297,86 +299,16 @@ class TrackState extends ChangeNotifier {
     return "$paceMin:${paceSec.toString().padLeft(2, '0')} min/km";
   }
 
-  // /// Start foreground location service
-  // Future<void> startLocationService() async {
-  //   bool isRunning = await FlutterForegroundTask.isRunningService;
-  //   clearAllFields();
-  //   notifyListeners();
-  //   if (!isRunning) {
-  //     await FlutterForegroundTask.startService(
-  //       notificationTitle: 'Activity tracking',
-  //       notificationText: 'RunTracK tracks your activity!',
-  //       callback: startCallback,
-  //     );
-  //   }
-  //   trackingState = TrackingState.running;
-  //   _setupCommunication();
-  // }
 
-  // /// Pause the foreground service
-  //  Future<void> pauseLocationService() async {
-  //   bool isRunning = await FlutterForegroundTask.isRunningService;
-  //   trackingState = TrackingState.paused;
-  //   notifyListeners();
-  //   if (isRunning) {
-  //     FlutterForegroundTask.sendDataToTask({
-  //       'action': 'pause'
-  //     });
-  //
-  //     await FlutterForegroundTask.updateService(
-  //       notificationTitle: 'Tracking paused',
-  //       notificationText: 'Location tracking is temporarily paused',
-  //     );
-  //   }
-  // }
 
-  // /// Stop the foreground service
-  // Future<void> stopLocationService() async {
-  //   trackingState = TrackingState.stopped;
-  //   notifyListeners();
-  //   bool isRunning = await FlutterForegroundTask.isRunningService;
-  //   if (isRunning) {
-  //     timerStartAdd = false;
-  //     FlutterForegroundTask.sendDataToTask({
-  //       'action':'stop'
-  //     });
-  //   }
-  // }
 
-  // /// Resume location service
-  // Future<void> resumeLocationService() async {
-  //   trackingState = TrackingState.running;
-  //   notifyListeners();
-  //   bool isRunning = await FlutterForegroundTask.isRunningService;
-  //   if (isRunning) {
-  //     FlutterForegroundTask.sendDataToTask({
-  //       'action':'resume'
-  //     });
-  //   }
-  // }
 
-  // /// Check if service is active on start and if it is, request data from it
-  // Future<void> getCurrentState()async {
-  //   bool isRunning = await FlutterForegroundTask.isRunningService;
-  //   if (isRunning) {
-  //     clearAllFields();
-  //     FlutterForegroundTask.sendDataToTask({
-  //       'action':'sendAllData'
-  //     });
-  //   }
-  // }
 
-  // Future<void> startLocationService() async {
-  //   await AppData.runTracker.init();
-  //   await AppData.runTracker.startTracking();
-  //   trackingState = TrackingState.running;
-  //   notifyListeners();
-  // }
-  //
-  // Future<void> stopLocationService() async {
-  //   await AppData.runTracker.stopTracking();
-  //   trackingState = TrackingState.stopped;
-  //   notifyListeners();
-  // }
+
+
+
+
+
+
 
 }

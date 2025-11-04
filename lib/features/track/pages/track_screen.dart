@@ -90,7 +90,9 @@ class TrackScreenState extends State<TrackScreen> {
         return CustomButton(
           backgroundColor: AppColors.secondary,
           text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: ForegroundTrackService.startTracking,
+          onPressed: () async {
+            await ForegroundTrackService.instance.startTracking();
+          },
         );
 
       case TrackingState.running:
@@ -103,7 +105,9 @@ class TrackScreenState extends State<TrackScreen> {
               children: [
                 // Resume Button
                 Expanded(
-                  child: CustomButton(height: 50, text: "Resume",         onPressed: ForegroundTrackService.stopTracking,
+                  child: CustomButton(height: 50, text: "Resume",          onPressed: () {
+                    ForegroundTrackService.instance.stopTracking();
+                  },
                   ),
                 ),
                 const SizedBox(width: AppUiConstants.horizontalSpacingButtons),

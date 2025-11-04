@@ -34,7 +34,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  await ForegroundTrackService.initializeService();
+  await ForegroundTrackService.instance.init();
 
 
   AppData.trackState = TrackState();
