@@ -28,7 +28,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late List<Widget> _pages;
   int _selectedIndex = 0;
-  TrackState? trackState;
   final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
   List<LatLng> track = [];
   LatLng? currentPosition;
@@ -53,8 +52,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     isTrackingNotifier.dispose();
-    FlutterForegroundTask.removeTaskDataCallback((data) {});
-
     super.dispose();
   }
 
@@ -76,8 +73,6 @@ class _HomePageState extends State<HomePage> {
   void initialize() {
     _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
   }
-
-
 
 
   Future<void> initializeAsync() async {

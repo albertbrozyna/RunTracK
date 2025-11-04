@@ -18,6 +18,7 @@ import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/widgets/stat_card.dart';
+import '../models/track_state.dart';
 import 'activity_choose.dart';
 import 'package:run_track/common/enums/visibility.dart' as enums;
 import 'package:run_track/services/preferences_service.dart';
@@ -218,10 +219,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
-      //AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
+      TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
+
+       // Delete a file from local store if it is saved
       saveLastVisibility();
       if (mounted) {
-        AppUtils.showMessage(context, 'Activity saved successfully!');
+        AppUtils.showMessage(context, 'Activity saved successfully!',messageType: MessageType.success);
       }
 
       /// Save last visibility to local prefs
@@ -289,6 +292,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
+                    TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
                     Navigator.of(context).pop(); // Two times to close dialog and screen
                     Navigator.of(context).pop();
                   },

@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/permission_utils.dart';
@@ -36,9 +35,6 @@ void main() async {
 
   await ForegroundTrackService.instance.init();
 
-
-  AppData.trackState = TrackState();
-
   runApp(const MyApp());
 }
 
@@ -65,28 +61,6 @@ class MyApp extends StatelessWidget {
         Locale('pl'), // Polish (example)
       ],
       home: FirebaseAuth.instance.currentUser != null ? HomePage() : StartPage(),
-      // home: StreamBuilder(stream: FirebaseAuth.instance.authStateChanges(), builder: (context,snapshot) {
-      //   if(AppData.blockedLoginState = false){
-      //
-      //   }
-      //   // If we wait we showing a progress indicator
-      //   if(snapshot.connectionState == ConnectionState.waiting){
-      //       return const Center(
-      //         child: CircularProgressIndicator(),
-      //       );
-      //   }
-      //
-      //   if(AppData.blockedLoginState){   // Show a windows to get
-      //     return AdditionalInfo();
-      //   }
-      //
-      //   // If we are logged in
-      //   if(snapshot.data != null){  // Data is user?
-      //       return HomePage();
-      //   }
-      //
-      //   return StartPage();
-      // }),
       debugShowCheckedModeBanner: false,
     );
   }

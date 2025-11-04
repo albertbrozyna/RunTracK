@@ -4,8 +4,28 @@ import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 
 class Storage {
-  final pathStats = 'stats';
-  final pathLocations = 'locations';
+  static final pathStats = 'stats.json';
+  static final pathLocations = 'locations.json';
+
+  /// Clear storage
+  static Future<void>clearStorage(){
+    return Future.wait([
+      _deleteFile(pathStats),
+      _deleteFile(pathLocations),
+    ]);
+  }
+
+  static Future<void> _deleteFile(String filename) async {
+    try {
+      final path = await _getPath(filename);
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+
+    }
+  }
 
   /// Get path
   static Future<String> _getPath(String filename) async {
@@ -21,7 +41,7 @@ class Storage {
 
   /// Save locations to file
   static Future<void> saveLocations(List<LatLng> locations) async {
-    final path = await _getPath('locations.json');
+    final path = await _getPath(Storage.pathLocations);
     final file = File(path);
 
     final data = locations.map((loc) => {
@@ -35,7 +55,7 @@ class Storage {
   /// Load locations from file
   static Future<List<LatLng>> loadLocations() async {
     try {
-      final path = await _getPath('locations.json');
+      final path = await _getPath(Storage.pathLocations);
       final file = File(path);
       if (!await file.exists()) {
         return [];
@@ -54,7 +74,7 @@ class Storage {
 
   /// Save stats
   static Future<void> saveStats(Map<String, dynamic> stats) async {
-    final path = await _getPath('stats.json');
+    final path = await _getPath(Storage.pathStats);
     final file = File(path);
     await file.writeAsString(jsonEncode(stats));
   }
@@ -62,7 +82,7 @@ class Storage {
   /// Load stats
   static Future<Map<String, dynamic>> loadStats() async {
     try {
-      final path = await _getPath('stats.json');
+      final path = await _getPath(pathStats);
       final file = File(path);
       if (!await file.exists()) return {};
       final content = await file.readAsString();
