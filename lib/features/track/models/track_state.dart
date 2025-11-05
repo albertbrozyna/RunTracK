@@ -28,7 +28,7 @@ class TrackState extends ChangeNotifier {
   Duration elapsedTime = Duration.zero;
   double? elevationGain;
   double? elevationLoss;
-
+  bool endSync = false;
   double? calories;
   double? avgSpeed;
   double? currentSpeedValue;
@@ -66,11 +66,16 @@ class TrackState extends ChangeNotifier {
     trackingState = TrackingState.paused;
     notifyListeners();
   }
+  Completer<void>? _stopCompleter;
 
   Future<void> stopRun() async {
+    endSync = false;
+    _stopCompleter = Completer<void>();
+
     ForegroundTrackService.instance.stopTracking();
     trackingState = TrackingState.stopped;
     notifyListeners();
+    await _stopCompleter!.future;
   }
 
   void resumeRun() async {
@@ -127,21 +132,31 @@ class TrackState extends ChangeNotifier {
 
     // Sync data
     service.on(ServiceEvent.sync.name).listen((event) {
+      print("nowy event jest");
       if (event != null) {
+        print("nowy sync jest");
         final update = LocationUpdate.fromJson(event);
 
         trackingState = update.trackingState ?? TrackingState.stopped;
         totalDistance = update.totalDistance;
         elevationGain = update.elevationGain;
         calories = update.calories;
+        elapsedTime = update.elapsedTime ?? Duration.zero;
         avgSpeed = update.avgSpeed;
         pace = update.pace;
         steps = update.steps;
         trackedPath = update.trackedPath ?? [];
         currentPosition = update.trackedPath?.last;
         _lastUpdateFromTask = DateTime.now();
-        notifyListeners();
-      }
+        if(update.type == 'e') {
+          endSync = true;
+          // Finish completer
+          if (_stopCompleter != null && !_stopCompleter!.isCompleted) {
+            _stopCompleter!.complete();
+          }
+        }
+          notifyListeners();
+        }
     });
   }
 
@@ -152,8 +167,6 @@ class TrackState extends ChangeNotifier {
     _secondTimer = null;
   }
 
-
-
   void initialize() async {
     _secondTimer?.cancel(); // Timer to fetch check a gps signal if service is off
     _secondTimer = Timer.periodic(Duration(seconds: 1), (_) {
@@ -162,12 +175,10 @@ class TrackState extends ChangeNotifier {
       }
       print("timerMain ${elapsedTime.inSeconds}");
       notifyListeners();
-      fetchCounter++;
       final now = DateTime.now();
-      if (now.difference(_lastUpdateFromTask) > Duration(seconds: 6) && fetchCounter > 6) {
+      if (now.difference(_lastUpdateFromTask) > Duration(seconds: 6) ) {
         // If there is no signal from background service
         _fetchLocation(); // Get gps location
-        fetchCounter = 0;
       }
     });
     ForegroundTrackService.instance.getState(); // Get state
@@ -233,7 +244,6 @@ class TrackState extends ChangeNotifier {
     currentPosition = null;
     trackingState = TrackingState.stopped;
     positionAccuracy = 0;
-    fetchCounter = 0;
     _isFetchingLocation = false;
     _lastUpdateFromTask = DateTime.now();
 

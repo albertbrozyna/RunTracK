@@ -56,8 +56,6 @@ class _ProfilePageState extends State<ProfilePage> {
     initializeAsync();
   }
 
-
-
   void initialize() {
     UserService.checkAppUseState(context);
 

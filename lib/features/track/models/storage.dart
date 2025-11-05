@@ -23,7 +23,7 @@ class Storage {
         await file.delete();
       }
     } catch (e) {
-
+      print("errror deleting a file");
     }
   }
 

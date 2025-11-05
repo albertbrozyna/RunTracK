@@ -75,31 +75,35 @@ class TrackScreenState extends State<TrackScreen> {
     TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
 
-  void handleStopTracking() {
-    ForegroundTrackService.instance.stopTracking();
+  void handleStopTracking() async {
+    await TrackState.trackStateInstance.stopRun();
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ActivitySummary(
-          readonly: false,
-          activityData: Activity(
-            uid: AppData.currentUser!.uid,
-            activityType: activityController.text.trim(),
-            avgSpeed: TrackState.trackStateInstance.avgSpeed,
-            calories: TrackState.trackStateInstance.calories,
-            steps: TrackState.trackStateInstance.steps,
-            elevationGain: TrackState.trackStateInstance.elevationGain,
-            trackedPath: TrackState.trackStateInstance.trackedPath,
-            elapsedTime: TrackState.trackStateInstance.elapsedTime.inSeconds.toInt(),
-            totalDistance: TrackState.trackStateInstance.totalDistance / 1000,
-            pace: TrackState.trackStateInstance.pace,
-            startTime: TrackState.trackStateInstance.startTime,
-            createdAt: DateTime.now(),
+    // Wait for last sync
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ActivitySummary(
+            readonly: false,
+            activityData: Activity(
+              uid: AppData.currentUser!.uid,
+              activityType: activityController.text.trim(),
+              avgSpeed: TrackState.trackStateInstance.avgSpeed,
+              calories: TrackState.trackStateInstance.calories,
+              steps: TrackState.trackStateInstance.steps,
+              elevationGain: TrackState.trackStateInstance.elevationGain,
+              trackedPath: TrackState.trackStateInstance.trackedPath,
+              elapsedTime: TrackState.trackStateInstance.elapsedTime.inSeconds.toInt(),
+              totalDistance: TrackState.trackStateInstance.totalDistance,
+              pace: TrackState.trackStateInstance.pace,
+              startTime: TrackState.trackStateInstance.startTime,
+              createdAt: DateTime.now(),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   // Controls with pace time and start/stop buttons

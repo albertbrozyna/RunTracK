@@ -41,11 +41,6 @@
             android:foregroundServiceType="location"
             />
 
-<!--        <service-->
-<!--            android:name="rekindle.background_locator.BackgroundLocatorService"-->
-<!--            android:exported="false"-->
-<!--            android:foregroundServiceType="location"/>-->
-
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
