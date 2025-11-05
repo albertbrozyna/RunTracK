@@ -149,7 +149,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       steps: widget.activityData.steps,
     );
 
-    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+    if (passedActivity.isEqual(userActivity)) {
       if (mounted) {
         AppUtils.showMessage(context, 'No changes to save!');
       }
@@ -254,7 +254,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     );
 
     // If there is no changes, just pop
-    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+    if (passedActivity.isEqual(userActivity)) {
       Navigator.of(context).pop();
       return;
     }
