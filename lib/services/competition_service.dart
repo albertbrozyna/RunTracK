@@ -11,12 +11,19 @@ import '../common/enums/visibility.dart';
 import '../common/utils/app_data.dart';
 import '../common/utils/utils.dart';
 
+
+class CompetitionFetchResult {
+  final List<Competition> competitions;
+  final DocumentSnapshot? lastDocument;
+
+  CompetitionFetchResult({
+    required this.competitions,
+    this.lastDocument,
+  });
+}
+
 class CompetitionService {
-  static DocumentSnapshot? lastFetchedDocumentMyCompetitions;
-  static DocumentSnapshot? lastFetchedDocumentFriendsCompetitions;
-  static DocumentSnapshot? lastFetchedDocumentAllCompetitions;
-  static DocumentSnapshot? lastFetchedDocumentMyInvitedCompetitions;
-  static DocumentSnapshot? lastFetchedDocumentMyParticipatingCompetitions;
+
 
   /// Pare competition goal from string to enum
   static CompetitionGoal? parseCompetitionGoal(String goal) {
@@ -39,61 +46,7 @@ class CompetitionService {
     return null;
   }
 
-  // TODO HANDLE RESULTS AND PHOTOS
-  static Competition fromMap(Map<String, dynamic> map) {
-    return Competition(
-      competitionId: map['competitionId'],
-      organizerUid: map['organizerUid'] ?? '',
-      name: map['name'] ?? '',
-      competitionGoalType: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
-      goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0,
-      // To num and then to double to avoid null
-      visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
-      description: map['description'],
-      startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
-      endDate: map['endDate'] != null ? (map['endDate'] as Timestamp).toDate() : null,
-      registrationDeadline: map['registrationDeadline'] != null ? (map['registrationDeadline'] as Timestamp).toDate() : null,
-      maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
-      maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
-      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
-      participantsUid: map['participantsUid'] != null ? Set<String>.from(map['participantsUid']) : {},
-      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? Set<String>.from(map['invitedParticipantsUid']) : {},
-      activityType: map['activityType'],
-      // TODO
-      //results: map['results'] != null
-      // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
-      //: {},
-      locationName: map['locationName'],
-      location: (map['latitude'] != null && map['longitude'] != null)
-          ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
-          : null,
-    );
-  }
 
-  /// Covert competition to firestore
-  static Map<String, dynamic> toMap(Competition competition) {
-    return {
-      'competitionId': competition.competitionId,
-      'organizerUid': competition.organizerUid,
-      'name': competition.name,
-      'competitionGoal': competition.competitionGoalType.toString(),
-      'description': competition.description,
-      'visibility': competition.visibility.toString(),
-      'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
-      'endDate': competition.endDate != null ? Timestamp.fromDate(competition.endDate!) : null,
-      'registrationDeadline': competition.registrationDeadline != null ? Timestamp.fromDate(competition.registrationDeadline!) : null,
-      'maxTimeToCompleteActivityHours': competition.maxTimeToCompleteActivityHours,
-      'maxTimeToCompleteActivityMinutes': competition.maxTimeToCompleteActivityMinutes,
-      'createdAt': Timestamp.fromDate(DateTime.now()),
-      'participantsUids': competition.participantsUid,
-      'invitedParticipantsUids': competition.invitedParticipantsUid,
-      'activityType': competition.activityType,
-      'results': competition.results ?? {},
-      'locationName': competition.locationName,
-      'latitude': competition.location?.latitude,
-      'longitude': competition.location?.longitude,
-    };
-  }
 
   static Future<bool> saveCompetition(Competition competition) async {
     try {

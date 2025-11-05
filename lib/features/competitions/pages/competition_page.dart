@@ -265,7 +265,6 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
       floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 70),
       floatingActionButton: Visibility(
         visible: [0, 1, 2].contains(_tabController.index), // Show add button only for my friends and all

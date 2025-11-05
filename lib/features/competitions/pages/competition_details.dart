@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/common/utils/app_data.dart';
+import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/features/competitions/pages/meeting_place.dart';
 import 'package:run_track/common/pages/users_list.dart';
@@ -245,16 +246,30 @@ class _AddCompetition extends State<CompetitionDetails> {
       return;
     }
 
+    AppAlertDialog(
+      titleText: "Warning",
+      contentText: "You have unsaved changes\n\n"
+          "If you leave now, your changes will be lost.\n\n"
+          "Are you sure you want to leave?",,
+      textLeft: "Cancel",
+      textRight: "Yes",
+      onPressedLeft: () {
+      Navigator.of(context).pop();
+    },
+      onPressedRight: () {
+      Navigator.of(context).pop(); // Two times to close dialog and screen
+      Navigator.of(context).pop();
+    },
+    )
+
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Warning", textAlign: TextAlign.center),
+          title: const Text(, textAlign: TextAlign.center),
           content: const Text(
-            "You have unsaved changes\n\n"
-            "If you leave now, your changes will be lost.\n\n"
-            "Are you sure you want to leave?",
+
             textAlign: TextAlign.center,
           ),
           alignment: Alignment.center,
@@ -263,19 +278,14 @@ class _AddCompetition extends State<CompetitionDetails> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Cancel"),
+                  onPressed:
+                  child: const Text(),
                 ),
                 SizedBox(width: AppUiConstants.horizontalSpacingButtons),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Two times to close dialog and screen
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Yes"),
+                  onPressed:
+                  child: const Text(),
                 ),
               ],
             ),
