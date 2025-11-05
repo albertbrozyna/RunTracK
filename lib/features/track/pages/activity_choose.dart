@@ -1,15 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/assets/app_images.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/theme/colors.dart';
-import 'package:run_track/theme/text_styles.dart';
 
 import '../../../common/utils/utils.dart';
+import '../../../theme/ui_constants.dart';
 
 class ActivityChoose extends StatefulWidget {
   final String currentActivity;
@@ -18,99 +17,53 @@ class ActivityChoose extends StatefulWidget {
 
   @override
   State<ActivityChoose> createState() => ActivityChooseState();
-
 }
 
 class ActivityChooseState extends State<ActivityChoose> {
   final TextEditingController _newActivityController = TextEditingController();
-  int _selectedActivity = 0;
+  late ValueNotifier<int> _selectedActivityNotifier;
   bool addingEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    fetchUserActivities();
-    setCurrentlySelectedActivity();
+    initialize();
   }
 
-  void setCurrentlySelectedActivity() {
-    if (AppData.currentUser == null || AppData.currentUser?.activityNames == null) {
-      return;
-    }
+  @override
+  void dispose() {
+    _newActivityController.dispose();
+    _selectedActivityNotifier.dispose();
+    super.dispose();
+  }
 
-    String current = widget.currentActivity; // the string you want to find
+  void initialize() {
+    UserService.checkAppUseState(context);
+
+    String current = widget.currentActivity;
     int index = AppData.currentUser!.activityNames!.indexOf(current);
 
-    if (index != -1) {
-      setState(() {
-        _selectedActivity = index; // set your selected index
-      });
-    } else {
-      // string not found
-      _selectedActivity = 0;
-    }
+    _selectedActivityNotifier = ValueNotifier<int>(index != -1 ? index : 0);
   }
 
   void onActivityTap(int index) {
-    setState(() {
-      _selectedActivity = index;
-      addingEnabled = false;
-    });
-  }
+    _selectedActivityNotifier.value = index;
 
-  // Todo export function to fetch user activities
-  Future<void> fetchUserActivities() async {
-    // If list is read, do not fetch it
-    if (AppData.currentUser != null && AppData.currentUser?.activityNames != null) {
-      return;
-    }
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        // User need to log again
-        FirebaseAuth.instance.signOut();
-        // Push to start page
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => StartPage()), (route) => false);
-        return; // No logged-in user
-      }
-
-      // TODO add with no internet and saving it to local prefs
-
-      final uid = user.uid;
-
-      // Fetch user document
-      final docSnapshot = await FirebaseFirestore.instance.collection("users").doc(uid).get();
-
-      if (docSnapshot.exists) {
-        final data = docSnapshot.data();
-        if (data != null && data.containsKey("activityNames")) {
-          if (AppData.currentUser != null && AppData.currentUser!.activityNames != null) {
-            setState(() {
-              AppData.currentUser?.activityNames = List<String>.from(data["activityNames"]);
-            });
-          }
-        }
-      }
-    } catch (e) {
-      print("Error fetching activity: $e");
+    if (addingEnabled) {
+      setState(() {
+        addingEnabled = false;
+      });
     }
   }
 
   // Adding new activity
   void addNewActivity() {
-    if (AppData.currentUser == null || AppData.currentUser?.activityNames == null) {
-      return;
-    }
-
-    // Check if this text controller is not empty
     if (_newActivityController.text.trim().isEmpty) {
-      // TODO Make this messenger look better
-      AppUtils.showMessage(context, "Activity name cannot be empty");
+      AppUtils.showMessage(context, "Activity name cannot be empty", messageType: MessageType.info);
       return;
     }
-
     if (AppData.currentUser?.activityNames?.contains(_newActivityController.text.trim()) ?? false) {
-      AppUtils.showMessage(context, "Activity is already on the list");
+      AppUtils.showMessage(context, "Activity is already on the list", messageType: MessageType.info);
       return;
     }
 
@@ -119,9 +72,9 @@ class ActivityChooseState extends State<ActivityChoose> {
       _newActivityController.text = "";
     });
 
-    AppUtils.showMessage(context, "Activity added to list");
+    AppUtils.showMessage(context, "Activity added to list", messageType: MessageType.success);
     addingEnabled = false;
-    UserService.updateUser(AppData.currentUser!); // Save activity data to firestore
+    UserService.updateUser(AppData.currentUser!);
   }
 
   /// Delete activity from list
@@ -129,15 +82,14 @@ class ActivityChooseState extends State<ActivityChoose> {
     setState(() {
       AppData.currentUser?.activityNames?.removeAt(index);
     });
+    UserService.updateUser(AppData.currentUser!);
   }
 
   @override
   Widget build(BuildContext context) {
-    // When activities are not loaded
     if (AppData.currentUser?.activityNames == null) {
       return Scaffold(
-        appBar: AppBar(title: Text("Choose your activity type:", style: AppTextStyles.PageHeaderTextStyle.copyWith()), centerTitle: true),
-        backgroundColor: AppColors.pageHeaderColor,
+        appBar: AppBar(title: Text("Choose your activity type:")),
         body: Center(child: CircularProgressIndicator()), // Loading state
       );
     }
@@ -147,18 +99,14 @@ class ActivityChooseState extends State<ActivityChoose> {
       onPopInvokedWithResult: (bool didPop, String? result) async {
         if (!didPop) {
           if (AppData.currentUser?.activityNames?.isNotEmpty ?? false) {
-            Navigator.pop(context, AppData.currentUser!.activityNames![_selectedActivity]);
+            Navigator.pop(context, AppData.currentUser!.activityNames![_selectedActivityNotifier.value]);
           } else {
             Navigator.pop(context, "Unknown");
           }
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("Choose your activity type:", style: AppTextStyles.PageHeaderTextStyle.copyWith()),
-          centerTitle: true,
-          backgroundColor: AppColors.pageHeaderColor,
-        ),
+        appBar: AppBar(title: Text("Choose your activity type:")),
         floatingActionButtonLocation: CustomFabLocation(xOffset: 30, yOffset: 60),
         floatingActionButton: !addingEnabled
             ? FloatingActionButton(
@@ -168,7 +116,7 @@ class ActivityChooseState extends State<ActivityChoose> {
                     addingEnabled = !addingEnabled;
                   }),
                 },
-                child: Icon(Icons.add_rounded, color: Colors.white, size: 30, weight: 2000),
+                child: Icon(Icons.add_rounded, color: Colors.white, size: 30),
               )
             : null,
         body: GestureDetector(
@@ -180,81 +128,59 @@ class ActivityChooseState extends State<ActivityChoose> {
               addingEnabled = false; // optionally disable adding
             });
           },
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/appBg6.jpg"),
-                fit: BoxFit.cover,
-                // Darkening
-                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: AppData.currentUser?.activityNames?.length,
-                      itemBuilder: (context, index) {
-                        bool isSelected =
-                            AppData.currentUser!.activityNames![index] == AppData.currentUser!.activityNames![_selectedActivity];
-                        return ListTile(
-                          title: Text(
-                            AppData.currentUser!.activityNames![index].toString(),
-                            style: TextStyle(
-                              color: isSelected ? Colors.green : Colors.white,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              letterSpacing: isSelected ? 1.5 : 1,
+          child: PageContainer(
+            assetPath: AppImages.appBg5,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ValueListenableBuilder(
+                    valueListenable: _selectedActivityNotifier,
+                    builder: (context, selectedActivity, child) {
+                      return ListView.builder(
+                        itemCount: AppData.currentUser?.activityNames?.length,
+                        itemBuilder: (context, index) {
+                          bool isSelected = index == selectedActivity;
+                          return ListTile(
+                            title: Text(
+                              AppData.currentUser!.activityNames![index].toString(),
+                              style: TextStyle(
+                                color: isSelected ? Colors.green : Colors.white,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                letterSpacing: isSelected ? 1.5 : 1,
+                              ),
                             ),
-                          ),
-                          onTap: isSelected ? () => () : () => onActivityTap(index),
-                          selected: AppData.currentUser!.activityNames![index] == widget.currentActivity,
-                          trailing: IconButton(
-                            onPressed: isSelected ? () => () : () => deleteActivity(index),
-                            icon: isSelected ? Icon(Icons.check, color: Colors.green) : Icon(Icons.delete, color: Colors.white),
-                          ),
-                        );
-                      },
+                            onTap: isSelected ? () => () : () => onActivityTap(index),
+                            selected: index == selectedActivity,
+                            trailing: IconButton(
+                              onPressed: isSelected ? () => () : () => deleteActivity(index),
+                              icon: isSelected ? Icon(Icons.check, color: Colors.green) : Icon(Icons.delete, color: Colors.white),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                if (addingEnabled) ...[
+                  Padding(
+                    padding: EdgeInsets.only(top: 15),
+                    child: TextFormField(
+                      controller: _newActivityController,
+                      keyboardType: TextInputType.text,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: "Your new activity name",
+                        labelStyle: TextStyle(color: Colors.white),
+                      ),
+                      maxLines: 1,
                     ),
                   ),
-                  if (addingEnabled)
-                    Padding(
-                      padding: EdgeInsets.only(top: 15),
-                      child: TextField(
-                        controller: _newActivityController,
-                        keyboardType: TextInputType.text,
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w200, letterSpacing: 1),
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: "Your new activity name",
-                          fillColor: Colors.black.withValues(alpha: 0.4),
-                          filled: true,
-                          labelStyle: TextStyle(color: Colors.white),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white24, width: 1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white, width: 2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        maxLines: 1,
-                      ),
-                    ),
-                  if (addingEnabled)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8, bottom: 10),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: CustomButton(text: "Add new activity", onPressed: addNewActivity, backgroundColor: AppColors.primary),
-                      ),
-                    ),
+
+                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                  CustomButton(text: "Add new activity", onPressed: addNewActivity, backgroundColor: AppColors.primary),
                 ],
-              ),
+              ],
             ),
           ),
         ),

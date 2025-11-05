@@ -42,10 +42,10 @@ class ActivitySummary extends StatefulWidget {
 
 class _ActivitySummaryState extends State<ActivitySummary> {
   bool activitySaved = false; // This var tells us if activity is saved
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController notesController = TextEditingController();
-  TextEditingController activityController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
+  final TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
@@ -397,17 +397,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         readOnly: true,
                         decoration: InputDecoration(
                           labelText: "Activity type",
-                          suffixIcon: Padding(
-                            padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
-                            child: IconButton(
+                          suffixIcon: IconButton(
                               onPressed: widget.readonly ? null : () => onTapActivity(),
                               icon: Icon(Icons.list, color: Colors.white),
-                            ),
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 15),
+                    SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
                     // Visibility
                     Expanded(
                       child: Theme(
@@ -417,14 +414,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           initialSelection: _visibility,
                           label: Text("Visibility", style: TextStyle(color: Colors.white)),
                           textStyle: TextStyle(color: Colors.white),
-                          inputDecorationTheme: InputDecorationTheme(
-                            filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white24, width: 1),
-                            ),
-                          ),
                           width: double.infinity,
                           textAlign: TextAlign.left,
                           // Selecting visibility
@@ -438,11 +427,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           // Icon
                           trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
                           selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-
-                          menuStyle: MenuStyle(
-                            backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
-                            alignment: Alignment.bottomLeft,
-                          ),
                           dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
                             DropdownMenuEntry(
                               value: enums.ComVisibility.me,

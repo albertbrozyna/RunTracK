@@ -171,7 +171,6 @@ void onStart(ServiceInstance serviceInstance) async {
 
       latestPosition = position;
 
-
       if (trackingState == TrackingState.running) {
         final update = LocationUpdate(
           type: 'u',

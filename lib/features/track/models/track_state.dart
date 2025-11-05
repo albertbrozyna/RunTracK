@@ -146,7 +146,9 @@ class TrackState extends ChangeNotifier {
         pace = update.pace;
         steps = update.steps;
         trackedPath = update.trackedPath ?? [];
-        currentPosition = update.trackedPath?.last;
+        if(update.trackedPath != null && update.trackedPath!.isNotEmpty){
+          currentPosition = update.trackedPath?.last;
+        }
         _lastUpdateFromTask = DateTime.now();
         if(update.type == 'e') {
           endSync = true;

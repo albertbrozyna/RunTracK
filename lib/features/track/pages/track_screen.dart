@@ -18,7 +18,6 @@ import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
 import '../../../theme/colors.dart';
-import '../services/track_foreground_service.dart';
 
 //import 'package:flutter_map_animations/flutter_map_animations.dart';
 
@@ -226,9 +225,7 @@ class TrackScreenState extends State<TrackScreen> {
                           readOnly: true,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.zero),
-                            filled: true,
-                            fillColor: Color(0xFFFFF3E0),
-                            suffixIcon: IconButton(onPressed: () => onTapActivity(), icon: Icon(Icons.settings, size: 26)),
+                            suffixIcon: IconButton(onPressed: () => onTapActivity(), icon: Icon(Icons.edit, size: 26,color: AppColors.gray,)),
                           ),
                         ),
                       ),
