@@ -121,7 +121,7 @@ class AppUtils {
     return s1.containsAll(s2);
   }
 
-  static bool mapsEqual(Map<String, double>? map1, Map<String, double>? map2) {
+  static bool mapsEqual<A, B>(Map<A, B>? map1, Map<A, B>? map2) {
     if (map1 == null && map2 == null) {
       return true;
     }
@@ -131,10 +131,12 @@ class AppUtils {
     if (map1.length != map2.length) {
       return false;
     }
+
     for (final key in map1.keys) {
       if (!map2.containsKey(key)) {
         return false;
       }
+
       if (map1[key] != map2[key]) {
         return false;
       }

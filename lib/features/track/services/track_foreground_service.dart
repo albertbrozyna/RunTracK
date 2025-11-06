@@ -134,8 +134,7 @@ void onStart(ServiceInstance serviceInstance) async {
 
         currentSpeedValue = position.speed * 3.6;
 
-        // TODO CAN BE || position.accuracy > 30
-        if (currentSpeedValue > maxHumanSpeed ) {
+        if (currentSpeedValue > maxHumanSpeed || position.accuracy > 30) {
           print('MYLOG jump');
           // Gps jump
         } else {

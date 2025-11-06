@@ -254,8 +254,9 @@ class CompetitionService {
       }
       final querySnapshot = await queryCompetitions.get();
 
+      DocumentSnapshot? newLastDocument;
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentMyInvitedCompetitions = querySnapshot.docs.last;
+        newLastDocument = querySnapshot.docs.last;
       }
       final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
       return competitions;
@@ -282,9 +283,9 @@ class CompetitionService {
         queryCompetitions = queryCompetitions.startAfterDocument(lastDocument);
       }
       final querySnapshot = await queryCompetitions.get();
-
+      DocumentSnapshot? newLastDocument;
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentMyParticipatingCompetitions = querySnapshot.docs.last;
+        newLastDocument = querySnapshot.docs.last;
       }
       final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
       return competitions;

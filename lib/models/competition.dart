@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../common/utils/utils.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import '../common/enums/visibility.dart' as enums;
-import '../common/enums/visibility.dart';
 
 class CompetitionResult {
   final int distance;
@@ -12,27 +12,27 @@ class CompetitionResult {
 }
 
 class Competition {
-  String competitionId; // Competition id
-  String organizerUid; // Event organizer user
-  String name; // Name of competition
-  String? description; // Description of competition
-  DateTime? startDate; // Start of the event
-  DateTime? endDate; // End of the event
-  DateTime? registrationDeadline; // Deadline to register for the event
-  int? maxTimeToCompleteActivityHours; // Max time to complete activity
-  int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
+  final String competitionId; // Competition id
+  final String organizerUid; // Event organizer user
+  final String name; // Name of competition
+  final String? description; // Description of competition
+  final DateTime? startDate; // Start of the event
+  final DateTime? endDate; // End of the event
+  final DateTime? registrationDeadline; // Deadline to register for the event
+  final int? maxTimeToCompleteActivityHours; // Max time to complete activity
+  final int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
   final DateTime? createdAt; // Date of creation
-  Set<String> participantsUid;
-  Set<String> invitedParticipantsUid;
-  enums.ComVisibility visibility; // Visibility of competition
-  Map<String, String>? results; // result of run first is the uid of the user and second is activity id
-  String? activityType; // Allowed activity types of competition
-  String? locationName; // Location name
-  LatLng? location; // Location
-  CompetitionGoal competitionGoalType;
-  double goal; // Goal  depends what type is // distance, steps or time
-  List<String> photos;  // Photos from competitions
-  bool closedBeforeEndTime;
+  final Set<String> participantsUid;
+  final Set<String> invitedParticipantsUid;
+  final enums.ComVisibility visibility; // Visibility of competition
+  final Map<String, String>? results; // result: uid of the user -> activity id
+  final String? activityType; // Allowed activity types of competition
+  final String? locationName; // Location name
+  final LatLng? location; // Location
+  final CompetitionGoal competitionGoalType;
+  final double goal; // Goal depends on competitionGoalType (distance, steps, time)
+  final List<String> photos; // Photos from competitions
+  final bool closedBeforeEndTime;
 
   Competition({
     this.competitionId = '',
@@ -57,20 +57,17 @@ class Competition {
     bool? closedBeforeEndTime,
     List<String>? photos,
   }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
-        photos = photos ?? [],
-  participantsUid = participantsUid ?? {},
-  invitedParticipantsUid = invitedParticipantsUid ?? {};
+       photos = photos ?? [],
+       participantsUid = participantsUid ?? {},
+       invitedParticipantsUid = invitedParticipantsUid ?? {};
 
-
-  // TODO HANDLE RESULTS AND PHOTOS
   factory Competition.fromMap(Map<String, dynamic> map) {
     return Competition(
-      competitionId: map['competitionId'],
+      competitionId: map['competitionId'] ?? '',
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
       competitionGoalType: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
       goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0,
-      // To num and then to double to avoid null
       visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
@@ -79,66 +76,131 @@ class Competition {
       maxTimeToCompleteActivityHours: map['maxTimeToCompleteActivityHours'],
       maxTimeToCompleteActivityMinutes: map['maxTimeToCompleteActivityMinutes'],
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
-      participantsUid: map['participantsUid'] != null ? Set<String>.from(map['participantsUid']) : {},
-      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? Set<String>.from(map['invitedParticipantsUid']) : {},
+      participantsUid: map['participantsUid'] != null ? Set<String>.from(List.from(map['participantsUid'])) : {},
+      invitedParticipantsUid: map['invitedParticipantsUid'] != null ? Set<String>.from(List.from(map['invitedParticipantsUid'])) : {},
       activityType: map['activityType'],
-      // TODO
-      //results: map['results'] != null
-      // ? Map<String, double>.from(map['results'].map((key, value) => MapEntry(key, (value as num).toDouble())))
-      //: {},
+      results: map['results'] != null ? Map<String, String>.from(map['results']) : null,
       locationName: map['locationName'],
       location: (map['latitude'] != null && map['longitude'] != null)
           ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
           : null,
+      photos: map['photos'] != null ? List<String>.from(map['photos']) : [],
+      closedBeforeEndTime: map['closedBeforeEndTime'] ?? false,
     );
   }
 
-  /// Covert competition to firestore
-  Map<String, dynamic> toMap(Competition competition) {
+  Map<String, dynamic> toMap() {
     return {
-      'competitionId': competition.competitionId,
-      'organizerUid': competition.organizerUid,
-      'name': competition.name,
-      'competitionGoal': competition.competitionGoalType.toString(),
-      'description': competition.description,
-      'visibility': competition.visibility.toString(),
-      'startDate': competition.startDate != null ? Timestamp.fromDate(competition.startDate!) : null,
-      'endDate': competition.endDate != null ? Timestamp.fromDate(competition.endDate!) : null,
-      'registrationDeadline': competition.registrationDeadline != null ? Timestamp.fromDate(competition.registrationDeadline!) : null,
-      'maxTimeToCompleteActivityHours': competition.maxTimeToCompleteActivityHours,
-      'maxTimeToCompleteActivityMinutes': competition.maxTimeToCompleteActivityMinutes,
-      'createdAt': Timestamp.fromDate(DateTime.now()),
-      'participantsUids': competition.participantsUid,
-      'invitedParticipantsUids': competition.invitedParticipantsUid,
-      'activityType': competition.activityType,
-      'results': competition.results ?? {},
-      'locationName': competition.locationName,
-      'latitude': competition.location?.latitude,
-      'longitude': competition.location?.longitude,
+      'competitionId': competitionId,
+      'organizerUid': organizerUid,
+      'name': name,
+      'competitionGoal': competitionGoalType.toString(),
+      'goal': goal,
+      'description': description,
+      'visibility': visibility.toString(),
+      'startDate': startDate != null ? Timestamp.fromDate(startDate!) : null,
+      'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
+      'registrationDeadline': registrationDeadline != null ? Timestamp.fromDate(registrationDeadline!) : null,
+      'maxTimeToCompleteActivityHours': maxTimeToCompleteActivityHours,
+      'maxTimeToCompleteActivityMinutes': maxTimeToCompleteActivityMinutes,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      'participantsUid': participantsUid.toList(),
+      'invitedParticipantsUid': invitedParticipantsUid.toList(),
+      'activityType': activityType,
+      'results': results,
+      'locationName': locationName,
+      'latitude': location?.latitude,
+      'longitude': location?.longitude,
+      'photos': photos,
+      'closedBeforeEndTime': closedBeforeEndTime,
     };
   }
 
-  // TODO ADD ALL FIELDS FROM COMPETITION
-  /// Compare two competitions and check if they are equal
-  static bool competitionsEqual(Competition c1, Competition c2) {
-    return c1.competitionId == c2.competitionId &&
-        c1.organizerUid == c2.organizerUid &&
-        c1.name == c2.name &&
-        c1.description == c2.description &&
-        c1.visibility == c2.visibility &&
-        c1.startDate == c2.startDate &&
-        c1.endDate == c2.endDate &&
-        c1.registrationDeadline == c2.registrationDeadline &&
-        c1.maxTimeToCompleteActivityHours == c2.maxTimeToCompleteActivityHours &&
-        c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
-        c1.activityType == c2.activityType &&
-        AppUtils.setsEqual(c1.participantsUid, c2.participantsUid) &&
-        AppUtils.setsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&
-        // TODO
-        //AppUtils.mapsEqual(c1.results, c2.results) &&
-        c1.locationName == c2.locationName &&
-        c1.location?.latitude == c2.location?.latitude &&
-        c1.location?.longitude == c2.location?.longitude;
+  Competition copyWith({
+    String? competitionId,
+    String? organizerUid,
+    String? name,
+    String? description,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? registrationDeadline,
+    int? maxTimeToCompleteActivityHours,
+    int? maxTimeToCompleteActivityMinutes,
+    DateTime? createdAt,
+    Set<String>? participantsUid,
+    Set<String>? invitedParticipantsUid,
+    enums.ComVisibility? visibility,
+    Map<String, String>? results,
+    String? activityType,
+    String? locationName,
+    LatLng? location,
+    CompetitionGoal? competitionGoalType,
+    double? goal,
+    List<String>? photos,
+    bool? closedBeforeEndTime,
+  }) {
+    return Competition(
+      competitionId: competitionId ?? this.competitionId,
+      organizerUid: organizerUid ?? this.organizerUid,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      registrationDeadline: registrationDeadline ?? this.registrationDeadline,
+      maxTimeToCompleteActivityHours: maxTimeToCompleteActivityHours ?? this.maxTimeToCompleteActivityHours,
+      maxTimeToCompleteActivityMinutes: maxTimeToCompleteActivityMinutes ?? this.maxTimeToCompleteActivityMinutes,
+      createdAt: createdAt ?? this.createdAt,
+      participantsUid: participantsUid ?? this.participantsUid,
+      invitedParticipantsUid: invitedParticipantsUid ?? this.invitedParticipantsUid,
+      visibility: visibility ?? this.visibility,
+      results: results ?? this.results,
+      activityType: activityType ?? this.activityType,
+      locationName: locationName ?? this.locationName,
+      location: location ?? this.location,
+      competitionGoalType: competitionGoalType ?? this.competitionGoalType,
+      goal: goal ?? this.goal,
+      photos: photos ?? this.photos,
+      closedBeforeEndTime: closedBeforeEndTime ?? this.closedBeforeEndTime,
+    );
   }
 
+  bool isEqual(Competition other) {
+    if (identical(this, other)) {
+      return true;
+    }
+
+    return other.competitionId == competitionId &&
+        other.organizerUid == organizerUid &&
+        other.name == name &&
+        other.description == description &&
+        other.startDate == startDate &&
+        other.endDate == endDate &&
+        other.registrationDeadline == registrationDeadline &&
+        other.maxTimeToCompleteActivityHours == maxTimeToCompleteActivityHours &&
+        other.maxTimeToCompleteActivityMinutes == maxTimeToCompleteActivityMinutes &&
+        other.createdAt == createdAt &&
+        AppUtils.setsEqual(other.participantsUid, participantsUid) &&
+        AppUtils.setsEqual(other.invitedParticipantsUid, invitedParticipantsUid) &&
+        other.visibility == visibility &&
+        AppUtils.mapsEqual(other.results, results) &&
+        other.activityType == activityType &&
+        other.locationName == locationName &&
+        other.location == location &&
+        other.competitionGoalType == competitionGoalType &&
+        other.goal == goal &&
+        AppUtils.listsEqual(other.photos, photos) &&
+        other.closedBeforeEndTime == closedBeforeEndTime;
+  }
+}
+
+CompetitionGoal? parseCompetitionGoal(String? value) {
+  if (value == null) return null;
+
+  return CompetitionGoal.values.firstWhere((e) => e.toString() == value, orElse: () => CompetitionGoal.distance);
+}
+
+enums.ComVisibility? parseVisibility(String? value) {
+  if (value == null) return null;
+
+  return enums.ComVisibility.values.firstWhere((e) => e.toString() == value, orElse: () => enums.ComVisibility.me);
 }
