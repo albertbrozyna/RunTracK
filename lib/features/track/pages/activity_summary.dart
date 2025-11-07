@@ -15,7 +15,7 @@ import 'package:run_track/features/track/pages/map.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/widgets/alert_dialog.dart';
 import '../../../common/widgets/stat_card.dart';

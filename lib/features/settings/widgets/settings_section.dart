@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/features/settings/widgets/settings_tile.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 
 
 class SettingsSection extends StatefulWidget {

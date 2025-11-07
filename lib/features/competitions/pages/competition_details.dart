@@ -4,9 +4,11 @@ import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/competitions/pages/meeting_place.dart';
+import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/assets/app_images.dart';
+import 'package:run_track/features/competitions/pages/meeting_place_map.dart';
 import 'package:run_track/common/pages/users_list.dart';
-import 'package:run_track/features/track/pages/activity_choose.dart';
+import 'package:run_track/features/competitions/widgets/section.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/user_service.dart';
 
@@ -16,27 +18,25 @@ import '../../../common/utils/utils.dart';
 import '../../../config/routes/app_routes.dart';
 import '../../../services/competition_service.dart';
 import '../../../services/preferences_service.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 import '../../../theme/preference_names.dart';
 import '../../../theme/ui_constants.dart';
 import 'package:flutter/services.dart';
 import '../../../common/enums/competition_role.dart';
 import 'package:geocoding/geocoding.dart';
 
-class CompetitionDetails extends StatefulWidget {
+class CompetitionDetailsPage extends StatefulWidget {
   final CompetitionContext enterContext;
   final Competition? competitionData;
   final int initTab; // Tab index to set a start visibility
 
-  const CompetitionDetails({super.key, required this.enterContext, this.competitionData, required this.initTab});
+  const CompetitionDetailsPage({super.key, required this.enterContext, this.competitionData, required this.initTab});
 
   @override
-  State<CompetitionDetails> createState() {
-    return _AddCompetition();
-  }
+  State<CompetitionDetailsPage> createState() => _CompetitionDetailsPageState();
 }
 
-class _AddCompetition extends State<CompetitionDetails> {
+class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -49,10 +49,9 @@ class _AddCompetition extends State<CompetitionDetails> {
   final TextEditingController _activityController = TextEditingController();
   final TextEditingController _meetingPlaceController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
-  final TextEditingController _goalTypeController = TextEditingController();
+
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
-  CompetitionGoal _competitionGoal = CompetitionGoal.distance;
   bool canPause = true;
   bool edit = true; // Can we edit a competition?
   Competition? competition;
@@ -80,11 +79,7 @@ class _AddCompetition extends State<CompetitionDetails> {
   }
 
   void initialize() {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
-      return;
-    }
+    UserService.checkAppUseState(context);
 
     // Set visibility based on init tab
     if (widget.enterContext == CompetitionContext.ownerCreate) {
@@ -103,7 +98,9 @@ class _AddCompetition extends State<CompetitionDetails> {
       }
     }
 
-    if (widget.enterContext != CompetitionContext.ownerModify) {  // Make fields readonly for
+    // Set readonly
+    if (widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
+      // Make fields readonly for
       setState(() {
         readOnly = true;
       });
@@ -122,7 +119,6 @@ class _AddCompetition extends State<CompetitionDetails> {
       _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
       _activityController.text = competition!.activityType ?? "";
       _visibility = competition!.visibility;
-      _competitionGoal = competition!.competitionGoalType;
       _goalController.text = competition!.goal.toString();
 
       String? latStr = competition?.location?.latitude.toStringAsFixed(4);
@@ -141,7 +137,6 @@ class _AddCompetition extends State<CompetitionDetails> {
         startDate: DateTime.now(),
         endDate: DateTime.now(),
         visibility: enums.ComVisibility.me,
-        competitionGoalType: CompetitionGoal.distance,
         goal: 10,
       );
     }
@@ -170,31 +165,7 @@ class _AddCompetition extends State<CompetitionDetails> {
     setState(() {});
   }
 
-  /// Get icon for goal input
-  Icon getIconForGoalInput() {
-    if (_competitionGoal == CompetitionGoal.distance) {
-      return Icon(Icons.directions_run, color: AppColors.white);
-    } else if (_competitionGoal == CompetitionGoal.longestDistance) {
-      return Icon(Icons.run_circle_rounded, color: AppColors.white);
-    } else if (_competitionGoal == CompetitionGoal.timedActivity) {
-      return Icon(Icons.timer, color: AppColors.white);
-    } else if (_competitionGoal == CompetitionGoal.steps) {
-      return Icon(Icons.directions_walk, color: AppColors.white);
-    }
-    return Icon(Icons.run_circle_outlined);
-  }
 
-  /// Get label text for goal input
-  String getLabelTextGoal() {
-    if (_competitionGoal == CompetitionGoal.distance || _competitionGoal == CompetitionGoal.longestDistance) {
-      return "Distance in km";
-    } else if (_competitionGoal == CompetitionGoal.steps) {
-      return "Steps";
-    } else if (_competitionGoal == CompetitionGoal.timedActivity) {
-      return "Time in minutes";
-    }
-    return "Goal";
-  }
 
   /// Set last competition used in adding
   Future<void> setLastActivityType() async {
@@ -231,7 +202,6 @@ class _AddCompetition extends State<CompetitionDetails> {
       activityType: _activityController.text.trim(),
       invitedParticipantsUid: competition?.invitedParticipantsUid ?? {},
       participantsUid: competition?.participantsUid ?? {},
-      competitionGoalType: _competitionGoal,
       location: competition?.location,
       locationName: competition?.locationName,
       goal: _goalController.text.trim().isNotEmpty ? double.parse(_goalController.text.trim()) : 0,
@@ -241,73 +211,43 @@ class _AddCompetition extends State<CompetitionDetails> {
     );
 
     // If there is no changes, just pop
-    if (widget.competitionData == null || CompetitionService.competitionsEqual(widget.competitionData!, compData)) {
+    if (widget.competitionData == null || (widget.competitionData?.isEqual(compData) ?? false)) {
       Navigator.of(context).pop();
       return;
     }
-
-    AppAlertDialog(
-      titleText: "Warning",
-      contentText: "You have unsaved changes\n\n"
-          "If you leave now, your changes will be lost.\n\n"
-          "Are you sure you want to leave?",,
-      textLeft: "Cancel",
-      textRight: "Yes",
-      onPressedLeft: () {
-      Navigator.of(context).pop();
-    },
-      onPressedRight: () {
-      Navigator.of(context).pop(); // Two times to close dialog and screen
-      Navigator.of(context).pop();
-    },
-    )
 
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(, textAlign: TextAlign.center),
-          content: const Text(
-
-            textAlign: TextAlign.center,
-          ),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed:
-                  child: const Text(),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed:
-                  child: const Text(),
-                ),
-              ],
-            ),
-          ],
+        return AppAlertDialog(
+          titleText: "Warning",
+          contentText:
+              "You have unsaved changes\n\n"
+              "If you leave now, your changes will be lost.\n\n"
+              "Are you sure you want to leave?",
+          textLeft: "Cancel",
+          textRight: "Yes",
+          onPressedLeft: () {
+            Navigator.of(context).pop();
+          },
+          onPressedRight: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pop();
+          },
         );
-      },
-    );
+      }, // Close builder
+    ); // Close showDialog
   }
 
   /// On tap/ on pressed functions
 
-  void onTapActivityType() async {
-    final selectedActivity = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: _activityController.text.trim())),
-    );
-
-    // If the user selected something, update the TextField
-    if (selectedActivity != null && selectedActivity.isNotEmpty) {
+  void onTapActivityType(BuildContext context) async {
+    final selectedActivity = await Navigator.pushNamed(context, AppRoutes.activityChoose);
+    if (selectedActivity is String && selectedActivity.isNotEmpty) {
       _activityController.text = selectedActivity;
       AppData.lastActivityString = selectedActivity;
-      // Save it to local preferences
+
       PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
     }
   }
@@ -315,10 +255,9 @@ class _AddCompetition extends State<CompetitionDetails> {
   /// On pressed list participants
   void onPressedListParticipants(BuildContext context) async {
     EnterContextUsersList enterContext = EnterContextUsersList.participantsModify;
-    if(widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
+    if (widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
       enterContext = EnterContextUsersList.participantsReadOnly;
     }
-
 
     final result = await Navigator.push(
       context,
@@ -369,7 +308,6 @@ class _AddCompetition extends State<CompetitionDetails> {
     }
   }
 
-  // Validators
   // Name of competition
   String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -479,7 +417,6 @@ class _AddCompetition extends State<CompetitionDetails> {
 
   // Max time to complete activity hours
   String? validateGoal(String? value) {
-    if (_competitionGoal == CompetitionGoal.distance || _competitionGoal == CompetitionGoal.longestDistance) {
       if (value == null || value.trim().isEmpty) {
         return 'Please enter distance in km';
       }
@@ -490,27 +427,6 @@ class _AddCompetition extends State<CompetitionDetails> {
       if (int.tryParse(value.trim())! <= 0) {
         return 'Distance must be positive and greater than 0';
       }
-    } else if (_competitionGoal == CompetitionGoal.steps) {
-      if (value == null || value.trim().isEmpty) {
-        return 'Please enter steps';
-      }
-      if (int.tryParse(value.trim()) == null) {
-        return 'Enter a valid number';
-      }
-      if (int.tryParse(value.trim())! <= 0) {
-        return 'Steps must be positive and greater than 0';
-      }
-    } else if (_competitionGoal == CompetitionGoal.timedActivity) {
-      if (value == null || value.trim().isEmpty) {
-        return 'Please enter time in minutes';
-      }
-      if (int.tryParse(value.trim()) == null) {
-        return 'Enter a valid number';
-      }
-      if (int.tryParse(value.trim())! <= 0) {
-        return 'Time must be positive and greater than 0';
-      }
-    }
 
     return null;
   }
@@ -544,6 +460,8 @@ class _AddCompetition extends State<CompetitionDetails> {
     return null;
   }
 
+  //#endregion
+
   /// Close competition
   void closeCompetition() async {
     bool res = await CompetitionService.closeCompetitionBeforeEndTime(competition!.competitionId);
@@ -564,68 +482,31 @@ class _AddCompetition extends State<CompetitionDetails> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.alertDialogColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-          alignment: Alignment.center,
-          title: const Text("Warning", textAlign: TextAlign.center),
-          content: const Text(
-            "Are you sure you want to delete this activity?\n\n"
-            "This action cannot be undone.",
-            textAlign: TextAlign.center,
-          ),
+        return AppAlertDialog(
+          titleText: "Warning",
+          contentText:
+              "Are you sure you want to delete this activity?\n\n"
+              "This action cannot be undone.",
+          textRight: "Yes",
+          textLeft: "Cancel",
+          colorBackgroundButtonRight: AppColors.danger,
+          onPressedRight: () async {
+            bool res = await CompetitionService.deleteCompetition(widget.competitionData!.competitionId);
 
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor:AppColors.gray,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor:AppColors.danger,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
-                      ),
-                    ),
-                    onPressed: () async {
-                      bool res = await CompetitionService.deleteCompetition(widget.competitionData!.competitionId);
-
-                      if (res) {
-                          AppUtils.showMessage(context, "Competition deleted successfully");
-                      }
-                      if (!res) {
-                          AppUtils.showMessage(context, "Error deleting competition");
-                      }
-                      if (mounted) {
-                        Navigator.of(context).pop(); // Two times to close dialog and screen
-                      }
-                      if (mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: const Text("Yes"),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            if (res) {
+              AppUtils.showMessage(context, "Competition deleted successfully");
+            }
+            if (!res) {
+              AppUtils.showMessage(context, "Error deleting competition");
+            }
+            if (mounted) {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Two times to close dialog and screen
+            }
+          },
+          onPressedLeft: () {
+            Navigator.of(context).pop();
+          },
         );
       },
     );
@@ -689,7 +570,6 @@ class _AddCompetition extends State<CompetitionDetails> {
       activityType: _activityController.text.trim(),
       invitedParticipantsUid: competition?.invitedParticipantsUid ?? {},
       participantsUid: competition?.participantsUid ?? {},
-      competitionGoalType: _competitionGoal,
       location: competition?.location,
       locationName: competition?.locationName,
       goal: _goalController.text.trim().isNotEmpty ? double.parse(_goalController.text.trim()) : 0,
@@ -721,464 +601,339 @@ class _AddCompetition extends State<CompetitionDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
       appBar: AppBar(
-        title: Text(
-          "Add competition",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-
+        title: Text("Add competition"),
         actions: [
           if (widget.enterContext == CompetitionContext.ownerModify)
-            IconButton(onPressed: () => deleteCompetition(context), icon: Icon(Icons.delete,color: Colors.white)),
+            IconButton(
+              onPressed: () => deleteCompetition(context),
+              icon: Icon(Icons.delete, color: Colors.white),
+            ),
         ],
       ),
       body: Form(
         key: _formKey,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/appBg6.jpg"),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.25), BlendMode.darken),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(AppUiConstants.scaffoldBodyPadding),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Organizer
-                  TextField(
-                    controller: _organizerController,
-                    textAlign: TextAlign.left,
-                    readOnly: true,
-                    enabled: false,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      contentPadding: EdgeInsets.all(20),
-                      border: AppUiConstants.borderTextFields,
-                      enabledBorder: AppUiConstants.enabledBorderTextFields,
-                      focusedBorder: AppUiConstants.focusedBorderTextFields,
-                      errorBorder: AppUiConstants.errorBorderTextFields,
-                      focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                      label: Text("Organizer"),
-                      labelStyle: AppUiConstants.labelStyleTextFields,
-                      filled: true,
-                      fillColor: AppColors.textFieldsBackground,
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundImage: (AppData.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
-                              ? NetworkImage(AppData.currentUser!.profilePhotoUrl!)
-                              : AssetImage('assets/DefaultProfilePhoto.png'),
+        child: PageContainer(
+          assetPath: AppImages.appBg4,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Section(
+                  title: "Basic info",
+                  children: [
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    // Organizer
+                    TextFormField(
+                      controller: _organizerController,
+                      textAlign: TextAlign.left,
+                      readOnly: true,
+                      enabled: true,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.all(20),
+                        border: AppUiConstants.borderTextFields,
+                        label: Text("Organizer"),
+                        labelStyle: AppUiConstants.labelStyleTextFields,
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundImage: (AppData.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
+                                ? NetworkImage(AppData.currentUser!.profilePhotoUrl!)
+                                : AssetImage(AppImages.defaultProfilePhoto),
+                          ),
                         ),
                       ),
-                      prefixStyle: TextStyle(),
                     ),
-                  ),
 
-                  // Name of competition
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  TextFormField(
-                    controller: _nameController,
-                    style: AppUiConstants.textStyleTextFields,
-                    readOnly: readOnly,
-                    decoration: InputDecoration(
-                      hintText: "Name of competition",
-                      hintStyle: TextStyle(color: AppColors.textFieldsHints),
-                      border: AppUiConstants.borderTextFields,
-                      enabledBorder: AppUiConstants.enabledBorderTextFields,
-                      focusedBorder: AppUiConstants.focusedBorderTextFields,
-                      errorBorder: AppUiConstants.errorBorderTextFields,
-                      focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                      label: Text("Name of competition"),
-                      labelStyle: AppUiConstants.labelStyleTextFields,
-                      filled: true,
-                      fillColor: AppColors.textFieldsBackground,
-                    ),
-                    validator: validateName,
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Description
-                  TextFormField(
-                    readOnly: readOnly,
-                    maxLines: 3,
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      hintText: "Describe your competition",
-                      hintStyle: TextStyle(color: AppColors.textFieldsHints),
-                      border: AppUiConstants.borderTextFields,
-                      enabledBorder: AppUiConstants.enabledBorderTextFields,
-                      focusedBorder: AppUiConstants.focusedBorderTextFields,
-                      errorBorder: AppUiConstants.errorBorderTextFields,
-                      focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                      label: Text("Description"),
-                      labelStyle: AppUiConstants.labelStyleTextFields,
-                      filled: true,
-                      fillColor: AppColors.textFieldsBackground,
-                    ),
-                    style: TextStyle(color: Colors.white),
-                    validator: validateDescription,
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Activity type of competition
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _activityController,
-                          style: AppUiConstants.textStyleTextFields,
-                          textAlign: TextAlign.left,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: "Activity type",
-                            labelStyle: AppUiConstants.labelStyleTextFields,
-                            enabledBorder: AppUiConstants.enabledBorderTextFields,
-                            focusedBorder: AppUiConstants.focusedBorderTextFields,
-                            errorBorder: AppUiConstants.errorBorderTextFields,
-                            focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                            filled: true,
-                            fillColor: AppColors.textFieldsBackground,
-                            suffixIcon: Padding(
-                              padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
-                              child: IconButton(
-                                onPressed: readOnly ? null : () => onTapActivityType(),
-                                icon: Icon(Icons.list, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          validator: validateActivity,
-                        ),
-                      ),
-                      SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
-                      // Visibility
-                      Expanded(
-                        child: Theme(
-                          data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
-                          child: DropdownMenu(
-                            enabled: !readOnly,
-                            maxLines: 1,
-                            width: double.infinity,
-                            textAlign: TextAlign.left,
-                            textStyle: AppUiConstants.textStyleTextFields,
-                            label: Text("Visibility"),
-                            initialSelection: _visibility,
-                            inputDecorationTheme: InputDecorationTheme(
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              filled: true,
-                              fillColor: AppColors.textFieldsBackground,
-                            ),
-                            onSelected: (enums.ComVisibility? visibility) {
-                              // Selecting visibility
-                              setState(() {
-                                if (visibility != null) {
-                                  _visibility = visibility;
-                                }
-                              });
-                            },
-                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
-                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-                            menuStyle: MenuStyle(
-                              backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
-                              alignment: Alignment.center,
-                            ),
-                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
-                              DropdownMenuEntry(
-                                value: enums.ComVisibility.me,
-                                label: "Only Me",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                              DropdownMenuEntry(
-                                value: enums.ComVisibility.friends,
-                                label: "Friends",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                              DropdownMenuEntry(
-                                value: enums.ComVisibility.everyone,
-                                label: "Everyone",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  // Start date
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextFormField(
-                      controller: _startDateController,
+                    // Name of competition
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    TextFormField(
+                      controller: _nameController,
+                      style: AppUiConstants.textStyleTextFields,
                       readOnly: readOnly,
+                      decoration: InputDecoration(label: Text("Name of competition"), hintText: "Name of competition"),
+                      validator: validateName,
+                    ),
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    // Description
+                    TextFormField(
+                      readOnly: readOnly,
+                      maxLines: 3,
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        hintText: "Describe your competition",
+                        hintStyle: TextStyle(color: AppColors.textFieldsHints),
+                        border: AppUiConstants.borderTextFields,
+                        label: Text("Description"),
+                      ),
+                      style: TextStyle(color: Colors.white),
+                      validator: validateDescription,
+                    ),
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    DropdownMenu(
+                      initialSelection: _visibility,
+                      enabled: !readOnly,
+                      maxLines: 1,
+                      textAlign: TextAlign.left,
+                      label: Text("Visibility"),
+                      width: double.infinity,
+                      onSelected: (enums.ComVisibility? visibility) {
+                        // Selecting visibility
+                        setState(() {
+                          if (visibility != null) {
+                            _visibility = visibility;
+                          }
+                        });
+                      },
+                      trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                      selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+                      menuStyle: MenuStyle(
+                        backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
+                        alignment: Alignment.center,
+                      ),
+                      dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
+                        DropdownMenuEntry(
+                          value: enums.ComVisibility.me,
+                          label: "Only Me",
+                          style: ButtonStyle(
+                            foregroundColor: WidgetStatePropertyAll(Colors.white),
+                            backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                          ),
+                        ),
+                        DropdownMenuEntry(
+                          value: enums.ComVisibility.friends,
+                          label: "Friends",
+                          style: ButtonStyle(
+                            foregroundColor: WidgetStatePropertyAll(Colors.white),
+                            backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                          ),
+                        ),
+                        DropdownMenuEntry(
+                          value: enums.ComVisibility.everyone,
+                          label: "Everyone",
+                          style: ButtonStyle(
+                            foregroundColor: WidgetStatePropertyAll(Colors.white),
+                            backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                Section(
+                  title: "Competition goal",
+                  children: [
+                    // Activity type of competition
+                    TextFormField(
+                      controller: _activityController,
+                      style: AppUiConstants.textStyleTextFields,
+                      textAlign: TextAlign.left,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: "Activity type",
+                        labelStyle: AppUiConstants.labelStyleTextFields,
+                        suffixIcon: Padding(
+                          padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
+                          child: IconButton(
+                            onPressed: readOnly ? null : () => onTapActivityType(context),
+                            icon: Icon(Icons.list, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      validator: validateActivity,
+                    ),
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    // Competition goal
+                    // DropdownMenu(
+                    //   enabled: !readOnly,
+                    //   maxLines: 1,
+                    //   width: double.infinity,
+                    //   textAlign: TextAlign.left,
+                    //   textStyle: AppUiConstants.textStyleTextFields,
+                    //   label: Text("Competition goal"),
+                    //   initialSelection: _competitionGoal,
+                    //   inputDecorationTheme: InputDecorationTheme(),
+                    //   onSelected: (value) => {
+                    //     setState(() {
+                    //       if (value != null) {
+                    //         _competitionGoal = value;
+                    //       }
+                    //     }),
+                    //   },
+                    //   trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                    //   selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+                    //   menuStyle: MenuStyle(
+                    //     backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
+                    //     alignment: Alignment.center,
+                    //   ),
+                    //   dropdownMenuEntries: <DropdownMenuEntry<CompetitionGoal>>[
+                    //     DropdownMenuEntry(
+                    //       value: CompetitionGoal.distance,
+                    //       label: "Distance in fastest time",
+                    //       style: ButtonStyle(
+                    //         foregroundColor: WidgetStatePropertyAll(Colors.white),
+                    //         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                    //       ),
+                    //     ),
+                    //     DropdownMenuEntry(
+                    //       value: CompetitionGoal.longestDistance,
+                    //       label: "Longest distance in fastest time",
+                    //       style: ButtonStyle(
+                    //         foregroundColor: WidgetStatePropertyAll(Colors.white),
+                    //         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                    //       ),
+                    //     ),
+                    //     DropdownMenuEntry(
+                    //       value: CompetitionGoal.timedActivity,
+                    //       label: "Time goal",
+                    //       style: ButtonStyle(
+                    //         foregroundColor: WidgetStatePropertyAll(Colors.white),
+                    //         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                    //       ),
+                    //     ),
+                    //     DropdownMenuEntry(
+                    //       value: CompetitionGoal.timedActivity,
+                    //       label: "Steps",
+                    //       style: ButtonStyle(
+                    //         foregroundColor: WidgetStatePropertyAll(Colors.white),
+                    //         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                    //SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    // Goal of competition
+                    TextFormField(
+                      readOnly: readOnly,
+                      controller: _goalController,
+                      style: AppUiConstants.textStyleTextFields,
+                      textAlign: TextAlign.left,
+                      decoration: InputDecoration(
+                        labelText: "Distance in km",
+                        prefixIcon: Icon(Icons.directions_run, color: Colors.white),
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: validateGoal,
+                    ),
+                  ],
+                ),
+
+                Section(
+                  title: "Time settings",
+                  children: [
+                    TextFormField(
+                      controller: _startDateController,
+                      readOnly: true,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: "Start date",
-                        labelStyle: AppUiConstants.labelStyleTextFields,
-                        enabledBorder: AppUiConstants.enabledBorderTextFields,
-                        focusedBorder: AppUiConstants.focusedBorderTextFields,
-                        errorBorder: AppUiConstants.errorBorderTextFields,
-                        focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                        filled: true,
-                        fillColor: AppColors.textFieldsBackground,
                         prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
                       ),
                       validator: validateStartDate,
                       onTap: () async {
-                        if (readOnly) {
+                        if(widget.enterContext != CompetitionContext.ownerCreate && widget.enterContext != CompetitionContext.ownerModify){
                           return;
                         }
-                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _startDateController,false);
+                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _startDateController, false);
                       },
                     ),
-                  ),
-                  // End date
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextFormField(
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
+                    TextFormField(
                       controller: _endDateController,
                       readOnly: true,
                       style: AppUiConstants.textStyleTextFields,
                       decoration: InputDecoration(
                         labelText: "End date",
                         labelStyle: AppUiConstants.labelStyleTextFields,
-                        enabledBorder: AppUiConstants.enabledBorderTextFields,
-                        focusedBorder: AppUiConstants.focusedBorderTextFields,
-                        errorBorder: AppUiConstants.errorBorderTextFields,
-                        focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                        filled: true,
-                        fillColor: AppColors.textFieldsBackground,
                         prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
                       ),
                       validator: (value) => validateEndDate(value, _startDateController.text.trim()),
                       onTap: () async {
-                        if (readOnly) {
+                        if (widget.enterContext != CompetitionContext.ownerCreate &&
+                            widget.enterContext != CompetitionContext.ownerModify) {
                           return;
                         }
-                        AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _endDateController,false);
+                        AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _endDateController, false);
                       },
                     ),
-                  ),
 
-                  // Registration deadline
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                    // Registration deadline
+                    SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextFormField(
+                    TextFormField(
                       controller: _registrationDeadline,
-                      readOnly: readOnly,
+                      readOnly: true,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
                         labelText: "Register to",
                         labelStyle: AppUiConstants.labelStyleTextFields,
-                        enabledBorder: AppUiConstants.enabledBorderTextFields,
-                        focusedBorder: AppUiConstants.focusedBorderTextFields,
-                        errorBorder: AppUiConstants.errorBorderTextFields,
-                        focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                        filled: true,
-                        fillColor: AppColors.textFieldsBackground,
                       ),
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (value) =>
                           validateRegistrationDeadline(_startDateController.text.trim(), _endDateController.text.trim(), value),
                       onTap: () async {
-                        if (readOnly) {
+                        if (widget.enterContext != CompetitionContext.ownerCreate &&
+                            widget.enterContext != CompetitionContext.ownerModify) {
                           return;
                         }
-                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _registrationDeadline,false);
+                        await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _registrationDeadline, false);
                       },
                     ),
-                  ),
-
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
-                  Row(
-                    children: [
-                      // Competition goal
-                      Expanded(
-                        child: Theme(
-                          data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
-                          child: DropdownMenu(
-                            enabled: !readOnly,
-                            maxLines: 1,
-                            width: double.infinity,
-                            textAlign: TextAlign.left,
-                            textStyle: AppUiConstants.textStyleTextFields,
-                            label: Text("Competition goal"),
-                            initialSelection: _competitionGoal,
-                            inputDecorationTheme: InputDecorationTheme(
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              filled: true,
-                              fillColor: AppColors.textFieldsBackground,
-                            ),
-                            onSelected: (value) => {
-                              // Selecting visibility
-                              setState(() {
-                                if (value != null) {
-                                  _competitionGoal = value;
-                                }
-                              }),
-                            },
-                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
-                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-                            menuStyle: MenuStyle(
-                              backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
-                              alignment: Alignment.center,
-                            ),
-                            dropdownMenuEntries: <DropdownMenuEntry<CompetitionGoal>>[
-                              DropdownMenuEntry(
-                                value: CompetitionGoal.distance,
-                                label: "Distance in fastest time",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                              DropdownMenuEntry(
-                                value: CompetitionGoal.longestDistance,
-                                label: "Longest distance in fastest time",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                              DropdownMenuEntry(
-                                value: CompetitionGoal.timedActivity,
-                                label: "Time goal",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                              DropdownMenuEntry(
-                                value: CompetitionGoal.timedActivity,
-                                label: "Steps",
-                                style: ButtonStyle(
-                                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                                ),
-                              ),
-                            ],
-                          ),
+                    Column(
+                      children: [
+                        // Label for hours and minutes
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Text("Max time to complete activity", style: AppUiConstants.labelStyleTextFields),
                         ),
-                      ),
-                      SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
-                      // Goal of competition
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: readOnly,
-                          controller: _goalController,
-                          style: AppUiConstants.textStyleTextFields,
-                          textAlign: TextAlign.left,
-                          decoration: InputDecoration(
-                            labelText: getLabelTextGoal(),
-                            labelStyle: AppUiConstants.labelStyleTextFields,
-                            enabledBorder: AppUiConstants.enabledBorderTextFields,
-                            focusedBorder: AppUiConstants.focusedBorderTextFields,
-                            errorBorder: AppUiConstants.errorBorderTextFields,
-                            focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                            filled: true,
-                            fillColor: AppColors.textFieldsBackground,
-                            prefixIcon: Padding(
-                              padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
-                              child: IconButton(onPressed: () => onTapActivityType(), icon: getIconForGoalInput()),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _maxTimeToCompleteActivityHours,
+                                readOnly: readOnly,
+                                style: AppUiConstants.textStyleTextFields,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
+                                  labelText: "Hours",
+                                  labelStyle: AppUiConstants.labelStyleTextFields,
+                                ),
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                validator: validateHours,
+                              ),
                             ),
-                          ),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: validateGoal,
+                            SizedBox(width: AppUiConstants.verticalSpacingTextFields),
+                            // Minutes to complete activity
+                            Expanded(
+                              child: TextFormField(
+                                controller: _maxTimeToCompleteActivityMinutes,
+                                readOnly: readOnly,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
+                                  labelText: "Minutes",
+                                ),
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                validator: validateMinutes,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Hours to complete activity
-                  Column(
-                    children: [
-                      // Label for hours and minutes
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text("Max time to complete activity", style: AppUiConstants.labelStyleTextFields),
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _maxTimeToCompleteActivityHours,
-                              readOnly: readOnly,
-                              style: AppUiConstants.textStyleTextFields,
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
-                                labelText: "Hours",
-                                labelStyle: AppUiConstants.labelStyleTextFields,
-                                enabledBorder: AppUiConstants.enabledBorderTextFields,
-                                focusedBorder: AppUiConstants.focusedBorderTextFields,
-                                errorBorder: AppUiConstants.errorBorderTextFields,
-                                focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                                filled: true,
-                                fillColor: AppColors.textFieldsBackground,
-                              ),
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              validator: validateHours,
-                            ),
-                          ),
-                          SizedBox(width: AppUiConstants.verticalSpacingTextFields),
-                          // Minutes to complete activity
-                          Expanded(
-                            child: TextFormField(
-                              controller: _maxTimeToCompleteActivityMinutes,
-                              readOnly: readOnly,
-                              style: AppUiConstants.textStyleTextFields,
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
-                                labelText: "Minutes",
-                                labelStyle: AppUiConstants.labelStyleTextFields,
-                                enabledBorder: AppUiConstants.enabledBorderTextFields,
-                                focusedBorder: AppUiConstants.focusedBorderTextFields,
-                                errorBorder: AppUiConstants.errorBorderTextFields,
-                                focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                                filled: true,
-                                fillColor: AppColors.textFieldsBackground,
-                              ),
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              validator: validateMinutes,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Meeting place
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextFormField(
+                      ],
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
+                // Hours to complete activity
+                Section(
+                  title: "Location and participants",
+                  children: [
+                    TextFormField(
                       controller: _meetingPlaceController,
                       readOnly: true,
                       maxLines: 2,
@@ -1186,68 +941,41 @@ class _AddCompetition extends State<CompetitionDetails> {
                       decoration: InputDecoration(
                         prefixIcon: Icon(Icons.add_location_alt, color: Colors.white),
                         labelText: "Meeting place",
-                        labelStyle: AppUiConstants.labelStyleTextFields,
-                        enabledBorder: AppUiConstants.enabledBorderTextFields,
-                        focusedBorder: AppUiConstants.focusedBorderTextFields,
-                        errorBorder: AppUiConstants.errorBorderTextFields,
-                        focusedErrorBorder: AppUiConstants.focusedBorderTextFields,
-                        filled: true,
-                        fillColor: AppColors.textFieldsBackground,
                       ),
                       onTap: () async {
                         onTapAddMeetingPlace();
                       },
                     ),
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                  // Invited competitors
-                  SizedBox(
-                    height: 40,
-                    child: CustomButton(
+                    SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
+                    // Invited competitors
+                    CustomButton(
                       text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
                       onPressed: () => onPressedListParticipants(context),
                     ),
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                  if (widget.enterContext == CompetitionContext.ownerCreate)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(
-                        text: competitionAdded ? "Competition added" : "Add competition",
-                        onPressed: competitionAdded ? null : () => handleSaveCompetition(),
-                      ),
-                    ),
-                  if (widget.enterContext == CompetitionContext.ownerModify && (competition?.startDate?.isAfter(DateTime.now()) ?? false))
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: "Save changes", onPressed: () => handleSaveCompetition()),
-                    ),
-                  if (widget.enterContext == CompetitionContext.ownerModify && (competition?.startDate?.isBefore(DateTime.now())  ?? false)) ...[
-                    SizedBox(height: AppUiConstants.verticalSpacingButtons,),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: "Close competition",
-                          backgroundColor: AppColors.gray,
-                          onPressed: () => closeCompetition()),
-                    ),
                   ],
-                  if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: "Accept invitation", onPressed: () => closeCompetition()),
-                    ),
-                  if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: "Decline invitation", onPressed: () => closeCompetition()),
-                    ),
+                ),
+
+                // Meeting place
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                if (widget.enterContext == CompetitionContext.ownerCreate)
+                  CustomButton(
+                    text: competitionAdded ? "Competition added" : "Add competition",
+                    onPressed: competitionAdded ? null : () => handleSaveCompetition(),
+                  ),
+                if (widget.enterContext == CompetitionContext.ownerModify && (competition?.startDate?.isAfter(DateTime.now()) ?? false))
+                  CustomButton(text: "Save changes", onPressed: () => handleSaveCompetition()),
+                if (widget.enterContext == CompetitionContext.ownerModify &&
+                    (competition?.startDate?.isBefore(DateTime.now()) ?? false)) ...[
+                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                  CustomButton(text: "Close competition", backgroundColor: AppColors.gray, onPressed: () => closeCompetition()),
                 ],
-              ),
+                if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
+                  CustomButton(text: "Accept invitation", onPressed: () => closeCompetition()),
+
+                if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
+                  CustomButton(text: "Decline invitation", onPressed: () => closeCompetition()),
+              ],
             ),
           ),
         ),

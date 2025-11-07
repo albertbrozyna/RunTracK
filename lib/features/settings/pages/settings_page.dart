@@ -4,7 +4,7 @@ import 'package:run_track/config/assets/app_images.dart';
 
 import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 import '../../../theme/ui_constants.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/settings_tile.dart';

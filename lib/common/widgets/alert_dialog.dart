@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/colors.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/ui_constants.dart';
 
 /// Custom alert dialog

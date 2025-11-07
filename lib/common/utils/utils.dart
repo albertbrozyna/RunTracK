@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../theme/colors.dart';
+import '../../theme/app_colors.dart';
 
 extension StringCapitalize on String {
   String capitalize() {

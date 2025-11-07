@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../common/utils/utils.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/enums/competition_goal.dart';
 import '../common/enums/visibility.dart' as enums;
 
 class CompetitionResult {
@@ -12,34 +11,32 @@ class CompetitionResult {
 }
 
 class Competition {
-  final String competitionId; // Competition id
-  final String organizerUid; // Event organizer user
-  final String name; // Name of competition
-  final String? description; // Description of competition
-  final DateTime? startDate; // Start of the event
-  final DateTime? endDate; // End of the event
-  final DateTime? registrationDeadline; // Deadline to register for the event
-  final int? maxTimeToCompleteActivityHours; // Max time to complete activity
-  final int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
-  final DateTime? createdAt; // Date of creation
-  final Set<String> participantsUid;
-  final Set<String> invitedParticipantsUid;
-  final enums.ComVisibility visibility; // Visibility of competition
-  final Map<String, String>? results; // result: uid of the user -> activity id
-  final String? activityType; // Allowed activity types of competition
-  final String? locationName; // Location name
-  final LatLng? location; // Location
-  final CompetitionGoal competitionGoalType;
-  final double goal; // Goal depends on competitionGoalType (distance, steps, time)
-  final List<String> photos; // Photos from competitions
-  final bool closedBeforeEndTime;
+  String competitionId; // Competition id
+  String organizerUid; // Event organizer user
+  String name; // Name of competition
+  String? description; // Description of competition
+  DateTime? startDate; // Start of the event
+  DateTime? endDate; // End of the event
+  DateTime? registrationDeadline; // Deadline to register for the event
+  int? maxTimeToCompleteActivityHours; // Max time to complete activity
+  int? maxTimeToCompleteActivityMinutes; // Max time to complete activity
+  DateTime? createdAt; // Date of creation
+  Set<String> participantsUid;
+  Set<String> invitedParticipantsUid;
+  enums.ComVisibility visibility; // Visibility of competition
+  Map<String, String>? results; // result: uid of the user -> activity id
+  String? activityType; // Allowed activity types of competition
+  String? locationName; // Location name
+  LatLng? location; // Location
+  double goal; // Km
+  List<String> photos; // Photos from competitions
+  bool closedBeforeEndTime;
 
   Competition({
     this.competitionId = '',
     required this.organizerUid,
     required this.name,
     required this.visibility,
-    required this.competitionGoalType,
     required this.goal,
     this.createdAt,
     this.startDate,
@@ -66,7 +63,6 @@ class Competition {
       competitionId: map['competitionId'] ?? '',
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
-      competitionGoalType: parseCompetitionGoal(map['competitionGoal']) ?? CompetitionGoal.distance,
       goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0,
       visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
@@ -94,7 +90,6 @@ class Competition {
       'competitionId': competitionId,
       'organizerUid': organizerUid,
       'name': name,
-      'competitionGoal': competitionGoalType.toString(),
       'goal': goal,
       'description': description,
       'visibility': visibility.toString(),
@@ -134,7 +129,6 @@ class Competition {
     String? activityType,
     String? locationName,
     LatLng? location,
-    CompetitionGoal? competitionGoalType,
     double? goal,
     List<String>? photos,
     bool? closedBeforeEndTime,
@@ -157,7 +151,6 @@ class Competition {
       activityType: activityType ?? this.activityType,
       locationName: locationName ?? this.locationName,
       location: location ?? this.location,
-      competitionGoalType: competitionGoalType ?? this.competitionGoalType,
       goal: goal ?? this.goal,
       photos: photos ?? this.photos,
       closedBeforeEndTime: closedBeforeEndTime ?? this.closedBeforeEndTime,
@@ -186,18 +179,13 @@ class Competition {
         other.activityType == activityType &&
         other.locationName == locationName &&
         other.location == location &&
-        other.competitionGoalType == competitionGoalType &&
         other.goal == goal &&
         AppUtils.listsEqual(other.photos, photos) &&
         other.closedBeforeEndTime == closedBeforeEndTime;
   }
 }
 
-CompetitionGoal? parseCompetitionGoal(String? value) {
-  if (value == null) return null;
 
-  return CompetitionGoal.values.firstWhere((e) => e.toString() == value, orElse: () => CompetitionGoal.distance);
-}
 
 enums.ComVisibility? parseVisibility(String? value) {
   if (value == null) return null;

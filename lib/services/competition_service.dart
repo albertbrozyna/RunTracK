@@ -1,15 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/models/competition.dart';
 
-import '../common/enums/visibility.dart' as enums;
 import '../common/enums/visibility.dart';
 import '../common/utils/app_data.dart';
-import '../common/utils/utils.dart';
 
 
 class CompetitionFetchResult {
@@ -47,7 +43,6 @@ class CompetitionService {
   }
 
 
-
   static Future<bool> saveCompetition(Competition competition) async {
     try {
       if (competition.competitionId.isNotEmpty) {
@@ -55,94 +50,22 @@ class CompetitionService {
         final docRef = FirebaseFirestore.instance.collection('activities').doc(competition.competitionId); // Fetch existing document
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
-          await docRef.set(CompetitionService.toMap(competition));
+          await docRef.set(competition.toMap());
           return true;
         }
       }
       // Save new competition
       final docRef = FirebaseFirestore.instance.collection('competitions').doc(); // Generate id
       competition.competitionId = docRef.id;
-      await docRef.set(CompetitionService.toMap(competition));
+      await docRef.set(competition.toMap());
     } catch (e) {
       return false;
     }
     return true;
   }
-
-  // TODO
-  /// Fetch last {limit} activities from all users
-  static Future<List<Competition>> fetchLatestCompetitions(int limit) async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
-          .where("visibility", isEqualTo: "EVERYONE")
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-      final activities = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data())).toList();
-
-      return activities;
-    } catch (e) {
-      // TODO TO DELETE
-      print("Error fetching latest activities: $e");
-      return [];
-    }
-  }
-
-  /// Fetch last friend activities
-  static Future<List<Competition>> fetchLastFriendsCompetitions(List<String> friendsUids, int limit) async {
-    List<Competition> lastCompetitions = [];
-    if (friendsUids.isEmpty) {
-      return lastCompetitions;
-    }
-
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('competitions')
-          .where("uid", whereIn: friendsUids)
-          .where("visibility", whereIn: ["everyone", "friends"])
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-
-      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data())).toList();
-
-      lastCompetitions.addAll(competitions);
-
-      // Sort activities by date and take limit
-      lastCompetitions.sort((a, b) {
-        final aTime = a.createdAt ?? DateTime(1970);
-        final bTime = b.createdAt ?? DateTime(1970);
-        return bTime.compareTo(aTime);
-      });
-      return lastCompetitions.take(limit).toList();
-    } catch (e) {
-      // TODO TO DELETE
-      print("Error fetching friends' activities: $e");
-      return [];
-    }
-  }
-
-  static Future<List<Competition>> fetchLatestUserCompetitions(String uid, int limit) async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('competitions')
-          .where("uid", isEqualTo: "me")
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data())).toList();
-
-      return competitions;
-    } catch (e) {
-      // TODO TO DELETE
-      print("Error fetching latest activities: $e");
-      return [];
-    }
-  }
-
+  
   /// Fetch last page of user activities
-  static Future<List<Competition>> fetchLatestCompetitionsPage(int limit, DocumentSnapshot? lastDocument) async {
+  static Future<CompetitionFetchResult> fetchLatestCompetitionsPage(int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -155,30 +78,30 @@ class CompetitionService {
       }
 
       final querySnapshot = await queryCompetitions.get();
-
+      DocumentSnapshot? newLastDocument;
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentAllCompetitions = querySnapshot.docs.last;
+        newLastDocument = querySnapshot.docs.last;
       }
 
       final competitions = querySnapshot.docs
-          .map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>))
+          .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
           .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
-      return competitions;
+      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
     } catch (e) {
       print("Error: $e");
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
   }
 
   /// Fetch pages of friends competitions
-  static Future<List<Competition>> fetchLastFriendsCompetitionsPage(
+  static Future<CompetitionFetchResult> fetchLastFriendsCompetitionsPage(
     int limit,
     DocumentSnapshot? lastDocument,
     Set<String> friendsUids,
   ) async {
     if (friendsUids.isEmpty) {
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
 
     try {
@@ -195,23 +118,24 @@ class CompetitionService {
 
       final querySnapshot = await queryCompetitions.get();
 
+      DocumentSnapshot? newLastDocument;
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentFriendsCompetitions = querySnapshot.docs.last;
+        newLastDocument = querySnapshot.docs.last;
       }
 
       final competitions = querySnapshot.docs
-          .map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>))
+          .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
           .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
-      return competitions;
+      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
     } catch (e) {
       print("Error: $e");
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
   }
 
   /// Fetch my latest activities by pages
-  static Future<List<Competition>> fetchMyLatestCompetitionsPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
+  static Future<CompetitionFetchResult> fetchMyLatestCompetitionsPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -224,21 +148,20 @@ class CompetitionService {
       }
 
       final querySnapshot = await queryCompetitions.get();
-
+      DocumentSnapshot? newLastDocument;
       if (querySnapshot.docs.isNotEmpty) {
-        lastFetchedDocumentMyCompetitions = querySnapshot.docs.last;
+        newLastDocument = querySnapshot.docs.last;
       }
-      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return competitions;
+      final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching latest competitions: $e");
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
   }
 
   /// Fetch my competition which I am invited
-  static Future<List<Competition>> fetchMyInvitedCompetitions(
+  static Future<CompetitionFetchResult> fetchMyInvitedCompetitions(
     Set<String> competitionsIds,
     int limit,
     DocumentSnapshot? lastDocument,
@@ -258,17 +181,16 @@ class CompetitionService {
       if (querySnapshot.docs.isNotEmpty) {
         newLastDocument = querySnapshot.docs.last;
       }
-      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return competitions;
+      final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching latest competitions: $e");
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
   }
 
   /// Fetch my competition which I participate
-  static Future<List<Competition>> fetchMyParticipatedCompetitions(
+  static Future<CompetitionFetchResult> fetchMyParticipatedCompetitions(
     Set<String> competitionsIds,
     int limit,
     DocumentSnapshot? lastDocument,
@@ -287,12 +209,11 @@ class CompetitionService {
       if (querySnapshot.docs.isNotEmpty) {
         newLastDocument = querySnapshot.docs.last;
       }
-      final competitions = querySnapshot.docs.map((doc) => CompetitionService.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return competitions;
+      final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
+      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching latest competitions: $e");
-      return [];
+      return CompetitionFetchResult(competitions: [],lastDocument: null);
     }
   }
 
@@ -417,8 +338,6 @@ class CompetitionService {
       }
     }
 
-
-
     /// Update field in competition
   static Future<void> updateFields(String competitionId, List<String> fields, List<dynamic> values) async {
     if (competitionId.isEmpty || fields.isEmpty || values.isEmpty) {
@@ -438,26 +357,4 @@ class CompetitionService {
     }
   }
 
-  // TODO ADD ALL FIELDS FROM COMPETITION
-  /// Compare two competitions and check if they are equal
-  static bool competitionsEqual(Competition c1, Competition c2) {
-    return c1.competitionId == c2.competitionId &&
-        c1.organizerUid == c2.organizerUid &&
-        c1.name == c2.name &&
-        c1.description == c2.description &&
-        c1.visibility == c2.visibility &&
-        c1.startDate == c2.startDate &&
-        c1.endDate == c2.endDate &&
-        c1.registrationDeadline == c2.registrationDeadline &&
-        c1.maxTimeToCompleteActivityHours == c2.maxTimeToCompleteActivityHours &&
-        c1.maxTimeToCompleteActivityMinutes == c2.maxTimeToCompleteActivityMinutes &&
-        c1.activityType == c2.activityType &&
-        AppUtils.setsEqual(c1.participantsUid, c2.participantsUid) &&
-        AppUtils.setsEqual(c1.invitedParticipantsUid, c2.invitedParticipantsUid) &&
-        // TODO
-        //AppUtils.mapsEqual(c1.results, c2.results) &&
-        c1.locationName == c2.locationName &&
-        c1.location?.latitude == c2.location?.latitude &&
-        c1.location?.longitude == c2.location?.longitude;
-  }
 }

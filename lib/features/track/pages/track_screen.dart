@@ -17,7 +17,7 @@ import 'package:run_track/theme/preference_names.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 
 //import 'package:flutter_map_animations/flutter_map_animations.dart';
 

@@ -15,6 +15,8 @@ class AppColors {
   static const Color black = Color(0xFF000000);
   static const Color pageHeaderColor = AppColors.primary; // Page header color
 
+  static Color section = Colors.black.withAlpha(40);
+
   // Primary app text colors
   static Color textPrimaryColor = Colors.white;
 

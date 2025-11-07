@@ -13,4 +13,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String usersList = '/usersList';
   static const String notifications = '/notifications';
+  static const String competitionDetails = '/competitionDetails';
+  static const String all = '/all';
+
 }

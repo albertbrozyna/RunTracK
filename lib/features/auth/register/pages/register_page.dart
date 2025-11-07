@@ -6,7 +6,7 @@ import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/common/widgets/form_container.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/text_styles.dart';
 import 'package:run_track/theme/ui_constants.dart';
 

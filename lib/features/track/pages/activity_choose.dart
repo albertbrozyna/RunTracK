@@ -5,7 +5,7 @@ import 'package:run_track/common/widgets/page_container.dart';
 import 'package:run_track/config/assets/app_images.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 
 import '../../../common/utils/utils.dart';
 import '../../../theme/ui_constants.dart';

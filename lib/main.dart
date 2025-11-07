@@ -46,8 +46,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Run TracK',
       theme: AppTheme.lightTheme,
-
-
       onGenerateRoute: AppRouter.onGenerateRoute,
       localizationsDelegates: const [
         AppLocalizations.delegate,

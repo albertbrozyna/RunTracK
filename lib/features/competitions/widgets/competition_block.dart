@@ -80,23 +80,8 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
     firstName = widget.firstName;
     lastName = widget.lastName;
 
-    // Parse activity type
-
-    if (widget.competition.competitionGoalType == CompetitionGoal.distance) {
       goalType = "Distance";
       goalFormatted = '${widget.competition.goal} km';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.longestDistance) {
-      goalType = "Longest\ndistance";
-      goalFormatted = '${widget.competition.goal} km';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.timedActivity) {
-      goalType = "Timed activity";
-      goalFormatted = '${widget.competition.goal} minutes';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.steps) {
-      goalType = "Amount of steps";
-      goalFormatted = '${widget.competition.goal} steps';
-    } else {
-      goalType = "Unknown";
-    }
 
     if (widget.competition.location != null) {
       String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
@@ -138,7 +123,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            CompetitionDetails(enterContext: enterContext, competitionData: widget.competition, initTab: widget.initIndex),
+            CompetitionDetailsPage(enterContext: enterContext, competitionData: widget.competition, initTab: widget.initIndex),
       ),
     );
   }

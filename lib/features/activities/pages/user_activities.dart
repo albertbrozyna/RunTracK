@@ -5,7 +5,7 @@ import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../common/widgets/page_container.dart';

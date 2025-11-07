@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:run_track/features/track/models/track_state.dart';
 
 import '../../models/user.dart';
 

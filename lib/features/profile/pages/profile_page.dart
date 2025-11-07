@@ -8,7 +8,7 @@ import 'package:run_track/common/widgets/stat_card.dart';
 import 'package:run_track/features/profile/widgets/info_tile.dart';
 import 'package:run_track/features/profile/widgets/profile_action_button.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;
 
