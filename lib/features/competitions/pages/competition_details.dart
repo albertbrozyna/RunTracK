@@ -1,6 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/widgets/alert_dialog.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
@@ -50,11 +50,12 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final TextEditingController _meetingPlaceController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
 
+  Competition? competition;
+
   bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool canPause = true;
   bool edit = true; // Can we edit a competition?
-  Competition? competition;
   bool readOnly = false;
   bool acceptedInvitation = false; // If users is invited and enter context is context invited users can accept invitation or not
   bool declined = false; // If users is invited and enter context is context invited users can decline invitation
@@ -80,73 +81,116 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void initialize() {
     UserService.checkAppUseState(context);
+    _setReadOnlyState();
+    _setupCompetitionData();
+  }
 
-    // Set visibility based on init tab
-    if (widget.enterContext == CompetitionContext.ownerCreate) {
-      if (widget.initTab == 0) {
-        setState(() {
-          _visibility = enums.ComVisibility.me;
-        });
-      } else if (widget.initTab == 1) {
-        setState(() {
-          _visibility = enums.ComVisibility.friends;
-        });
-      } else if (widget.initTab == 2) {
-        setState(() {
-          _visibility = enums.ComVisibility.everyone;
-        });
-      }
+  void _setReadOnlyState() {
+    if (widget.enterContext != CompetitionContext.ownerModify &&
+        widget.enterContext != CompetitionContext.ownerCreate) {
+      readOnly = true;
     }
+  }
 
-    // Set readonly
-    if (widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
-      // Make fields readonly for
-      setState(() {
-        readOnly = true;
-      });
-    }
-
-    // Assign a competition
+  void _setupCompetitionData() {
     competition = widget.competitionData;
-    if (competition != null) {
-      // Set all fields
-      _organizerController.text = _nameController.text = competition!.name;
-      _descriptionController.text = competition!.description ?? "";
-      _startDateController.text = AppUtils.formatDateTime(competition!.startDate);
-      _endDateController.text = AppUtils.formatDateTime(competition!.endDate);
-      _registrationDeadline.text = AppUtils.formatDateTime(competition!.registrationDeadline);
-      _maxTimeToCompleteActivityHours.text = competition!.maxTimeToCompleteActivityHours.toString();
-      _maxTimeToCompleteActivityMinutes.text = competition!.maxTimeToCompleteActivityMinutes.toString();
-      _activityController.text = competition!.activityType ?? "";
-      _visibility = competition!.visibility;
-      _goalController.text = competition!.goal.toString();
 
-      String? latStr = competition?.location?.latitude.toStringAsFixed(4);
-      String? lngStr = competition?.location?.longitude.toStringAsFixed(4);
-      if (competition!.locationName != null && competition!.location?.longitude != null && competition!.location?.latitude != null) {
-        _meetingPlaceController.text = "${competition?.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
-      } else if (competition!.location?.longitude != null && competition!.location?.latitude != null) {
-        _meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
-      }
+    if (competition != null) {
+      _populateFormFromData(competition!);
     } else {
-      // Create new empty competition
-      competition = Competition(
-        organizerUid: AppData.currentUser!.uid,
-        name: "",
-        description: "",
-        startDate: DateTime.now(),
-        endDate: DateTime.now(),
-        visibility: enums.ComVisibility.me,
-        goal: 10,
-      );
+      _createNewCompetition();
     }
+  }
+
+  /// Sync data to controllers
+  void _populateFormFromData(Competition data) {
+    _nameController.text = data.name;
+    _organizerController.text = data.name;
+    _descriptionController.text = data.description ?? "";
+    _startDateController.text = AppUtils.formatDateTime(data.startDate);
+    _endDateController.text = AppUtils.formatDateTime(data.endDate);
+    _registrationDeadline.text = AppUtils.formatDateTime(data.registrationDeadline);
+    _maxTimeToCompleteActivityHours.text = data.maxTimeToCompleteActivityHours.toString();
+    _maxTimeToCompleteActivityMinutes.text = data.maxTimeToCompleteActivityMinutes.toString();
+    _activityController.text = data.activityType ?? "";
+    _visibility = data.visibility;
+    _goalController.text = data.goal.toString();
+    _setMeetingPlaceText(data.location, data.locationName);
+  }
+
+  Competition _getDataFromForm() {
+    final baseCompetition = competition;
+    final currentUser = AppData.instance.currentUser;
+
+    return Competition(
+      competitionId: baseCompetition?.competitionId ?? "",
+      organizerUid: baseCompetition?.organizerUid ?? currentUser?.uid ?? "",
+      invitedParticipantsUid: baseCompetition?.invitedParticipantsUid ?? {},
+      participantsUid: baseCompetition?.participantsUid ?? {},
+      location: baseCompetition?.location,
+      locationName: baseCompetition?.locationName,
+      closedBeforeEndTime: baseCompetition?.closedBeforeEndTime ?? false,
+      photos: baseCompetition?.photos ?? [],
+      createdAt: baseCompetition?.createdAt ?? DateTime.now(),
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      activityType: _activityController.text.trim(),
+      visibility: _visibility,
+
+      startDate: DateTime.tryParse(_startDateController.text.trim()) ?? DateTime.now(),
+      endDate: DateTime.tryParse(_endDateController.text.trim()) ?? DateTime.now(),
+      registrationDeadline: DateTime.tryParse(_registrationDeadline.text.trim()) ?? DateTime.now(),
+
+      goal: double.tryParse(_goalController.text.trim()) ?? 0,
+
+      maxTimeToCompleteActivityHours: int.tryParse(_maxTimeToCompleteActivityHours.text.trim()),
+      maxTimeToCompleteActivityMinutes: int.tryParse(_maxTimeToCompleteActivityMinutes.text.trim()),
+    );
+  }
+
+
+  void _setMeetingPlaceText(LatLng? location, String? locationName) {
+    if (location == null) {
+      _meetingPlaceController.text = "";
+      return;
+    }
+
+    String latStr = location.latitude.toStringAsFixed(4);
+    String lngStr = location.longitude.toStringAsFixed(4);
+
+    if (locationName != null && locationName.isNotEmpty) {
+      _meetingPlaceController.text = "$locationName\nLat: $latStr, Lng: $lngStr";
+    } else {
+      _meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
+    }
+  }
+
+  void _createNewCompetition() {
+    if (widget.enterContext == CompetitionContext.ownerCreate) {
+      if (widget.initTab == 1) {
+        _visibility = enums.ComVisibility.friends;
+      } else if (widget.initTab == 2) {
+        _visibility = enums.ComVisibility.everyone;
+      }
+    }
+
+    competition = Competition(
+      organizerUid: AppData.instance.currentUser!.uid,
+      name: "",
+      description: "",
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      visibility: _visibility,
+      goal: 10,
+      participantsUid: {FirebaseAuth.instance.currentUser!.uid}, // Set owner as fir participant
+    );
   }
 
   Future<void> initializeAsync() async {
     // Set name of user
     if (widget.enterContext == CompetitionContext.ownerCreate || widget.enterContext == CompetitionContext.ownerModify) {
-      _organizerController.text = AppData.currentUser?.firstName ?? "";
-      _organizerController.text += ' ${AppData.currentUser?.lastName ?? ""}';
+      _organizerController.text = AppData.instance.currentUser?.firstName ?? "";
+      _organizerController.text += ' ${AppData.instance.currentUser?.lastName ?? ""}';
     } else if (widget.enterContext == CompetitionContext.participant ||
         widget.enterContext == CompetitionContext.invited ||
         widget.enterContext == CompetitionContext.participant ||
@@ -166,87 +210,26 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
 
-
   /// Set last competition used in adding
   Future<void> setLastActivityType() async {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
-      if (AppData.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
+      if (AppData.instance.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
         _activityController.text = lastCompetition;
         return;
       }
-      _activityController.text = AppData.currentUser?.activityNames?.first ?? "Unknown";
+      _activityController.text = AppData.instance.currentUser?.activityNames?.first ?? "Unknown";
     }
   }
 
-  /// Leave page if changes are done
-  void leavePageEdit(BuildContext context) {
-    if (widget.enterContext != CompetitionContext.ownerModify) {
-      // If it is not owner and he is not modifying competition, leave
-      Navigator.of(context).pop();
-      return;
-    }
-
-    var compData = Competition(
-      competitionId: competition?.competitionId ?? "",
-      organizerUid: widget.competitionData?.organizerUid ?? AppData.currentUser!.uid,
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim(),
-      visibility: _visibility,
-      startDate: DateTime.parse(_startDateController.text.trim()),
-      endDate: DateTime.parse(_endDateController.text.trim()),
-      registrationDeadline: DateTime.parse(_registrationDeadline.text.trim()),
-      maxTimeToCompleteActivityHours: int.tryParse(_maxTimeToCompleteActivityHours.text.trim()),
-      maxTimeToCompleteActivityMinutes: int.tryParse(_maxTimeToCompleteActivityMinutes.text.trim()),
-      activityType: _activityController.text.trim(),
-      invitedParticipantsUid: competition?.invitedParticipantsUid ?? {},
-      participantsUid: competition?.participantsUid ?? {},
-      location: competition?.location,
-      locationName: competition?.locationName,
-      goal: _goalController.text.trim().isNotEmpty ? double.parse(_goalController.text.trim()) : 0,
-      createdAt: DateTime.now(),
-      photos: [],
-      closedBeforeEndTime: competition?.closedBeforeEndTime ?? false,
-    );
-
-    // If there is no changes, just pop
-    if (widget.competitionData == null || (widget.competitionData?.isEqual(compData) ?? false)) {
-      Navigator.of(context).pop();
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AppAlertDialog(
-          titleText: "Warning",
-          contentText:
-              "You have unsaved changes\n\n"
-              "If you leave now, your changes will be lost.\n\n"
-              "Are you sure you want to leave?",
-          textLeft: "Cancel",
-          textRight: "Yes",
-          onPressedLeft: () {
-            Navigator.of(context).pop();
-          },
-          onPressedRight: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pop();
-          },
-        );
-      }, // Close builder
-    ); // Close showDialog
-  }
 
   /// On tap/ on pressed functions
-
   void onTapActivityType(BuildContext context) async {
     final selectedActivity = await Navigator.pushNamed(context, AppRoutes.activityChoose);
     if (selectedActivity is String && selectedActivity.isNotEmpty) {
       _activityController.text = selectedActivity;
-      AppData.lastActivityString = selectedActivity;
+      AppData.instance.lastActivityString = selectedActivity;
 
       PreferencesService.saveString(PreferenceNames.lastUsedPreferenceAddCompetition, selectedActivity);
     }
@@ -262,12 +245,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UsersList(
-          usersUid: competition?.participantsUid ?? {},
-          usersUid2: competition?.invitedParticipantsUid ?? {},
-          usersUid3: {},
-          enterContext: enterContext,
-        ),
+        builder: (context) =>
+            UsersList(
+              usersUid: competition?.participantsUid ?? {},
+              usersUid2: competition?.invitedParticipantsUid ?? {},
+              usersUid3: {},
+              enterContext: enterContext,
+            ),
       ),
     );
     if (result != null) {
@@ -310,10 +294,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Name of competition
   String? validateName(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please enter a name';
     }
-    if (value.trim().length < 5) {
+    if (value
+        .trim()
+        .length < 5) {
       return 'Name must be at least 5 characters';
     }
     return null;
@@ -321,10 +309,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Description
   String? validateDescription(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please enter a description';
     }
-    if (value.trim().length < 10) {
+    if (value
+        .trim()
+        .length < 10) {
       return 'Description must be at least 10 characters';
     }
     return null;
@@ -332,7 +324,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Activity type
   String? validateActivity(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please select an activity';
     }
     return null;
@@ -340,7 +334,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Start date
   String? validateStartDate(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please pick a start date of competition';
     }
     if (DateTime.tryParse(value.trim()) == null) {
@@ -355,7 +351,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // End date
   String? validateEndDate(String? value, String? startDateValue) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please pick an end date';
     }
     DateTime? start = DateTime.tryParse(startDateValue ?? '');
@@ -378,10 +376,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Registration deadline
   String? validateRegistrationDeadline(String? startDateValue, String? endDateValue, String? value) {
-    if (startDateValue == null || startDateValue.trim().isEmpty) {
+    if (startDateValue == null || startDateValue
+        .trim()
+        .isEmpty) {
       return 'Please select a start date before registration deadline';
     }
-    if (endDateValue == null || endDateValue.trim().isEmpty) {
+    if (endDateValue == null || endDateValue
+        .trim()
+        .isEmpty) {
       return 'Please select an end date before registration deadline';
     }
     DateTime? start = DateTime.tryParse(startDateValue);
@@ -393,7 +395,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return 'Invalid end date';
     }
 
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value
+        .trim()
+        .isEmpty) {
       return 'Please pick a registration deadline';
     }
     DateTime? registrationDeadline = DateTime.tryParse(value.trim());
@@ -417,23 +421,25 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   // Max time to complete activity hours
   String? validateGoal(String? value) {
-      if (value == null || value.trim().isEmpty) {
-        return 'Please enter distance in km';
-      }
-      if (int.tryParse(value.trim()) == null) {
-        return 'Enter a valid number';
-      }
-
-      if (int.tryParse(value.trim())! <= 0) {
-        return 'Distance must be positive and greater than 0';
-      }
-
+    if (value == null || value
+        .trim()
+        .isEmpty) {
+      return 'Please enter distance in km';
+    }
+    if (double.tryParse(value.trim()) == null) {
+      return 'Enter a valid number';
+    }
+    if (double.tryParse(value.trim())! <= 0) {
+      return 'Distance must be positive and greater than 0';
+    }
     return null;
   }
 
   // Max time to complete activity hours
   String? validateHours(String? value) {
-    if (value != null && value.trim().isNotEmpty) {
+    if (value != null && value
+        .trim()
+        .isNotEmpty) {
       if (int.tryParse(value.trim()) == null) {
         return 'Enter a valid number';
       }
@@ -441,13 +447,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         return 'There must be at least one hour to complete activity';
       }
     }
-
     return null;
   }
 
   // Max time to complete activity minutes
   String? validateMinutes(String? value) {
-    if (value != null && value.trim().isNotEmpty) {
+    if (value != null && value
+        .trim()
+        .isNotEmpty) {
       if (int.tryParse(value.trim()) == null) {
         return 'Enter a valid number';
       }
@@ -485,11 +492,12 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         return AppAlertDialog(
           titleText: "Warning",
           contentText:
-              "Are you sure you want to delete this activity?\n\n"
+          "Are you sure you want to delete this activity?\n\n"
               "This action cannot be undone.",
           textRight: "Yes",
           textLeft: "Cancel",
           colorBackgroundButtonRight: AppColors.danger,
+          colorButtonForegroundRight: AppColors.white,
           onPressedRight: () async {
             bool res = await CompetitionService.deleteCompetition(widget.competitionData!.competitionId);
 
@@ -548,35 +556,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   /// Save competition to database
   void handleSaveCompetition() async {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      return;
-    }
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    var compData = Competition(
-      competitionId: "",
-      organizerUid: AppData.currentUser!.uid,
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim(),
-      visibility: _visibility,
-      startDate: DateTime.parse(_startDateController.text.trim()),
-      endDate: DateTime.parse(_endDateController.text.trim()),
-      registrationDeadline: DateTime.parse(_registrationDeadline.text.trim()),
-      maxTimeToCompleteActivityHours: int.tryParse(_maxTimeToCompleteActivityHours.text.trim()),
-      maxTimeToCompleteActivityMinutes: int.tryParse(_maxTimeToCompleteActivityMinutes.text.trim()),
-      activityType: _activityController.text.trim(),
-      invitedParticipantsUid: competition?.invitedParticipantsUid ?? {},
-      participantsUid: competition?.participantsUid ?? {},
-      location: competition?.location,
-      locationName: competition?.locationName,
-      goal: _goalController.text.trim().isNotEmpty ? double.parse(_goalController.text.trim()) : 0,
-      createdAt: DateTime.now(),
-      photos: [],
-    );
-
+    var compData = _getDataFromForm();
     bool result = await CompetitionService.saveCompetition(compData);
 
     if (result) {
@@ -598,6 +582,54 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     }
   }
 
+  /// Leave page if changes are done
+  void leavePageEdit(BuildContext context) {
+    if (widget.enterContext != CompetitionContext.ownerModify) {
+      // If it is not owner and he is not modifying competition, leave
+      Navigator.of(context).pop();
+      return;
+    }
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    var compData = _getDataFromForm();
+
+    // If there is no changes, just pop
+    if (widget.competitionData == null || (widget.competitionData?.isEqual(compData) ?? false)) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AppAlertDialog(
+          titleText: "Warning",
+          contentText:
+          "You have unsaved changes\n\n"
+              "If you leave now, your changes will be lost.\n\n"
+              "Are you sure you want to leave?",
+          textLeft: "Cancel",
+          textRight: "Yes",
+          onPressedLeft: () {
+            Navigator.of(context).pop();
+          },
+          onPressedRight: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pop();
+          },
+        );
+      }, // Close builder
+    ); // Close showDialog
+  }
+
+  void _startCompetition() {
+
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -618,6 +650,25 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
+                if(competition?.startDate != null && competition?.endDate != null && competition!.startDate!.isBefore(DateTime.now()) &&
+                    competition!.endDate!.isBefore(DateTime.now()) &&
+                    !(competition?.results?.containsKey(FirebaseAuth.instance.currentUser?.uid) ?? false) &&
+                    widget.enterContext != CompetitionContext.ownerCreate)...[
+
+                  SizedBox(
+                    height: AppUiConstants.verticalSpacingButtons,
+                  ),
+                  CustomButton(
+                      text: competition?.competitionId != AppData.instance.currentCompetition?.competitionId
+                          ? "Set as current competition"
+                      : "Current competition",
+                      onPressed: _startCompetition
+                  ), SizedBox(
+                    height: AppUiConstants.verticalSpacingButtons,
+                  ),
+                ],
+
+
                 Section(
                   title: "Basic info",
                   children: [
@@ -638,13 +689,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                           padding: const EdgeInsets.only(left: 10),
                           child: CircleAvatar(
                             radius: 20,
-                            backgroundImage: (AppData.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
-                                ? NetworkImage(AppData.currentUser!.profilePhotoUrl!)
+                            backgroundImage: (AppData.instance.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
+                                ? NetworkImage(AppData.instance.currentUser!.profilePhotoUrl!)
                                 : AssetImage(AppImages.defaultProfilePhoto),
                           ),
                         ),
                       ),
                     ),
+
 
                     // Name of competition
                     SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -833,7 +885,8 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                       ),
                       validator: validateStartDate,
                       onTap: () async {
-                        if(widget.enterContext != CompetitionContext.ownerCreate && widget.enterContext != CompetitionContext.ownerModify){
+                        if (widget.enterContext != CompetitionContext.ownerCreate &&
+                            widget.enterContext != CompetitionContext.ownerModify) {
                           return;
                         }
                         await AppUtils.pickDate(context, DateTime.now(), DateTime(2100), _startDateController, false);
@@ -913,8 +966,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                                 controller: _maxTimeToCompleteActivityMinutes,
                                 readOnly: readOnly,
                                 decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
                                   labelText: "Minutes",
+                                  prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
+                                ),
+                                style: TextStyle(
+                                  color: AppColors.white,
                                 ),
                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 validator: validateMinutes,
@@ -950,7 +1006,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
                     // Invited competitors
                     CustomButton(
-                      text: "Participants (${competition?.invitedParticipantsUid.length ?? 0})",
+                      text: "Participants (${competition?.participantsUid.length ?? 0})",
                       onPressed: () => onPressedListParticipants(context),
                     ),
                   ],

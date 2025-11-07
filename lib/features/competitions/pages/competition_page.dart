@@ -26,7 +26,7 @@ class CompetitionsPage extends StatefulWidget {
 
 class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  User? currentUser = AppData.currentUser;
+  User? currentUser = AppData.instance.currentUser;
 
   final List<Competition> _myCompetitions = [];
   final List<Competition> _friendsCompetitions = [];
@@ -201,7 +201,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
 
     final competitionFetchResult = await CompetitionService.fetchMyInvitedCompetitions(
-      AppData.currentUser?.receivedInvitationsToCompetitions ?? {},
+      AppData.instance.currentUser?.receivedInvitationsToCompetitions ?? {},
       _limit,
       _lastPageInvites,
     );
@@ -226,7 +226,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
 
     final competitionFetchResult = await CompetitionService.fetchMyParticipatedCompetitions(
-      AppData.currentUser?.participatedCompetitions ?? {},
+      AppData.instance.currentUser?.participatedCompetitions ?? {},
       _limit,
       _lastPageParticipating,
     );
