@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/common/widgets/form_container.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../../common/utils/app_constants.dart';
-import '../../../../common/widgets/custom_button.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/page_container.dart';
+
 
 class AdditionalInfo extends StatefulWidget {
   const AdditionalInfo({super.key});
@@ -41,7 +42,7 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
       child: Center(
         child: Form(
           key: _formKey,
-          child: FormContainer(
+          child: PageContainer(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

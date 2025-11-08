@@ -5,25 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/common/widgets/add_photos.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/assets/app_images.dart';
-import 'package:run_track/features/track/pages/map.dart';
-import 'package:run_track/models/activity.dart';
-import 'package:run_track/services/activity_service.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
-import '../../../common/widgets/alert_dialog.dart';
-import '../../../common/widgets/stat_card.dart';
-import '../models/track_state.dart';
+
+import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/constants/preference_names.dart';
+import '../../../../core/enums/visibility.dart' as enums;
+import '../../../../core/models/activity.dart';
+import '../../../../core/services/activity_service.dart';
+import '../../../../core/services/preferences_service.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/alert_dialog.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/page_container.dart';
+import '../../../../core/widgets/stat_card.dart';
+import '../../data/models/track_state.dart';
 import 'activity_choose.dart';
-import 'package:run_track/common/enums/visibility.dart' as enums;
-import 'package:run_track/services/preferences_service.dart';
-import 'package:run_track/theme/preference_names.dart';
+import 'map.dart';
+
+
 
 class ActivitySummary extends StatefulWidget {
   final Activity activityData;
@@ -541,15 +543,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Photos section
-                AddPhotos(
-                  onlyShow: false,
-                  active: true,
-                  showSelectedPhotos: true,
-                  onImagesSelected: (images) {
-                    _pickedImages = images;
-                  },
-                ),
-                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 if (!widget.readonly || !activitySaved)
                   SizedBox(
                     width: double.infinity,

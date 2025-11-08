@@ -5,10 +5,9 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/utils/utils.dart';
 
-import '../../../common/enums/tracking_state.dart';
-
+import '../../../../core/enums/tracking_state.dart';
+import '../../../../core/utils/utils.dart';
 import '../services/track_foreground_service.dart';
 import 'location_update.dart';
 

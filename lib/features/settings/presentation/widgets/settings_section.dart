@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
-import 'package:run_track/features/settings/widgets/settings_tile.dart';
-import 'package:run_track/theme/ui_constants.dart';
+import 'package:run_track/features/settings/presentation/widgets/settings_tile.dart';
 
-import '../../../theme/app_colors.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+
 
 
 class SettingsSection extends StatefulWidget {

@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/assets/app_images.dart';
-import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/features/auth/login/pages/login_page.dart';
-import 'package:run_track/features/auth/register/pages/register_page.dart';
-import 'package:run_track/l10n/app_localizations.dart';
-import 'package:run_track/models/sign_in_result.dart';
-import 'package:run_track/core/services/google_service.dart';
-import 'package:run_track/models/user.dart' as model;
-import 'package:run_track/services/user_service.dart';
-import '../../../../common/enums/sign_in_status.dart';
-import '../../../../common/utils/app_data.dart';
-import '../../../../config/assets/app_icons.dart';
-import '../../../../theme/ui_constants.dart';
+import 'package:run_track/features/auth/presentation/pages/register_page.dart';
+
+import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_icons.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/navigation/app_routes.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/enums/SignInStatus.dart';
+import '../../../../core/models/sign_in_result.dart';
+import '../../../../core/models/user.dart' as model show User;
+import '../../../../core/services/google_service.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/page_container.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../widgets/additional_info_form.dart';
+import 'login_page.dart';
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});

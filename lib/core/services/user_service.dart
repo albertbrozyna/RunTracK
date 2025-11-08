@@ -3,15 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
-import 'package:run_track/models/notification.dart';
-import 'package:run_track/models/user.dart' as model;
-import 'package:run_track/services/notification_service.dart';
 
-import '../config/routes/app_routes.dart';
+import '../../app/config/app_data.dart';
+import '../../app/navigation/app_routes.dart';
+import '../models/notification.dart';
+import '../models/user.dart' as model;
+import '../utils/utils.dart';
+import 'notification_service.dart';
 
 enum UserAction {
   inviteToFriends,

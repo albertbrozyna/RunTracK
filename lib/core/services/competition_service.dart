@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
-import 'package:run_track/models/competition.dart';
 
-import '../common/enums/visibility.dart';
+import '../enums/visibility.dart';
+import '../models/competition.dart';
+
 
 
 class CompetitionFetchResult {

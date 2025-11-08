@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/theme/ui_constants.dart';
+import 'package:run_track/core/utils/utils.dart';
 
-import '../../config/assets/app_images.dart';
+import '../../app/config/app_images.dart';
+import '../../app/theme/ui_constants.dart';
+
 
 class UserProfileTile extends StatelessWidget {
   final String firstName;

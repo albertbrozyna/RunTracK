@@ -1,21 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/features/track/widgets/fab_location.dart';
-import 'package:run_track/models/competition.dart';
-import 'package:run_track/services/competition_service.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../common/enums/competition_role.dart';
-import '../../../common/utils/app_data.dart';
-import '../../../config/assets/app_images.dart';
-import '../../../models/user.dart';
-import '../../../services/user_service.dart';
+import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/navigation/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/enums/competition_role.dart';
+import '../../../../core/models/competition.dart';
+import '../../../../core/models/user.dart';
+import '../../../../core/services/competition_service.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/widgets/no_items_msg.dart';
+import '../../../../core/widgets/page_container.dart';
+import '../../../track/presentation/widgets/fab_location.dart';
 import '../widgets/competition_block.dart';
-import '../../../common/widgets/no_items_msg.dart';
+
+
+
 
 class CompetitionsPage extends StatefulWidget {
   const CompetitionsPage({super.key});

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
-import 'package:run_track/models/notification.dart';
+
+import '../models/notification.dart';
 
 class NotificationFetchResult {
   final List<AppNotification> notifications;

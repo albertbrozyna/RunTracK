@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/enums/user_relationship.dart';
 
-import '../../../services/user_service.dart';
-import '../../../theme/app_colors.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../core/enums/user_relationship.dart' show UserRelationshipStatus;
+import '../../../../core/services/user_service.dart';
+import '../../../../core/widgets/alert_dialog.dart';
+
 
 class ProfileActionButton extends StatefulWidget {
   final UserRelationshipStatus userRelationshipStatus;

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/assets/app_images.dart';
-import 'package:run_track/features/track/widgets/fab_location.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
 
-import '../../../common/utils/utils.dart';
-import '../../../theme/ui_constants.dart';
+import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/page_container.dart';
+import '../widgets/fab_location.dart';
+
 
 class ActivityChoose extends StatefulWidget {
   final String currentActivity;

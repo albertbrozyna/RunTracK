@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
-import '../../../common/enums/tracking_state.dart';
+
+import '../../../../core/enums/tracking_state.dart';
 
 class LocationUpdate {
   final String type;

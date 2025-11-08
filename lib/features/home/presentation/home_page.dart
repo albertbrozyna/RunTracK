@@ -1,18 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/features/activities/pages/user_activities.dart';
-import 'package:run_track/features/competitions/pages/competition_page.dart';
-import 'package:run_track/features/profile/pages/profile_page.dart';
-import 'package:run_track/features/track/pages/track_screen.dart';
-import 'package:run_track/services/user_service.dart';
 
-import '../../common/widgets/navigation_bar.dart';
-import '../../common/widgets/top_bar.dart';
-import 'package:run_track/common/utils/permission_utils.dart';
+import '../../../app/config/app_data.dart';
+import '../../../core/services/competition_service.dart';
+import '../../../core/services/user_service.dart';
+import '../../../core/utils/permission_utils.dart';
+import '../../../core/utils/utils.dart' show AppUtils;
+import '../../../core/widgets/navigation_bar.dart';
+import '../../../core/widgets/top_bar.dart';
+import '../../activities/pages/user_activities.dart';
+import '../../competitions/presentation/pages/competition_page.dart';
+import '../../profile/presentation/pages/profile_page.dart';
+import '../../track/presentation/pages/track_screen.dart';
 
-import '../../services/competition_service.dart';
+
 
 
 class HomePage extends StatefulWidget {

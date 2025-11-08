@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
+
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+
 
 class Section extends StatelessWidget {
   final List<Widget> children;

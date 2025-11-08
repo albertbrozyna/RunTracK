@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/theme/ui_constants.dart';
 
-import '../../theme/app_colors.dart';
+import '../../app/theme/app_colors.dart';
+import '../../app/theme/ui_constants.dart';
+
 
 class ContentContainer extends StatelessWidget {
   final Widget? child;

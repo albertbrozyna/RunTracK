@@ -1,17 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/app_constants.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/common/widgets/form_container.dart';
-import 'package:run_track/features/auth/login/pages/login_page.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/text_styles.dart';
-import 'package:run_track/theme/ui_constants.dart';
-
-import '../../../../common/utils/validators.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/widgets/page_container.dart';
 import '../../models/auth_response.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -186,7 +184,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text("Sign up", style: AppTextStyles.PageHeaderTextStyle),
+        title: Text("Sign up"),
         centerTitle: true,
         backgroundColor: AppColors.primary,
       ),
@@ -204,7 +202,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    FormContainer(
+                    PageContainer(
                       child: Column(
                         children: [
                           // First Name

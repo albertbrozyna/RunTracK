@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../common/utils/utils.dart';
 import 'package:latlong2/latlong.dart';
-import '../common/enums/visibility.dart' as enums;
+
+import '../enums/visibility.dart' as enums;
+import '../utils/utils.dart';
+
 
 class CompetitionResult {
   final int distance;

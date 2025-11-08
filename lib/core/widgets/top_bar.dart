@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../config/routes/app_routes.dart';
+import '../../app/navigation/app_routes.dart';
 
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;

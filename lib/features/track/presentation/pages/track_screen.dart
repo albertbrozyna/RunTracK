@@ -2,22 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/features/profile/models/settings.dart';
-import 'package:run_track/features/track/models/track_state.dart';
-import 'package:run_track/features/track/pages/activity_choose.dart';
-import 'package:run_track/features/track/pages/activity_summary.dart';
-import 'package:run_track/features/track/widgets/activity_stats.dart';
-import 'package:run_track/features/track/widgets/fab_location.dart';
-import 'package:run_track/l10n/app_localizations.dart';
-import 'package:run_track/models/activity.dart';
-import 'package:run_track/services/activity_service.dart';
-import 'package:run_track/services/preferences_service.dart';
-import 'package:run_track/theme/preference_names.dart';
-import 'package:run_track/theme/ui_constants.dart';
-import '../../../common/enums/tracking_state.dart';
-import '../../../common/utils/app_data.dart';
-import '../../../theme/app_colors.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../../../app/config/app_data.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/constants/preference_names.dart';
+import '../../../../core/enums/tracking_state.dart';
+import '../../../../core/models/activity.dart';
+import '../../../../core/services/activity_service.dart';
+import '../../../../core/services/preferences_service.dart';
+import '../../../../core/widgets/custom_button.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../data/models/track_state.dart';
+import '../widgets/activity_stats.dart';
+import '../widgets/fab_location.dart';
+import 'activity_choose.dart';
+import 'activity_summary.dart';
 
 //import 'package:flutter_map_animations/flutter_map_animations.dart';
 
@@ -296,7 +297,7 @@ class TrackScreenState extends State<TrackScreen> {
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: TrackState.trackStateInstance.currentPosition ?? AppSettings.defaultLocation,
+                        initialCenter: TrackState.trackStateInstance.currentPosition ?? LatLng(0,0),
                         initialZoom: 15.0,
                         interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),

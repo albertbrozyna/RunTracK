@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/theme/ui_constants.dart';
 
-import '../../theme/app_colors.dart';
+import '../../app/theme/app_colors.dart';
+import '../../app/theme/ui_constants.dart';
+
 
 extension StringCapitalize on String {
   String capitalize() {
@@ -189,15 +190,12 @@ class AppUtils {
       "Kayaking",
       "Canoeing",
       "Surfing",
-      "Stand-up Paddleboarding",
       "Jump Rope",
       "Elliptical Training",
       "Stair Climbing",
       "CrossFit",
-      "HIIT",
       "Strength Training",
       "Weightlifting",
-      "Bodyweight Training",
       "Pilates",
       "Yoga",
       "Dance",

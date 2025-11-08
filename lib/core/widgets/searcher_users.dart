@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
-import 'package:run_track/common/enums/enter_context.dart';
-import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/services/user_service.dart';
-
-import '../../models/user.dart';
-import '../../theme/app_colors.dart';
+import '../../app/navigation/app_routes.dart';
+import '../../app/theme/app_colors.dart';
+import '../enums/enter_context.dart';
+import '../models/user.dart';
+import '../services/user_service.dart';
 
 class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   final Set<String> listUsers; // Participants list or friends list

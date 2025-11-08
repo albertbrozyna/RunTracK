@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/widgets/notification_tile.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/assets/app_images.dart';
-import 'package:run_track/models/notification.dart';
 
-import '../../services/notification_service.dart';
-import '../../theme/ui_constants.dart';
+import '../../app/config/app_images.dart';
+import '../../app/theme/ui_constants.dart';
+import '../models/notification.dart';
+import '../services/notification_service.dart';
 import '../widgets/no_items_msg.dart';
+import '../widgets/notification_tile.dart';
+import '../widgets/page_container.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});

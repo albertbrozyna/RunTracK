@@ -1,14 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/common/utils/validators.dart';
-import 'package:run_track/common/widgets/custom_button.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../../common/utils/app_data.dart';
-import '../../../../config/routes/app_routes.dart';
+import '../../../../app/config/app_data.dart';
+import '../../../../app/navigation/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/custom_button.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

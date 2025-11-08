@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/config/assets/app_images.dart';
 
-import '../../../common/utils/utils.dart';
-import '../../../services/user_service.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/ui_constants.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/page_container.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/settings_tile.dart';
 

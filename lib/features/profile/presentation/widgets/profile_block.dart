@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/models/user.dart' as model;
+
+import '../../../../core/models/user.dart';
 
 class ProfileBlock extends StatelessWidget {
-  final model.User? user;
+  final User? user;
   const ProfileBlock({super.key, this.user});
 
   @override

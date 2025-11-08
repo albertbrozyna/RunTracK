@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../common/enums/tracking_state.dart';
+import '../../../../core/enums/tracking_state.dart' show TrackingState;
 import '../models/storage.dart';
 
 import '../models/location_update.dart';

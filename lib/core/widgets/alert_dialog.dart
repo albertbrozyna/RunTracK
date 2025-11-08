@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_colors.dart';
-import '../../theme/ui_constants.dart';
+import '../../app/theme/app_colors.dart';
+import '../../app/theme/ui_constants.dart';
+
+
 
 /// Custom alert dialog
 class AppAlertDialog extends StatelessWidget {

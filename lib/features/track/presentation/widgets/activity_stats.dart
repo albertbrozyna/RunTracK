@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/theme/ui_constants.dart';
-import '../../../theme/app_colors.dart';
-import '../../../common/widgets/stat_card.dart';
 
-import '../../../services/activity_service.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/services/activity_service.dart';
+import '../../../../core/widgets/stat_card.dart';
+
 
 class RunStats extends StatelessWidget {
   final double totalDistance;

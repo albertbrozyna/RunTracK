@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../common/utils/utils.dart';
-import '../../../models/activity.dart';
+import '../../../../core/models/activity.dart' show Activity;
+import '../../../../core/utils/utils.dart';
+
 
 class TrackMap extends StatefulWidget {
   final Activity? activity;

@@ -1,22 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/enums/user_relationship.dart';
-import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/common/widgets/content_container.dart';
-import 'package:run_track/common/widgets/no_items_msg.dart';
-import 'package:run_track/common/widgets/stat_card.dart';
-import 'package:run_track/features/profile/widgets/info_tile.dart';
-import 'package:run_track/features/profile/widgets/profile_action_button.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
-import 'package:run_track/theme/ui_constants.dart';
-import 'package:run_track/models/user.dart' as model;
 
-import '../../../common/enums/enter_context.dart';
-import '../../../common/utils/utils.dart';
-import '../../../common/widgets/page_container.dart';
-import '../../../config/assets/app_images.dart';
-import '../../../config/routes/app_routes.dart';
+import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/navigation/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/enums/enter_context.dart';
+import '../../../../core/enums/user_relationship.dart';
+import '../../../../core/models/user.dart' as model;
+import '../../../../core/services/user_service.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../core/widgets/content_container.dart';
+import '../../../../core/widgets/no_items_msg.dart';
+import '../../../../core/widgets/page_container.dart';
+import '../../../../core/widgets/stat_card.dart';
+import '../widgets/info_tile.dart';
+import '../widgets/profile_action_button.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile

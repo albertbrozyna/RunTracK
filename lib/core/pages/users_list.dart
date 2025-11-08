@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/enums/enter_context.dart';
-import 'package:run_track/common/widgets/no_items_msg.dart';
-import 'package:run_track/common/widgets/page_container.dart';
-import 'package:run_track/common/widgets/user_profile_tile.dart';
-import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/models/user.dart';
 
-import '../../config/assets/app_images.dart';
-import '../../features/track/widgets/fab_location.dart';
+import '../../app/config/app_images.dart';
+import '../../app/navigation/app_routes.dart';
+import '../../app/theme/app_colors.dart';
+import '../../features/track/presentation/widgets/fab_location.dart';
+import '../enums/enter_context.dart' show EnterContextUsersList, EnterContextSearcher;
+import '../models/user.dart';
+import '../services/user_service.dart';
+import '../widgets/no_items_msg.dart';
+import '../widgets/page_container.dart';
 import '../widgets/searcher_users.dart';
-import '../../services/user_service.dart';
-import '../../theme/app_colors.dart';
+import '../widgets/user_profile_list.dart';
+
+
 
 class UsersList extends StatefulWidget {
   final Set<String> usersUid; // Friends for example or list of participants

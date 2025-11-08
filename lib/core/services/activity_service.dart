@@ -2,14 +2,13 @@ import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/common/enums/visibility.dart';
+import 'package:run_track/core/services/preferences_service.dart';
 
-import 'package:run_track/models/activity.dart';
-import 'package:run_track/services/preferences_service.dart';
-import 'package:run_track/theme/preference_names.dart';
-
-import '../../common/utils/app_data.dart';
+import '../../app/config/app_data.dart';
 import '../constants/firestore_names.dart';
+import '../constants/preference_names.dart';
+import '../enums/visibility.dart';
+import '../models/activity.dart';
 
 class ActivitiesFetchResult {
   final List<Activity> activities;

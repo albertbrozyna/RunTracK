@@ -1,17 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/common/widgets/no_items_msg.dart';
-import 'package:run_track/features/activities/widgets/activity_block.dart';
-import 'package:run_track/services/activity_service.dart';
-import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/app_colors.dart';
 
-import '../../../common/utils/app_data.dart';
-import '../../../common/widgets/page_container.dart';
-import '../../../config/assets/app_images.dart';
-import '../../../models/activity.dart';
-import '../../../models/user.dart' as model;
+import '../../../app/config/app_data.dart';
+import '../../../app/config/app_images.dart';
+import '../../../app/theme/app_colors.dart';
+import '../../../core/models/activity.dart';
+import '../../../core/models/user.dart' as model;
+import '../../../core/services/activity_service.dart';
+import '../../../core/services/user_service.dart';
+import '../../../core/widgets/no_items_msg.dart';
+import '../../../core/widgets/page_container.dart';
+import '../widgets/activity_block.dart';
+
+
 
 class ActivitiesPage extends StatefulWidget {
   const ActivitiesPage({super.key});
