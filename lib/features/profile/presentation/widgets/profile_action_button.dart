@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/enums/user_relationship.dart';
 
-import '../../../common/widgets/alert_dialog.dart';
 import '../../../services/user_service.dart';
 import '../../../theme/app_colors.dart';
 

@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/common/pages/notifications_page.dart';
-import 'package:run_track/features/activities/pages/user_activities.dart';
-import 'package:run_track/features/auth/login/pages/login_page.dart';
-import 'package:run_track/features/auth/register/pages/register_page.dart';
-import 'package:run_track/features/auth/start/pages/start_page.dart';
-import 'package:run_track/features/competitions/pages/competition_details.dart';
-import 'package:run_track/features/competitions/pages/competition_page.dart';
-import 'package:run_track/features/home/home_page.dart';
-import 'package:run_track/features/profile/pages/profile_page.dart';
-import 'package:run_track/features/settings/pages/settings_page.dart';
-import 'package:run_track/models/competition.dart';
 
-
-import '../../common/enums/competition_role.dart';
-import '../../common/enums/enter_context.dart';
-import '../../common/pages/users_list.dart';
-import '../../features/track/pages/activity_choose.dart';
-import '../../features/track/pages/activity_summary.dart';
-import '../../models/activity.dart';
-import '../../models/user.dart';
+import '../../core/enums/competition_role.dart';
+import '../../core/enums/enter_context.dart';
+import '../../core/models/activity.dart';
+import '../../core/models/competition.dart';
+import '../../core/models/user.dart';
+import '../../core/pages/notifications_page.dart';
+import '../../core/pages/users_list.dart';
+import '../../features/activities/pages/user_activities.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/auth/presentation/pages/start_page.dart';
+import '../../features/competitions/presentation/pages/competition_details.dart';
+import '../../features/competitions/presentation/pages/competition_page.dart';
+import '../../features/home/presentation/home_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/track/presentation/pages/activity_choose.dart';
+import '../../features/track/presentation/pages/activity_summary.dart';
 import 'app_routes.dart';
 
 class AppRouter {
