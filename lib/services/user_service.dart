@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
-import 'package:run_track/constants/firestore_names.dart';
+import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
 import 'package:run_track/models/notification.dart';
 import 'package:run_track/models/user.dart' as model;

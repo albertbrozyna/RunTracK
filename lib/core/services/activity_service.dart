@@ -8,7 +8,7 @@ import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/preferences_service.dart';
 import 'package:run_track/theme/preference_names.dart';
 
-import '../common/utils/app_data.dart';
+import '../../common/utils/app_data.dart';
 import '../constants/firestore_names.dart';
 
 class ActivitiesFetchResult {

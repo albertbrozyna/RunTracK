@@ -85,9 +85,9 @@ class AppTheme {
           ),
         ),
         textStyle: TextStyle(
-          color: AppColors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w400
+            color: AppColors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w400
         ),
         menuStyle: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(AppColors.primary),

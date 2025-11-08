@@ -8,7 +8,7 @@ import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/l10n/app_localizations.dart';
 import 'package:run_track/models/sign_in_result.dart';
-import 'package:run_track/services/google_service.dart';
+import 'package:run_track/core/services/google_service.dart';
 import 'package:run_track/models/user.dart' as model;
 import 'package:run_track/services/user_service.dart';
 import '../../../../common/enums/sign_in_status.dart';

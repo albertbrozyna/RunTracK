@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:run_track/services/user_service.dart';
 import 'package:run_track/models/user.dart' as model;
-import '../common/enums/sign_in_status.dart';
-import '../models/sign_in_result.dart';
+import '../../common/enums/sign_in_status.dart';
+import '../../models/sign_in_result.dart';
 
 
 class GoogleService {
