@@ -16,6 +16,7 @@ class LocationUpdate {
   final List<LatLng>? trackedPath;
   final double positionAccuracy;
   final TrackingState? trackingState;
+  final String? currentCompetition;
 
   LocationUpdate({
     required this.type,
@@ -32,6 +33,7 @@ class LocationUpdate {
     required this.positionAccuracy,
     this.trackingState,
     this.trackedPath,
+    this.currentCompetition,
   });
 
   Map<String, dynamic> toJson() {

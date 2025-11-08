@@ -23,7 +23,7 @@ class ActivitiesPage extends StatefulWidget {
 class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<User>? friendsActivities;
-  model.User? currentUser = AppData.currentUser;
+  model.User? currentUser = AppData.instance.currentUser;
 
   final List<Activity> _myActivities = [];
   final List<Activity> _friendsActivities = [];

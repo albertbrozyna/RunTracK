@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/common/enums/competition_goal.dart';
 import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/models/competition.dart';
 
 import '../common/enums/visibility.dart';
-import '../common/utils/app_data.dart';
 
 
 class CompetitionFetchResult {
@@ -19,35 +17,25 @@ class CompetitionFetchResult {
 }
 
 class CompetitionService {
-
-
-  /// Pare competition goal from string to enum
-  static CompetitionGoal? parseCompetitionGoal(String goal) {
-    if (goal.isEmpty) {
+  static Future<Competition?> fetchCompetition(String competitionId) async {
+    if(competitionId.isEmpty){
       return null;
     }
-
-    if (goal == CompetitionGoal.distance.toString()) {
-      return CompetitionGoal.distance;
+    final docSnapshot = await FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId).get(); // Fetch existing document
+    if (docSnapshot.exists)  {
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      return Competition.fromMap(data);
+    } else {
+      return null;
     }
-    if (goal == CompetitionGoal.timedActivity.toString()) {
-      return CompetitionGoal.timedActivity;
-    }
-    if (goal == CompetitionGoal.longestDistance.toString()) {
-      return CompetitionGoal.longestDistance;
-    }
-    if (goal == CompetitionGoal.steps.toString()) {
-      return CompetitionGoal.steps;
-    }
-    return null;
   }
 
 
-  static Future<bool> saveCompetition(Competition competition) async {
+    static Future<bool> saveCompetition(Competition competition) async {
     try {
       if (competition.competitionId.isNotEmpty) {
         // Competition exists, edit it
-        final docRef = FirebaseFirestore.instance.collection('activities').doc(competition.competitionId); // Fetch existing document
+        final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competition.competitionId); // Fetch existing document
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
           await docRef.set(competition.toMap());
@@ -55,7 +43,7 @@ class CompetitionService {
         }
       }
       // Save new competition
-      final docRef = FirebaseFirestore.instance.collection('competitions').doc(); // Generate id
+      final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(); // Generate id
       competition.competitionId = docRef.id;
       await docRef.set(competition.toMap());
     } catch (e) {
@@ -249,18 +237,13 @@ class CompetitionService {
 
   /// Accept invitation to competition
   static Future<bool> acceptInvitation(Competition competition) async {
-    String? currentUserUid = AppData.currentUser?.uid;
-    if(currentUserUid == null){
-      return false;
-    }
-
     try {
 
       await FirebaseFirestore.instance.runTransaction((transaction)async {
         final competitionReference = FirebaseFirestore.instance
             .collection(FirestoreCollections.competitions)
             .doc(competition.competitionId);
-        final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(currentUserUid);
+        final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(FirebaseAuth.instance.currentUser?.uid);
 
         final competitionS = await transaction.get(competitionReference);
         if (!competitionS.exists) {
@@ -268,7 +251,7 @@ class CompetitionService {
         }
 
         final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
-        updatedInviteList.remove(currentUserUid);
+        updatedInviteList.remove(FirebaseAuth.instance.currentUser?.uid);
 
         transaction.update(competitionReference, {
           'invitedParticipantsUid': updatedInviteList,
@@ -296,10 +279,7 @@ class CompetitionService {
 
   /// Decline invitation to competition
   static Future<bool> declineInvitation(Competition competition) async {
-      String? currentUserUid = AppData.currentUser?.uid;
-      if(currentUserUid == null){
-        return false;
-      }
+
 
       try {
         // Do this in one transaction
@@ -307,7 +287,7 @@ class CompetitionService {
           final competitionReference = FirebaseFirestore.instance
               .collection(FirestoreCollections.competitions)
               .doc(competition.competitionId);
-          final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(currentUserUid);
+          final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(FirebaseAuth.instance.currentUser?.uid);
 
           final competitionS = await transaction.get(competitionReference);
           if (!competitionS.exists) {
@@ -315,7 +295,7 @@ class CompetitionService {
           }
 
           final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
-          updatedInviteList.remove(currentUserUid);
+          updatedInviteList.remove(FirebaseAuth.instance.currentUser?.uid);
 
           transaction.update(competitionReference, {
             'invitedParticipantsUid': updatedInviteList,

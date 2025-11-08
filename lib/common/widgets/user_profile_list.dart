@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
+import '../../config/assets/app_images.dart';
+
 class UserProfileTile extends StatelessWidget {
   final String firstName;
   final String lastName;
@@ -9,8 +11,8 @@ class UserProfileTile extends StatelessWidget {
   final double radiusOfAvatar;
   final double fontSize;
   final int height;
-  BoxBorder? containerBorder;
-  UserProfileTile({
+  final BoxBorder? containerBorder;
+  const UserProfileTile({
     super.key,
     required this.firstName,
     required this.lastName,
@@ -46,7 +48,7 @@ class UserProfileTile extends StatelessWidget {
                   radius: radiusOfAvatar,
                   backgroundImage: profilePhotoUrl.isNotEmpty
                       ? NetworkImage(profilePhotoUrl)
-                      : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                      : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                 ),
               ),
               SizedBox(width: 10),

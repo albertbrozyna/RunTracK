@@ -29,12 +29,12 @@ class StartPage extends StatefulWidget {
 class StartPageState extends State<StartPage> {
   /// Handle sign in with google
   Future<void> handleSignInWithGoogle() async {
-    AppData.googleLogin = true;
+    AppData.instance.googleLogin = true;
     SignInResult result = await GoogleService.signInWithGoogle();
 
     if (result.status == SignInStatus.success) {
       // User exist in database so we log in
-      AppData.googleLogin = false;
+      AppData.instance.googleLogin = false;
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushReplacementNamed(context, AppRoutes.home);
@@ -45,7 +45,7 @@ class StartPageState extends State<StartPage> {
       model.User? newUser = result.user;
 
       if (newUser == null) {
-        AppData.googleLogin = false;
+        AppData.instance.googleLogin = false;
         GoogleService.signOutFromGoogle();
         return;
       }
@@ -78,13 +78,13 @@ class StartPageState extends State<StartPage> {
         );
         if (mounted) {
           if (message == "User created") {
-            AppData.googleLogin = false;
+            AppData.instance.googleLogin = false;
             AppUtils.showMessage(context, "Registered successfully!");
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(route) => false);
             });
           } else {
-            AppData.googleLogin = false;
+            AppData.instance.googleLogin = false;
             AppUtils.showMessage(context, "Register failed!", messageType: MessageType.error);
           }
         }

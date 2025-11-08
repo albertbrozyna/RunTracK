@@ -177,11 +177,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
     // Photos from activity
     List<String> uploadedUrls = [];
-    if (AppData.images) {
+    if (AppData.instance.images) {
       // If images are enabled in app
       for (var image in _pickedImages) {
         final ref = FirebaseStorage.instance.ref().child(
-          'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
+          'users/${AppData.instance.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
         );
         await ref.putFile(File(image.path));
         final url = await ref.getDownloadURL();

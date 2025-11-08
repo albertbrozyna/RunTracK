@@ -35,6 +35,7 @@ void onStart(ServiceInstance serviceInstance) async {
   LatLng? currentPosition;
   const double maxHumanSpeed = 12.0; // 43 km/h
   int saveCounter = 0;
+  String currentCompetition = ""; // Current competition
 
   Timer? timeTimer;
   StreamSubscription<Position>? positionSubscription;
@@ -54,6 +55,7 @@ void onStart(ServiceInstance serviceInstance) async {
     latestPosition = null;
     trackingState = TrackingState.stopped;
     saveCounter = 0;
+    currentCompetition = "";
     Storage.clearStorage();
   }
 
@@ -80,6 +82,7 @@ void onStart(ServiceInstance serviceInstance) async {
       steps = (stats['steps'] ?? 0).toInt();
       currentSpeedValue = (stats['currentSpeedValue'] ?? 0.0).toDouble();
       elapsedTime = Duration(seconds: (stats['elapsedTime'] ?? 0).toInt());
+      currentCompetition = stats['currentCompetition'];
 
       // Read saved state
       final savedState = stats['trackingState'] as String?;
@@ -114,7 +117,7 @@ void onStart(ServiceInstance serviceInstance) async {
     });
 
     // location stream
-    final locationSettings = LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 3);
+    final locationSettings = LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 15);
     positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
       if (position.latitude == 0.0 && position.longitude == 0.0) return;
       if (latestPosition == null) {
@@ -218,16 +221,17 @@ void onStart(ServiceInstance serviceInstance) async {
           'steps': steps,
           'currentSpeedValue': currentSpeedValue,
           'trackingState': trackingState.name,
+          'currentCompetition': currentCompetition,
         });
       }
     });
   }
 
-  void sendSync(){
+  void sendSync(String type){
     final update = LocationUpdate(
       lat: 0.0,
       lng: 0.0,
-      type: 'S',
+      type: type,
       totalDistance: totalDistance,
       steps: steps,
       elevationGain: elevationGain,
@@ -256,24 +260,7 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // Stop service
      serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
-      final update = LocationUpdate(
-        lat: 0.0,
-        lng: 0.0,
-        type: 'e',
-        // END
-        totalDistance: totalDistance,
-        steps: steps,
-        elevationGain: elevationGain,
-        elevationLoss: elevationLoss,
-        avgSpeed: avgSpeed,
-        pace: pace,
-        calories: calories,
-        positionAccuracy: 0.0,
-        trackingState: trackingState,
-        trackedPath: trackedPath,
-        elapsedTime: elapsedTime
-      );
-      serviceInstance.invoke(ServiceEvent.sync.name, update.toJson()); // Send sync flag
+      sendSync("E");  // End sync
       stopLocationTimerAndStream();
       clearStats();
 
@@ -284,14 +271,14 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // Get current state
      serviceInstance.on(ServiceEvent.getState.name).listen((_) {
-       sendSync();
+       sendSync("S");
      });
 
     // pause service
     serviceInstance.on(ServiceEvent.pause.name).listen((_) {
       print("MYLOG pause");
       trackingState = TrackingState.paused;
-      sendSync();
+      sendSync("S");
     });
 
     // resume service

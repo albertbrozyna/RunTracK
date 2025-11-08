@@ -25,14 +25,14 @@ class UserService {
   /// Check if current user i logged in to app
   static bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null &&
-        AppData.currentUser != null &&
-        AppData.currentUser!.uid == FirebaseAuth.instance.currentUser!.uid;
+        AppData.instance.currentUser != null &&
+        AppData.instance.currentUser!.uid == FirebaseAuth.instance.currentUser!.uid;
   }
 
   /// Sign out user
   static Future<void> signOutUser() async {
     await FirebaseAuth.instance.signOut();
-    AppData.currentUser = null;
+    AppData.instance.currentUser = null;
   }
 
   static void checkAppUseState(BuildContext context) {
@@ -64,30 +64,7 @@ class UserService {
     return age;
   }
 
-  // TODO check if you clone all fields
-  static model.User cloneUserData(model.User sourceUser) {
-    return model.User(
-      uid: sourceUser.uid,
-      firstName: sourceUser.firstName,
-      lastName: sourceUser.lastName,
-      gender: sourceUser.gender,
-      activityNames: sourceUser.activityNames != null
-          ? List.from(sourceUser.activityNames!)
-          : null,
-      friendsUid: Set.from(sourceUser.friendsUid),
-      email: sourceUser.email,
-      profilePhotoUrl: sourceUser.profilePhotoUrl,
-      dateOfBirth: sourceUser.dateOfBirth != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              sourceUser.dateOfBirth!.millisecondsSinceEpoch,
-            )
-          : null,
-      defaultLocation: LatLng(
-        sourceUser.userDefaultLocation.latitude,
-        sourceUser.userDefaultLocation.longitude,
-      ),
-    );
-  }
+
 
   /// Delete user from firestore
   static Future<bool> deleteUserFromFirestore() async {
@@ -113,74 +90,6 @@ class UserService {
     }
   }
 
-  /// Map user to firestore collection
-  static Map<String, dynamic> toMap(model.User user) {
-    return {
-      'uid': user.uid,
-      'firstName': user.firstName,
-      'lastName': user.lastName,
-      'fullName': user.fullName,
-      'email': user.email,
-      'activityNames': user.activityNames ?? [],
-      'dateOfBirth': user.dateOfBirth != null
-          ? Timestamp.fromDate(user.dateOfBirth!)
-          : null,
-      'gender': user.gender,
-      'friendsUid': user.friendsUid,
-      'pendingInvitationsToFriends': user.pendingInvitationsToFriends,
-      'receivedInvitationsToFriends': user.receivedInvitationsToFriends,
-      'receivedInvitationsToCompetitions':
-          user.receivedInvitationsToCompetitions,
-      'participatedCompetitions': user.participatedCompetitions,
-      'profilePhotoUrl': user.profilePhotoUrl,
-      'userDefaultLocation': {
-        'latitude': user.userDefaultLocation.latitude,
-        'longitude': user.userDefaultLocation.longitude,
-      },
-      'kilometers': user.kilometers,
-      'burnedCalories': user.burnedCalories,
-      'hoursOfActivity': user.hoursOfActivity,
-    };
-  }
-
-  /// Create user from firestore collection
-  static model.User fromMap(Map<String, dynamic> map) {
-    final location = map['userDefaultLocation'];
-    return model.User(
-      uid: map['uid'] ?? '',
-      firstName: map['firstName'] ?? '',
-      lastName: map['lastName'] ?? '',
-      email: map['email'],
-      activityNames: List<String>.from(map['activityNames'] ?? []),
-      friendsUid: Set<String>.from(map['friendsUid'] ?? []),
-      pendingInvitationsToFriends: Set<String>.from(
-        map['pendingInvitationsToFriends'] ?? [],
-      ),
-      receivedInvitationsToFriends: Set<String>.from(
-        map['receivedInvitationsToFriends'] ?? [],
-      ),
-      receivedInvitationsToCompetitions: Set<String>.from(
-        map['receivedInvitationsToCompetitions'] ?? [],
-      ),
-      participatedCompetitions: Set<String>.from(
-        map['participatedCompetitions'] ?? [],
-      ),
-      profilePhotoUrl: map['profilePhotoUrl'],
-      defaultLocation: location != null
-          ? LatLng(
-              (location['latitude'] ?? 0.0).toDouble(),
-              (location['longitude'] ?? 0.0).toDouble(),
-            )
-          : LatLng(0.0, 0.0),
-      dateOfBirth: map['dateOfBirth'] != null
-          ? (map['dateOfBirth'] as Timestamp).toDate()
-          : null,
-      gender: map['gender'],
-      kilometers: map['kilometers'] ?? 0,
-      burnedCalories: map['burnedCalories'] ?? 0,
-      hoursOfActivity: map['hoursOfActivity'] ?? 0,
-    );
-  }
 
   /// Fetch one user data
   static Future<model.User?> fetchUser(String uid) async {
@@ -195,7 +104,7 @@ class UserService {
     if (docSnapshot.exists) {
       final userData = docSnapshot.data();
       if (userData != null) {
-        return UserService.fromMap(userData);
+        return model.User.fromMap(userData);
       }
     }
     return null;
@@ -266,7 +175,7 @@ class UserService {
         final querySnapshot = await queryUsers.get();
         final users = querySnapshot.docs
             .map(
-              (doc) => UserService.fromMap(doc.data() as Map<String, dynamic>),
+              (doc) => model.User.fromMap(doc.data() as Map<String, dynamic>),
             )
             .toList();
 
@@ -360,7 +269,7 @@ class UserService {
       }
 
       final users = querySnapshot.docs
-          .map((doc) => UserService.fromMap(doc.data() as Map<String, dynamic>))
+          .map((doc) => model.User.fromMap(doc.data() as Map<String, dynamic>))
           .toList();
       return users;
     } catch (e) {
@@ -383,7 +292,7 @@ class UserService {
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
-      await docRef.set(UserService.toMap(user));
+      await docRef.set(user.toMap());
       return user;
     } catch (e) {
       print(e);
@@ -400,7 +309,7 @@ class UserService {
       final docRef = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
-      await docRef.set(UserService.toMap(user));
+      await docRef.set(user.toMap());
       return user;
     } catch (e) {
       print(e);

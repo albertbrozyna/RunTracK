@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/config/assets/app_images.dart';
 import 'package:run_track/config/routes/app_routes.dart';
-import 'package:run_track/features/competitions/pages/competition_details.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
@@ -80,7 +79,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
     lastName = widget.lastName;
 
     goalType = "Distance";
-    goalFormatted = '${widget.competition.goal} km';
+    goalFormatted = '${widget.competition.distanceToGo} km';
 
     if (widget.competition.location != null) {
       String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
@@ -295,7 +294,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                   ),
                 ),
               // Photos from the run
-              if (widget.competition.photos.isNotEmpty && AppData.images)
+              if (widget.competition.photos.isNotEmpty && AppData.instance.images)
                 SizedBox(
                   height: 120,
                   child: ListView.builder(

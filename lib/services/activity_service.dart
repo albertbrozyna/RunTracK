@@ -242,7 +242,7 @@ class ActivityService {
   static Future<String> fetchLastActivityFromPrefs() async {
     String? activityName = await PreferencesService.loadString(PreferenceNames.lastUsedPreference);
 
-    final userActivities = AppData.currentUser?.activityNames;
+    final userActivities = AppData.instance.currentUser?.activityNames;
     // If saved and on the user list
     if (activityName != null) {
       return activityName;

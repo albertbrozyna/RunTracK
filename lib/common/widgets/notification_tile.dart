@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '';
 import '../../models/notification.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/ui_constants.dart';
@@ -15,9 +14,7 @@ class NotificationTile extends StatelessWidget {
         return Icons.run_circle_outlined;
       case NotificationType.inviteFriends:
         return Icons.person;
-      default:
-        return Icons.notifications;
-    }
+      }
   }
 
   @override

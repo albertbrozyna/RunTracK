@@ -1,8 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:run_track/common/enums/tracking_state.dart';
 import 'package:run_track/common/utils/app_data.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
@@ -14,9 +11,9 @@ import 'package:run_track/services/user_service.dart';
 import '../../common/widgets/navigation_bar.dart';
 import '../../common/widgets/top_bar.dart';
 import 'package:run_track/common/utils/permission_utils.dart';
-import 'package:run_track/features/track/models/track_state.dart';
 
-import '../track/models/location_update.dart';
+import '../../services/competition_service.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,8 +26,6 @@ class _HomePageState extends State<HomePage> {
   late List<Widget> _pages;
   int _selectedIndex = 0;
   final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
-  List<LatLng> track = [];
-  LatLng? currentPosition;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -55,10 +50,12 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> _loadCurrentUser() async {
-    if (FirebaseAuth.instance.currentUser != null && AppData.currentUser == null) {
-      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
-      setState(() {});
+  Future<void> _loadAppData() async {
+    if (FirebaseAuth.instance.currentUser != null && AppData.instance.currentUser == null) {
+      AppData.instance.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
+    }
+    if (AppData.instance.currentUser != null && AppData.instance.currentUser!.currentCompetition.isNotEmpty) {
+      AppData.instance.currentCompetition = await CompetitionService.fetchCompetition(AppData.instance.currentUser!.currentCompetition);
     }
   }
 
@@ -67,28 +64,17 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initialize();
     initializeAsync();
-    _loadCurrentUser();
   }
 
   void initialize() {
     _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
   }
 
-
   Future<void> initializeAsync() async {
-    AppData.isLoading.value = true; // Start loading
+    AppData.instance.isLoading.value = true; // Start loading
+    _loadAppData();
+    AppData.instance.isLoading.value = false;
 
-    // Set track state to paused i last state was running
-    // if (AppData.trackState.trackingState == TrackingState.running) {
-    //   AppData.trackState.trackingState = TrackingState.paused;
-    // }
-    AppData.isLoading.value = false;
-
-    // Add listener
-    // AppData.trackState.addListener(() {
-    //   isTrackingNotifier.value =
-    //       AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused;
-    // });
     _askLocation();
   }
 

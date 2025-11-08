@@ -75,19 +75,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (user != null) {
       // Check user relationship
-      if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
+      if (user!.friendsUid.contains(AppData.instance.currentUser?.uid)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(
+      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends.contains(
             user!.uid,
           ) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(
+      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends.contains(
             user!.uid,
           ) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
-      } else if (user!.uid == AppData.currentUser?.uid) {
+      } else if (user!.uid == AppData.instance.currentUser?.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
       }
     }

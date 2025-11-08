@@ -1,10 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../theme/app_colors.dart';
 
@@ -38,7 +35,6 @@ class AppUtils {
 
   // Show message using scaffold
   static void showMessage(BuildContext context, String message, {MessageType messageType = MessageType.info}) {
-    String title = "";
     Color bgColor;
     if(MessageType.info == messageType){
       bgColor = AppColors.scaffoldMessengerInfoColor;

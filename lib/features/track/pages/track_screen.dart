@@ -49,7 +49,7 @@ class TrackScreenState extends State<TrackScreen> {
   final MapController _mapController = MapController();
   bool _followUser = true;
   TextEditingController activityController = TextEditingController();
-  String? activityName = AppData.currentUser?.activityNames?.first; // Assign default on the start
+  String? activityName = AppData.instance.currentUser?.activityNames?.first; // Assign default on the start
   final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
   Timer? _finishTimer;
 
@@ -65,11 +65,13 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
-    final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
-    setState(() {
-      activityName = lastActivity;
-      activityController.text = lastActivity;
-    });
+    if(AppData.instance.currentCompetition != null){  // Set activity type from competition
+      activityController.text = AppData.instance.currentCompetition!.name;
+    }else{
+      final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
+        activityName = lastActivity;
+        activityController.text = lastActivity;
+    }
 
     TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
@@ -86,7 +88,7 @@ class TrackScreenState extends State<TrackScreen> {
           builder: (context) => ActivitySummary(
             readonly: false,
             activityData: Activity(
-              uid: AppData.currentUser!.uid,
+              uid: AppData.instance.currentUser!.uid,
               activityType: activityController.text.trim(),
               avgSpeed: TrackState.trackStateInstance.avgSpeed,
               calories: TrackState.trackStateInstance.calories,
@@ -197,7 +199,7 @@ class TrackScreenState extends State<TrackScreen> {
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
       activityController.text = selectedActivity;
-      AppData.lastActivityString = selectedActivity;
+      AppData.instance.lastActivityString = selectedActivity;
       // Save it to local preferences
       PreferencesService.saveString(PreferenceNames.lastUsedPreference, selectedActivity);
     }
@@ -225,12 +227,69 @@ class TrackScreenState extends State<TrackScreen> {
                           readOnly: true,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.zero),
-                            suffixIcon: IconButton(onPressed: () => onTapActivity(), icon: Icon(Icons.edit, size: 26,color: AppColors.gray,)),
+                            suffixIcon: IconButton(onPressed: AppData.instance.currentCompetition == null ? () => onTapActivity() : null, icon: Icon(Icons.edit, size: 26,color: AppData.instance.currentCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),)),
                           ),
                         ),
                       ),
                     ],
                   ),
+                  if (AppData.instance.currentCompetition != null || true)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.emoji_events,
+                            color: Colors.yellow[600],
+                            size: 32,
+                          ),
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "You are currently participating in:",
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(80),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  AppData.instance.currentCompetition!.name,
+                                  // AppData.instance.currentCompetition!.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  "Distance to go: ${AppData.instance.currentCompetition!.distanceToGo}",
+                                  // AppData.instance.currentCompetition!.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Expanded map
                   Expanded(

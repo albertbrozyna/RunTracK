@@ -28,7 +28,7 @@ class Competition {
   String? activityType; // Allowed activity types of competition
   String? locationName; // Location name
   LatLng? location; // Location
-  double goal; // Km
+  double distanceToGo; // Km
   List<String> photos; // Photos from competitions
   bool closedBeforeEndTime;
 
@@ -37,7 +37,7 @@ class Competition {
     required this.organizerUid,
     required this.name,
     required this.visibility,
-    required this.goal,
+    required this.distanceToGo,
     this.createdAt,
     this.startDate,
     this.endDate,
@@ -63,7 +63,7 @@ class Competition {
       competitionId: map['competitionId'] ?? '',
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
-      goal: (map['goal'] is num) ? (map['goal'] as num).toDouble() : 0.0,
+      distanceToGo: (map['distanceToGo'] is num) ? (map['distanceToGo'] as num).toDouble() : 0.0,
       visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
@@ -90,7 +90,7 @@ class Competition {
       'competitionId': competitionId,
       'organizerUid': organizerUid,
       'name': name,
-      'goal': goal,
+      'distanceToGo': distanceToGo,
       'description': description,
       'visibility': visibility.toString(),
       'startDate': startDate != null ? Timestamp.fromDate(startDate!) : null,
@@ -151,7 +151,7 @@ class Competition {
       activityType: activityType ?? this.activityType,
       locationName: locationName ?? this.locationName,
       location: location ?? this.location,
-      goal: goal ?? this.goal,
+      distanceToGo: goal ?? distanceToGo,
       photos: photos ?? this.photos,
       closedBeforeEndTime: closedBeforeEndTime ?? this.closedBeforeEndTime,
     );
@@ -179,7 +179,7 @@ class Competition {
         other.activityType == activityType &&
         other.locationName == locationName &&
         other.location == location &&
-        other.goal == goal &&
+        other.distanceToGo == distanceToGo &&
         AppUtils.listsEqual(other.photos, photos) &&
         other.closedBeforeEndTime == closedBeforeEndTime;
   }

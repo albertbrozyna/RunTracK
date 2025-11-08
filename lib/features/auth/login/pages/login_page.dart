@@ -61,8 +61,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
-      if (AppData.currentUser == null) {
+      AppData.instance.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
+      if (AppData.instance.currentUser == null) {
         if (mounted) {
           AppUtils.showMessage(context, "User don't exists.", messageType: MessageType.info);
         }
