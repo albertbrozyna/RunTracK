@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/widgets/form_container.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/app_constants.dart';

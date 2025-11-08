@@ -10,7 +10,7 @@ import '../../config/assets/app_images.dart';
 import '../../features/track/widgets/fab_location.dart';
 import '../widgets/searcher_users.dart';
 import '../../services/user_service.dart';
-import '../../theme/colors.dart';
+import '../../theme/app_colors.dart';
 
 class UsersList extends StatefulWidget {
   final Set<String> usersUid; // Friends for example or list of participants

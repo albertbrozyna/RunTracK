@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/common/utils/app_constants.dart';
 
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 
 class MeetingPlaceMap extends StatefulWidget {
   final LatLng? latLng;

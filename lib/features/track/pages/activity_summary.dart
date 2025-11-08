@@ -15,9 +15,11 @@ import 'package:run_track/features/track/pages/map.dart';
 import 'package:run_track/models/activity.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
+import '../../../common/widgets/alert_dialog.dart';
 import '../../../common/widgets/stat_card.dart';
+import '../models/track_state.dart';
 import 'activity_choose.dart';
 import 'package:run_track/common/enums/visibility.dart' as enums;
 import 'package:run_track/services/preferences_service.dart';
@@ -40,10 +42,10 @@ class ActivitySummary extends StatefulWidget {
 
 class _ActivitySummaryState extends State<ActivitySummary> {
   bool activitySaved = false; // This var tells us if activity is saved
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController notesController = TextEditingController();
-  TextEditingController activityController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
+  final TextEditingController activityController = TextEditingController();
   late Activity passedActivity = widget.activityData;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
@@ -54,23 +56,16 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   void initState() {
     super.initState();
     initialize();
-    // Formatted startTime of the activity
-
     setState(() {
       activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text =
-          widget.activityData.title ?? "${widget.activityData.activityType}, ${widget.activityData.totalDistance.toString()}";
+      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${(widget.activityData.totalDistance! / 1000).toString()}";
       descriptionController.text = widget.activityData.description ?? "";
       _visibility = widget.activityData.visibility;
     });
   }
 
   void initialize() {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
-      return;
-    }
+    UserService.checkAppUseState(context);
   }
 
   /// Get text for save button
@@ -154,7 +149,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       steps: widget.activityData.steps,
     );
 
-    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+    if (passedActivity.isEqual(userActivity)) {
       if (mounted) {
         AppUtils.showMessage(context, 'No changes to save!');
       }
@@ -182,11 +177,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
     // Photos from activity
     List<String> uploadedUrls = [];
-    if (AppData.images) {
+    if (AppData.instance.images) {
       // If images are enabled in app
       for (var image in _pickedImages) {
         final ref = FirebaseStorage.instance.ref().child(
-          'users/${AppData.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
+          'users/${AppData.instance.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
         );
         await ref.putFile(File(image.path));
         final url = await ref.getDownloadURL();
@@ -218,10 +213,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     // Save activity to database
     bool saved = await ActivityService.saveActivity(userActivity);
     if (saved) {
-      //AppData.trackState.deleteFile(); // Delete a file from local store if it is saved
+      TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
+
+      // Delete a file from local store if it is saved
       saveLastVisibility();
       if (mounted) {
-        AppUtils.showMessage(context, 'Activity saved successfully!');
+        AppUtils.showMessage(context, 'Activity saved successfully!', messageType: MessageType.success);
       }
 
       /// Save last visibility to local prefs
@@ -257,91 +254,66 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     );
 
     // If there is no changes, just pop
-    if (ActivityService.activitiesEqual(passedActivity, userActivity)) {
+    if (passedActivity.isEqual(userActivity)) {
       Navigator.of(context).pop();
       return;
     }
 
+    AppAlertDialog alert = AppAlertDialog(
+      titleText: "Warning",
+      contentText:
+          "You have unsaved changes\n\n"
+          "If you leave now, your changes will be lost.\n\n"
+          "Are you sure you want to leave?",
+      textLeft: "Cancel",
+      textRight: "Yes",
+      colorBackgroundButtonRight: AppColors.danger,
+      colorButtonForegroundRight: AppColors.white,
+      onPressedLeft: () {
+        Navigator.of(context).pop();
+      },
+      onPressedRight: () {
+        Navigator.of(context).pop(); // Two times to close dialog and screen
+        Navigator.of(context).pop();
+      },
+    );
+
     showDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: true, // Allow closing by outside tap
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Warning", textAlign: TextAlign.center),
-          content: const Text(
-            "You have unsaved changes\n\n"
-            "If you leave now, your changes will be lost.\n\n"
-            "Are you sure you want to leave?",
-            textAlign: TextAlign.center,
-          ),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Cancel"),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Two times to close dialog and screen
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Yes"),
-                ),
-              ],
-            ),
-          ],
-        );
+        return alert;
       },
     );
   }
 
   /// Ask if we are sure if we want to leave a page without saving when saving activity for the first time
   void leavePage(BuildContext context) {
+    AppAlertDialog alert = AppAlertDialog(
+      titleText: "Warning",
+      contentText:
+          "You haven't saved this activity yet.\n\n"
+          "If you leave now, your activity will be lost.\n\n"
+          "Are you sure you want to leave?",
+      textLeft: "Cancel",
+      textRight: "Yes",
+      colorBackgroundButtonRight: AppColors.danger,
+      colorButtonForegroundRight: AppColors.white,
+      onPressedLeft: () {
+        Navigator.of(context).pop();
+      },
+      onPressedRight: () {
+        TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
+        Navigator.of(context).pop(); // Two times to close dialog and screen
+        Navigator.of(context).pop();
+      },
+    );
+
     showDialog(
       context: context,
-      barrierDismissible: true, // Close by tapping outside
+      barrierDismissible: true, // Allow closing by outside tap
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Warning", textAlign: TextAlign.center),
-          content: const Text(
-            "You haven't saved this activity yet.\n\n"
-            "If you leave now, your activity will be lost.\n\n"
-            "Are you sure you want to leave?",
-            textAlign: TextAlign.center,
-          ),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Cancel"),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () {
-                    //AppData.trackState.deleteFile(); // Delete a file from local store if user wants to exit
-
-                    Navigator.of(context).pop(); // Two times to close dialog and screen
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Yes"),
-                ),
-              ],
-            ),
-          ],
-        );
+        return alert;
       },
     );
   }
@@ -379,258 +351,214 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       },
       child: Scaffold(
         backgroundColor: AppColors.white,
-        appBar: AppBar(
-          title: Text(
-            "Activity summary",
-          ),
-        ),
+        appBar: AppBar(title: Text("Activity summary")),
         body: PageContainer(
           assetPath: AppImages.appBg5,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Title
-                  TextField(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                // Title
+                TextField(
+                  readOnly: widget.readonly,
+                  enabled: !widget.readonly,
+                  controller: titleController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Title",
+                    labelStyle: TextStyle(fontSize: 18),
+                  ),
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                // Description
+                Visibility(
+                  visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
+                  child: TextField(
                     readOnly: widget.readonly,
                     enabled: !widget.readonly,
-                    controller: titleController,
-                    style: TextStyle(color: Colors.white),
+                    maxLines: 3,
+                    controller: descriptionController,
                     decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24, width: 1),
-                      ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      label: Text("Title", style: TextStyle(color: Colors.white)),
-                      labelStyle: TextStyle(fontSize: 18),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.1),
+                      labelText: "Description",
                     ),
+                    style: TextStyle(color: Colors.white),
                   ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Description
-                  Visibility(
-                    visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
-                    child: TextField(
-                      readOnly: widget.readonly,
-                      enabled: !widget.readonly,
-                      maxLines: 3,
-                      controller: descriptionController,
-                      decoration: InputDecoration(
-                        // Normal border
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white24, width: 1),
-                        ),
-                        label: Text("Description", style: TextStyle(color: Colors.white)),
-                        fillColor: Colors.white.withValues(alpha: 0.1),
-                        filled: true,
-                      ),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Activity type
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          enabled: !widget.readonly,
-                          style: TextStyle(color: Colors.white),
-                          textAlign: TextAlign.left,
-                          controller: activityController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white24, width: 1),
-                            ),
-                            label: Text("Activity type", style: TextStyle(color: Colors.white)),
-                            suffixIcon: Padding(
-                              padding: EdgeInsets.all(AppUiConstants.paddingTextFields),
-                              child: IconButton(
-                                onPressed: widget.readonly ? null : () => onTapActivity(),
-                                icon: Icon(Icons.list, color: Colors.white),
-                              ),
-                            ),
-                            fillColor: Colors.white.withValues(alpha: 0.1),
-                            filled: true,
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                // Activity type
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        enabled: !widget.readonly,
+                        style: TextStyle(color: Colors.white),
+                        textAlign: TextAlign.left,
+                        controller: activityController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: "Activity type",
+                          suffixIcon: IconButton(
+                              onPressed: widget.readonly ? null : () => onTapActivity(),
+                              icon: Icon(Icons.list, color: Colors.white),
                           ),
                         ),
                       ),
-                      SizedBox(width: 15),
-                      // Visibility
-                      Expanded(
-                        child: Theme(
-                          data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
-                          child: DropdownMenu(
-                            enabled: !widget.readonly,
-                            initialSelection: _visibility,
-                            label: Text("Visibility", style: TextStyle(color: Colors.white)),
-                            textStyle: TextStyle(color: Colors.white),
-                            inputDecorationTheme: InputDecorationTheme(
-                              filled: true,
-                              fillColor: Colors.white.withValues(alpha: 0.1),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.white24, width: 1),
-                              ),
+                    ),
+                    SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
+                    // Visibility
+                    Expanded(
+                      child: Theme(
+                        data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
+                        child: DropdownMenu(
+                          enabled: !widget.readonly,
+                          initialSelection: _visibility,
+                          label: Text("Visibility", style: TextStyle(color: Colors.white)),
+                          textStyle: TextStyle(color: Colors.white),
+                          width: double.infinity,
+                          textAlign: TextAlign.left,
+                          // Selecting visibility
+                          onSelected: (enums.ComVisibility? visibility) {
+                            setState(() {
+                              if (visibility != null) {
+                                _visibility = visibility;
+                              }
+                            });
+                          },
+                          // Icon
+                          trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                          selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+                          dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
+                            DropdownMenuEntry(
+                              value: enums.ComVisibility.me,
+                              label: "Only Me",
                             ),
-                            width: double.infinity,
-                            textAlign: TextAlign.left,
-                            // Selecting visibility
-                            onSelected: (enums.ComVisibility? visibility) {
-                              setState(() {
-                                if (visibility != null) {
-                                  _visibility = visibility;
-                                }
+                            DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
+                            DropdownMenuEntry(value: enums.ComVisibility.everyone, label: "Everyone"),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                IntrinsicHeight(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      spacing: 6,
+                      children: [
+                        // Time
+                        if (widget.activityData.elapsedTime != null)
+                          StatCard(
+                            title: "Time",
+                            value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!),
+                            icon: Icon(Icons.timer),
+                          ),
+                        if (widget.activityData.totalDistance != null)
+                          StatCard(
+                            title: "Distance",
+                            value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
+                            icon: Icon(Icons.social_distance),
+                          ),
+                        if (widget.activityData.totalDistance != null)
+                          StatCard(title: "Pace", value: widget.activityData.pace.toString(), icon: Icon(Icons.man)),
+                        if (widget.activityData.calories != null)
+                          StatCard(
+                            title: "Calories",
+                            value: '${widget.activityData.calories?.toStringAsFixed(0)} kcal',
+                            icon: Icon(Icons.local_fire_department),
+                          ),
+                        if (widget.activityData.avgSpeed != null)
+                          StatCard(
+                            title: "Avg Speed",
+                            value: '${widget.activityData.avgSpeed?.toStringAsFixed(1)} km/h',
+                            icon: Icon(Icons.speed),
+                          ),
+                        if (widget.activityData.steps != null)
+                          StatCard(title: "Steps", value: widget.activityData.steps.toString(), icon: Icon(Icons.directions_walk)),
+                        if (widget.activityData.elevationGain != null)
+                          StatCard(
+                            title: "Elevation",
+                            value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',
+                            icon: Icon(Icons.terrain),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Flutter map if there is a path
+                if (widget.activityData.trackedPath?.isNotEmpty ?? false)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.3,
+                        child: FlutterMap(
+                          mapController: _mapController,
+                          options: MapOptions(
+                            initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                            initialZoom: 15.0,
+                            onMapReady: () async {
+                              // Delay to load a tiles properly
+                              Future.delayed(const Duration(milliseconds: 100), () {
+                                AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController);
                               });
                             },
-                            // Icon
-                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
-                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-
-                            menuStyle: MenuStyle(
-                              backgroundColor: WidgetStatePropertyAll(AppColors.dropdownEntryBackground),
-                              alignment: Alignment.bottomLeft,
-                            ),
-                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
-                              DropdownMenuEntry(
-                                value: enums.ComVisibility.me,
-                                label: "Only Me",
-
-                                // style: ButtonStyle(
-                                //   backgroundColor:
-                                // ),
-                              ),
-                              DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
-                              DropdownMenuEntry(value: enums.ComVisibility.everyone, label: "Everyone"),
-                            ],
+                            interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                            onTap: (tapPosition, point) => {onTapMap(context)},
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  IntrinsicHeight(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        spacing: 6,
-                        children: [
-                          // Time
-                          if (widget.activityData.elapsedTime != null)
-                            StatCard(
-                              title: "Time",
-                              value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!),
-                              icon: Icon(Icons.timer),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.example.runtrack',
                             ),
-                          if (widget.activityData.totalDistance != null)
-                            StatCard(
-                              title: "Distance",
-                              value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
-                              icon: Icon(Icons.social_distance),
+                            PolylineLayer(
+                              polylines: [Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
                             ),
-                          if (widget.activityData.totalDistance != null)
-                            StatCard(title: "Pace", value: widget.activityData.pace.toString(), icon: Icon(Icons.man)),
-                          if (widget.activityData.calories != null)
-                            StatCard(
-                              title: "Calories",
-                              value: '${widget.activityData.calories?.toStringAsFixed(0)} kcal',
-                              icon: Icon(Icons.local_fire_department),
-                            ),
-                          if (widget.activityData.avgSpeed != null)
-                            StatCard(
-                              title: "Avg Speed",
-                              value: '${widget.activityData.avgSpeed?.toStringAsFixed(1)} km/h',
-                              icon: Icon(Icons.speed),
-                            ),
-                          if (widget.activityData.steps != null)
-                            StatCard(title: "Steps", value: widget.activityData.steps.toString(), icon: Icon(Icons.directions_walk)),
-                          if (widget.activityData.elevationGain != null)
-                            StatCard(
-                              title: "Elevation",
-                              value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',
-                              icon: Icon(Icons.terrain),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Flutter map if there is a path
-                  if (widget.activityData.trackedPath?.isNotEmpty ?? false)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.3,
-                          child: FlutterMap(
-                            mapController: _mapController,
-                            options: MapOptions(
-                              initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
-                              initialZoom: 15.0,
-                              onMapReady: () async {
-                                // Delay to load a tiles properly
-                                Future.delayed(const Duration(milliseconds: 100), () {
-                                  AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController);
-                                });
-                              },
-                              interactionOptions: InteractionOptions(flags:  InteractiveFlag.none),
-                              onTap: (tapPosition, point) => {onTapMap(context)},
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName: 'com.example.runtrack',
-                              ),
-                              PolylineLayer(
-                                polylines: [Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
-                              ),
-                              MarkerLayer(
-                                markers: [
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(Icons.flag, color: Colors.green),
+                                ),
+                                if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
                                   Marker(
-                                    point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                                    point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
                                     width: 40,
                                     height: 40,
-                                    child: Icon(Icons.flag, color: Colors.green),
+                                    child: Icon(Icons.stop, color: Colors.red),
                                   ),
-                                  if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
-                                    Marker(
-                                      point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(Icons.stop, color: Colors.red),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  // Photos section
-                  AddPhotos(
-                    onlyShow: false,
-                    active: true,
-                    showSelectedPhotos: true,
-                    onImagesSelected: (images) {
-                      _pickedImages = images;
-                    },
                   ),
-                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                  if (!widget.readonly || !activitySaved)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: CustomButton(text: getSaveButtonText(), onPressed: getSaveButtonCallback()),
-                    ),
-                ],
-              ),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                // Photos section
+                AddPhotos(
+                  onlyShow: false,
+                  active: true,
+                  showSelectedPhotos: true,
+                  onImagesSelected: (images) {
+                    _pickedImages = images;
+                  },
+                ),
+                SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                if (!widget.readonly || !activitySaved)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: CustomButton(text: getSaveButtonText(), onPressed: getSaveButtonCallback()),
+                  ),
+              ],
             ),
+          ),
         ),
       ),
     );

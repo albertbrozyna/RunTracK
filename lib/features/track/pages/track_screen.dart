@@ -17,7 +17,26 @@ import 'package:run_track/theme/preference_names.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import '../../../common/enums/tracking_state.dart';
 import '../../../common/utils/app_data.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
+
+//import 'package:flutter_map_animations/flutter_map_animations.dart';
+
+// late final AnimatedMapController _animatedMapController;
+//
+// @override
+// void initState() {
+//   super.initState();
+//   _animatedMapController = AnimatedMapController(vsync: this);
+// }
+//
+// void moveSmooth(LatLng newPos) {
+//   _animatedMapController.animateTo(
+//     dest: newPos,
+//     zoom: 17,
+//     curve: Curves.easeInOut,
+//     duration: const Duration(seconds: 1),
+//   );
+// }
 
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
@@ -30,7 +49,7 @@ class TrackScreenState extends State<TrackScreen> {
   final MapController _mapController = MapController();
   bool _followUser = true;
   TextEditingController activityController = TextEditingController();
-  String? activityName = AppData.currentUser?.activityNames?.first; // Assign default on the start
+  String? activityName = AppData.instance.currentUser?.activityNames?.first; // Assign default on the start
   final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
   Timer? _finishTimer;
 
@@ -46,54 +65,60 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
-    final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
-    setState(() {
-      activityName = lastActivity;
-      activityController.text = lastActivity;
-    });
+    if(AppData.instance.currentCompetition != null){  // Set activity type from competition
+      activityController.text = AppData.instance.currentCompetition!.name;
+    }else{
+      final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
+        activityName = lastActivity;
+        activityController.text = lastActivity;
+    }
 
-    AppData.trackState.mapController = _mapController; // Assign map controller to move the map
+    TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
 
-  void handleStopTracking() {
-    AppData.trackState.stopLocationService();
+  void handleStopTracking() async {
+    await TrackState.trackStateInstance.stopRun();
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ActivitySummary(
-          readonly: false,
-          activityData: Activity(
-            uid: AppData.currentUser!.uid,
-            activityType: activityController.text.trim(),
-            avgSpeed: AppData.trackState.avgSpeed,
-            calories: AppData.trackState.calories,
-            steps: AppData.trackState.steps,
-            elevationGain: AppData.trackState.elevationGain,
-            trackedPath: AppData.trackState.trackedPath,
-            elapsedTime: AppData.trackState.elapsedTime.inSeconds.toInt(),
-            totalDistance: AppData.trackState.totalDistance / 1000,
-            pace: AppData.trackState.pace,
-            startTime: AppData.trackState.startTime,
-            createdAt: DateTime.now(),
+    // Wait for last sync
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ActivitySummary(
+            readonly: false,
+            activityData: Activity(
+              uid: AppData.instance.currentUser!.uid,
+              activityType: activityController.text.trim(),
+              avgSpeed: TrackState.trackStateInstance.avgSpeed,
+              calories: TrackState.trackStateInstance.calories,
+              steps: TrackState.trackStateInstance.steps,
+              elevationGain: TrackState.trackStateInstance.elevationGain,
+              trackedPath: TrackState.trackStateInstance.trackedPath,
+              elapsedTime: TrackState.trackStateInstance.elapsedTime.inSeconds.toInt(),
+              totalDistance: TrackState.trackStateInstance.totalDistance,
+              pace: TrackState.trackStateInstance.pace,
+              startTime: TrackState.trackStateInstance.startTime,
+              createdAt: DateTime.now(),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   // Controls with pace time and start/stop buttons
   Widget buildActionButtons() {
-    switch (AppData.trackState.trackingState) {
+    switch (TrackState.trackStateInstance.trackingState) {
       case TrackingState.stopped:
         return CustomButton(
           backgroundColor: AppColors.secondary,
           text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: AppData.trackState.startLocationService,
+          onPressed: () => TrackState.trackStateInstance.startRun(context),
         );
 
       case TrackingState.running:
-        return CustomButton(width: 50, text: "Stop", onPressed: AppData.trackState.pauseLocationService);
+        return CustomButton(width: 50, text: "Stop", onPressed: TrackState.trackStateInstance.pauseRun);
 
       case TrackingState.paused:
         return Column(
@@ -102,7 +127,7 @@ class TrackScreenState extends State<TrackScreen> {
               children: [
                 // Resume Button
                 Expanded(
-                  child: CustomButton(height: 50, text: "Resume", onPressed: AppData.trackState.resumeLocationService),
+                  child: CustomButton(height: 50, text: "Resume", onPressed: TrackState.trackStateInstance.resumeRun),
                 ),
                 const SizedBox(width: AppUiConstants.horizontalSpacingButtons),
 
@@ -174,7 +199,7 @@ class TrackScreenState extends State<TrackScreen> {
     // If the user selected something, update the TextField
     if (selectedActivity != null && selectedActivity.isNotEmpty) {
       activityController.text = selectedActivity;
-      AppData.lastActivityString = selectedActivity;
+      AppData.instance.lastActivityString = selectedActivity;
       // Save it to local preferences
       PreferencesService.saveString(PreferenceNames.lastUsedPreference, selectedActivity);
     }
@@ -185,7 +210,7 @@ class TrackScreenState extends State<TrackScreen> {
     return Scaffold(
       // Custom fab location to set a fab
       body: AnimatedBuilder(
-        animation: AppData.trackState,
+        animation: TrackState.trackStateInstance,
         builder: (BuildContext context, _) {
           return Stack(
             children: [
@@ -195,28 +220,83 @@ class TrackScreenState extends State<TrackScreen> {
                   Row(
                     children: [
                       SizedBox(width: 10.0),
-                      Column(mainAxisSize: MainAxisSize.min, children: [AppData.trackState.gpsIcon, Text("GPS")]),
+                      Column(mainAxisSize: MainAxisSize.min, children: [TrackState.trackStateInstance.gpsIcon, Text("GPS")]),
                       Expanded(
                         child: TextField(
                           controller: activityController,
                           readOnly: true,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.zero),
-                            filled: true,
-                            fillColor: Color(0xFFFFF3E0),
-                            suffixIcon: IconButton(onPressed: () => onTapActivity(), icon: Icon(Icons.settings, size: 26)),
+                            suffixIcon: IconButton(onPressed: AppData.instance.currentCompetition == null ? () => onTapActivity() : null, icon: Icon(Icons.edit, size: 26,color: AppData.instance.currentCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),)),
                           ),
                         ),
                       ),
                     ],
                   ),
+                  if (AppData.instance.currentCompetition != null || true)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.emoji_events,
+                            color: Colors.yellow[600],
+                            size: 32,
+                          ),
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "You are currently participating in:",
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(80),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  AppData.instance.currentCompetition!.name,
+                                  // AppData.instance.currentCompetition!.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  "Distance to go: ${AppData.instance.currentCompetition!.distanceToGo}",
+                                  // AppData.instance.currentCompetition!.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Expanded map
                   Expanded(
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: AppData.trackState.currentPosition ?? AppSettings.defaultLocation,
+                        initialCenter: TrackState.trackStateInstance.currentPosition ?? AppSettings.defaultLocation,
                         initialZoom: 15.0,
                         interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
@@ -225,17 +305,17 @@ class TrackScreenState extends State<TrackScreen> {
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.runtrack',
                         ),
-                        if (AppData.trackState.trackedPath.isNotEmpty &&
-                            (AppData.trackState.trackingState == TrackingState.paused ||
-                                AppData.trackState.trackingState == TrackingState.running))
+                        if (TrackState.trackStateInstance.trackedPath.isNotEmpty &&
+                            (TrackState.trackStateInstance.trackingState == TrackingState.paused ||
+                                TrackState.trackStateInstance.trackingState == TrackingState.running))
                           PolylineLayer(
-                            polylines: [Polyline(points: AppData.trackState.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
+                            polylines: [Polyline(points: TrackState.trackStateInstance.trackedPath, strokeWidth: 4.0, color: Colors.blue)],
                           ),
-                        if (AppData.trackState.currentPosition != null)
+                        if (TrackState.trackStateInstance.currentPosition != null)
                           MarkerLayer(
                             markers: [
                               Marker(
-                                point: AppData.trackState.currentPosition!,
+                                point: TrackState.trackStateInstance.currentPosition!,
                                 width: 40,
                                 height: 40,
                                 child: Icon(Icons.location_pin, color: Colors.red, size: 40),
@@ -249,19 +329,20 @@ class TrackScreenState extends State<TrackScreen> {
               ),
 
               /// RunStats positioned as draggable sheet
-              if (AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused)
+              if (TrackState.trackStateInstance.trackingState == TrackingState.running ||
+                  TrackState.trackStateInstance.trackingState == TrackingState.paused)
                 Positioned.fill(
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: RunStats(
-                      totalDistance: (AppData.trackState.totalDistance / 1000),
-                      pace: TrackState.formatPace(AppData.trackState.totalDistance, AppData.trackState.elapsedTime),
-                      elapsedTime: AppData.trackState.elapsedTime,
-                      startTime: AppData.trackState.startTime,
-                      avgSpeed: AppData.trackState.avgSpeed,
-                      calories: AppData.trackState.calories,
-                      steps: AppData.trackState.steps,
-                      elevation: AppData.trackState.elevationGain,
+                      totalDistance: TrackState.trackStateInstance.totalDistance,
+                      pace: TrackState.formatPace(TrackState.trackStateInstance.totalDistance, TrackState.trackStateInstance.elapsedTime),
+                      elapsedTime: TrackState.trackStateInstance.elapsedTime,
+                      startTime: TrackState.trackStateInstance.startTime,
+                      avgSpeed: TrackState.trackStateInstance.avgSpeed,
+                      calories: TrackState.trackStateInstance.calories,
+                      steps: TrackState.trackStateInstance.steps,
+                      elevation: TrackState.trackStateInstance.elevationGain,
                     ),
                   ),
                 ),
@@ -274,7 +355,8 @@ class TrackScreenState extends State<TrackScreen> {
                 child: Container(
                   width: double.infinity,
                   height:
-                      AppData.trackState.trackingState == TrackingState.running || AppData.trackState.trackingState == TrackingState.paused
+                      TrackState.trackStateInstance.trackingState == TrackingState.running ||
+                          TrackState.trackStateInstance.trackingState == TrackingState.paused
                       ? 76.0
                       : 60.0,
                   decoration: BoxDecoration(color: Colors.white),
@@ -284,8 +366,8 @@ class TrackScreenState extends State<TrackScreen> {
                       right: AppUiConstants.paddingTextFields,
                       top: AppUiConstants.paddingTextFields,
                       bottom:
-                          AppData.trackState.trackingState == TrackingState.running ||
-                              AppData.trackState.trackingState == TrackingState.paused
+                          TrackState.trackStateInstance.trackingState == TrackingState.running ||
+                              TrackState.trackStateInstance.trackingState == TrackingState.paused
                           ? 16
                           : 0,
                     ),
@@ -303,8 +385,8 @@ class TrackScreenState extends State<TrackScreen> {
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
-            if (_followUser && AppData.trackState.currentPosition != null) {
-              _mapController.move(AppData.trackState.currentPosition!, _mapController.camera.zoom);
+            if (_followUser && TrackState.trackStateInstance.currentPosition != null) {
+              _mapController.move(TrackState.trackStateInstance.currentPosition!, _mapController.camera.zoom);
             }
           });
         },

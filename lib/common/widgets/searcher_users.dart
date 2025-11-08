@@ -5,7 +5,7 @@ import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/services/user_service.dart';
 
 import '../../models/user.dart';
-import '../../theme/colors.dart';
+import '../../theme/app_colors.dart';
 
 class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   final Set<String> listUsers; // Participants list or friends list

@@ -1,10 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/constants/firestore_names.dart';
 import 'package:run_track/models/notification.dart';
 
+class NotificationFetchResult {
+  final List<AppNotification> notifications;
+  final DocumentSnapshot? lastDocument;
+
+  NotificationFetchResult({
+    required this.notifications,
+    this.lastDocument,
+  });
+}
+
 class NotificationService {
-  static DocumentSnapshot? lastFetchedNotificationDoc;
 
   /// Save notification to database
   static Future<bool> saveNotification(AppNotification notification) async {
@@ -33,9 +41,9 @@ class NotificationService {
   }
 
   /// Fetch last page of user notifications only for one user
-  static Future<List<AppNotification>> fetchUserNotifications({required String uid, int limit = 10, DocumentSnapshot? lastDocument}) async {
+  static Future<NotificationFetchResult> fetchUserNotifications({required String uid, int limit = 10, DocumentSnapshot? lastDocument}) async {
     if (uid.isEmpty) {
-      return [];
+      return NotificationFetchResult(notifications: [], lastDocument: null);
     }
 
     final List<AppNotification> allNotifications = [];
@@ -50,15 +58,16 @@ class NotificationService {
     }
 
     final snapshot = await databaseQuery.get();
+    DocumentSnapshot? newLastDocument;
 
     if (snapshot.docs.isNotEmpty) {
-      lastFetchedNotificationDoc = snapshot.docs.last;
-
+      newLastDocument = snapshot.docs.last;
       allNotifications.addAll(snapshot.docs.map((doc) => AppNotification.fromMap(doc.data() as Map<String, dynamic>)));
     }
 
-    allNotifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return allNotifications;
+    return NotificationFetchResult(
+      notifications: allNotifications,
+      lastDocument: newLastDocument,
+    );
   }
 }

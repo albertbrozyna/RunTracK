@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../common/utils/utils.dart';
 import '../../../models/activity.dart';
-import '../../../theme/colors.dart';
 
 class TrackMap extends StatefulWidget {
   final Activity? activity;

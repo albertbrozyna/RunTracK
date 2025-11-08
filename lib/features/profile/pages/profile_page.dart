@@ -8,7 +8,7 @@ import 'package:run_track/common/widgets/stat_card.dart';
 import 'package:run_track/features/profile/widgets/info_tile.dart';
 import 'package:run_track/features/profile/widgets/profile_action_button.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 import 'package:run_track/models/user.dart' as model;
 
@@ -56,8 +56,6 @@ class _ProfilePageState extends State<ProfilePage> {
     initializeAsync();
   }
 
-
-
   void initialize() {
     UserService.checkAppUseState(context);
 
@@ -77,19 +75,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (user != null) {
       // Check user relationship
-      if (user!.friendsUid.contains(AppData.currentUser?.uid)) {
+      if (user!.friendsUid.contains(AppData.instance.currentUser?.uid)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.currentUser?.receivedInvitationsToFriends.contains(
+      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends.contains(
             user!.uid,
           ) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.currentUser?.pendingInvitationsToFriends.contains(
+      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends.contains(
             user!.uid,
           ) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
-      } else if (user!.uid == AppData.currentUser?.uid) {
+      } else if (user!.uid == AppData.instance.currentUser?.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
       }
     }

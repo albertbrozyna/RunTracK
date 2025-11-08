@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 
 class NoItemsMsg extends StatelessWidget {
   final String textMessage;

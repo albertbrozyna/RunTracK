@@ -3,7 +3,7 @@ import 'package:run_track/common/enums/user_relationship.dart';
 
 import '../../../common/widgets/alert_dialog.dart';
 import '../../../services/user_service.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 
 class ProfileActionButton extends StatefulWidget {
   final UserRelationshipStatus userRelationshipStatus;

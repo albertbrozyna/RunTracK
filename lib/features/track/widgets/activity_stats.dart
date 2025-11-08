@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/theme/ui_constants.dart';
-import '../../../theme/colors.dart';
+import '../../../theme/app_colors.dart';
 import '../../../common/widgets/stat_card.dart';
 
 import '../../../services/activity_service.dart';

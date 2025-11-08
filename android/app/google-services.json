@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "959724000751-trh438pkt94gcjv18q5e1ajmfack643j.apps.googleusercontent.com",
+          "client_id": "959724000751-5o5ta9c7om9j2ncjb6obfuouhtfhq1g1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.albertbrozyna.runtrack",
-            "certificate_hash": "828f7a367a02d34e8d4362dccd191691189503f7"
+            "certificate_hash": "662ce63738523f42cbf46eadba4bbd79bfa4ecda"
           }
         },
         {

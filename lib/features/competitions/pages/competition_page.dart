@@ -2,10 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:run_track/common/widgets/page_container.dart';
+import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/features/track/widgets/fab_location.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/services/competition_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../common/enums/competition_role.dart';
@@ -15,18 +16,17 @@ import '../../../models/user.dart';
 import '../../../services/user_service.dart';
 import '../widgets/competition_block.dart';
 import '../../../common/widgets/no_items_msg.dart';
-import 'competition_details.dart';
 
 class CompetitionsPage extends StatefulWidget {
   const CompetitionsPage({super.key});
 
   @override
-  State<CompetitionsPage> createState() => _CompetitionsState();
+  State<CompetitionsPage> createState() => _CompetitionsPageState();
 }
 
-class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProviderStateMixin {
+class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  User? currentUser = AppData.currentUser;
+  User? currentUser = AppData.instance.currentUser;
 
   final List<Competition> _myCompetitions = [];
   final List<Competition> _friendsCompetitions = [];
@@ -70,18 +70,10 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
   }
 
   Future<void> initialize() async {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
-    }
-
-    CompetitionService.lastFetchedDocumentMyCompetitions = null;
-    CompetitionService.lastFetchedDocumentFriendsCompetitions = null;
-    CompetitionService.lastFetchedDocumentAllCompetitions = null;
+    UserService.checkAppUseState(context);
 
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        // Rebuild when index is changing
         setState(() {});
       }
     });
@@ -93,7 +85,7 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
     _loadMyInvitedCompetitions();
     _loadMyParticipatedCompetitions();
 
-    // Listeners for scroll controller to load more activities
+    // Listeners for scroll controller to load more competitions
     _scrollControllerMy.addListener(() {
       if (_scrollControllerMy.position.pixels >= _scrollControllerMy.position.maxScrollExtent - 200) {
         _loadMyCompetitions();
@@ -136,17 +128,17 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
       _isLoadingMy = true;
     });
 
-    final competitions = await CompetitionService.fetchMyLatestCompetitionsPage(
+    final competitionFetchResult = await CompetitionService.fetchMyLatestCompetitionsPage(
       FirebaseAuth.instance.currentUser?.uid ?? "",
       _limit,
       _lastPageMyCompetitions,
     );
 
     setState(() {
-      _myCompetitions.addAll(competitions);
-      _lastPageMyCompetitions = competitions.isNotEmpty ? CompetitionService.lastFetchedDocumentMyCompetitions : null;
+      _myCompetitions.addAll(competitionFetchResult.competitions);
+      _lastPageMyCompetitions = competitionFetchResult.lastDocument;
       _isLoadingMy = false;
-      if (competitions.length < _limit) {
+      if (competitionFetchResult.competitions.length < _limit) {
         _hasMoreMy = false;
       }
     });
@@ -161,24 +153,21 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
       _isLoadingFriends = true;
     });
 
-    final competitions = await CompetitionService.fetchLastFriendsCompetitionsPage(
+    final competitionFetchResult = await CompetitionService.fetchLastFriendsCompetitionsPage(
       _limit,
       _lastPageFriendsCompetitions,
       currentUser?.friendsUid ?? {},
     );
 
     setState(() {
-      if (competitions.isEmpty) {
-        _hasMoreFriends = false;
-      } else {
-        _friendsCompetitions.addAll(competitions);
-        _lastPageFriendsCompetitions = CompetitionService.lastFetchedDocumentFriendsCompetitions;
-        if (_friendsCompetitions.length < _limit) {
-          _hasMoreFriends = false;
-        }
-      }
+      _friendsCompetitions.addAll(competitionFetchResult.competitions);
+      _lastPageFriendsCompetitions = competitionFetchResult.lastDocument;
       _isLoadingFriends = false;
+      if (competitionFetchResult.competitions.length < _limit) {
+        _hasMoreFriends = false;
+      }
     });
+    _isLoadingFriends = false;
   }
 
   /// Load last competitions from all users
@@ -190,13 +179,13 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
       _isLoadingAll = true;
     });
 
-    final competitions = await CompetitionService.fetchLatestCompetitionsPage(_limit, _lastPageAllCompetitions);
+    final competitionFetchResult = await CompetitionService.fetchLatestCompetitionsPage(_limit, _lastPageAllCompetitions);
 
     setState(() {
-      _allCompetitions.addAll(competitions);
-      _lastPageAllCompetitions = competitions.isNotEmpty ? CompetitionService.lastFetchedDocumentAllCompetitions : null;
+      _allCompetitions.addAll(competitionFetchResult.competitions);
+      _lastPageAllCompetitions = competitionFetchResult.lastDocument;
       _isLoadingAll = false;
-      if (competitions.length < _limit) {
+      if (competitionFetchResult.competitions.length < _limit) {
         _hasMoreAll = false;
       }
     });
@@ -211,17 +200,17 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
       _isLoadingInvites = true;
     });
 
-    final competitions = await CompetitionService.fetchMyInvitedCompetitions(
-      AppData.currentUser?.receivedInvitationsToCompetitions ?? {},
+    final competitionFetchResult = await CompetitionService.fetchMyInvitedCompetitions(
+      AppData.instance.currentUser?.receivedInvitationsToCompetitions ?? {},
       _limit,
       _lastPageInvites,
     );
 
     setState(() {
-      _invitedCompetitions.addAll(competitions);
-      _lastPageInvites = competitions.isNotEmpty ? CompetitionService.lastFetchedDocumentMyInvitedCompetitions : null;
+      _invitedCompetitions.addAll(competitionFetchResult.competitions);
+      _lastPageInvites = competitionFetchResult.lastDocument;
       _isLoadingInvites = false;
-      if (competitions.length < _limit) {
+      if (competitionFetchResult.competitions.length < _limit) {
         _hasMoreInvites = false;
       }
     });
@@ -236,17 +225,17 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
       _isLoadingParticipating = true;
     });
 
-    final competitions = await CompetitionService.fetchMyParticipatedCompetitions(
-      AppData.currentUser?.participatedCompetitions ?? {},
+    final competitionFetchResult = await CompetitionService.fetchMyParticipatedCompetitions(
+      AppData.instance.currentUser?.participatedCompetitions ?? {},
       _limit,
       _lastPageParticipating,
     );
 
     setState(() {
-      _participatedCompetitions.addAll(competitions);
-      _lastPageParticipating = competitions.isNotEmpty ? CompetitionService.lastFetchedDocumentMyParticipatingCompetitions : null;
+      _participatedCompetitions.addAll(competitionFetchResult.competitions);
+      _lastPageParticipating = competitionFetchResult.lastDocument;
       _isLoadingParticipating = false;
-      if (competitions.length < _limit) {
+      if (competitionFetchResult.competitions.length < _limit) {
         _hasMoreParticipating = false;
       }
     });
@@ -254,18 +243,16 @@ class _CompetitionsState extends State<CompetitionsPage> with SingleTickerProvid
 
   /// On pressed add competition button
   void onPressedAddCompetition(BuildContext context) {
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => CompetitionDetails(enterContext: CompetitionContext.ownerCreate, initTab: _tabController.index),
-      ),
+      AppRoutes.competitionDetails,
+      arguments: {'enterContext': CompetitionContext.ownerCreate, 'competitionData': null, 'initTab': _tabController.index},
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
       floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 70),
       floatingActionButton: Visibility(
         visible: [0, 1, 2].contains(_tabController.index), // Show add button only for my friends and all

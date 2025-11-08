@@ -4,7 +4,7 @@ import 'package:run_track/common/utils/utils.dart';
 import 'package:run_track/common/utils/validators.dart';
 import 'package:run_track/common/widgets/custom_button.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
 import '../../../../common/utils/app_data.dart';
@@ -61,8 +61,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      AppData.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
-      if (AppData.currentUser == null) {
+      AppData.instance.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
+      if (AppData.instance.currentUser == null) {
         if (mounted) {
           AppUtils.showMessage(context, "User don't exists.", messageType: MessageType.info);
         }

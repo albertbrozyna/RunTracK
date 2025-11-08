@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
+import 'app_colors.dart';
 
 class AppUiConstants {
   static const double scaffoldBodyPadding = 16.0;

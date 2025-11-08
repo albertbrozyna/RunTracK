@@ -8,6 +8,7 @@ class LocationUpdate {
   final double totalDistance;
   final Duration? elapsedTime;
   final double elevationGain;
+  final double elevationLoss;
   final double avgSpeed;
   final double pace;
   final int steps;
@@ -15,6 +16,7 @@ class LocationUpdate {
   final List<LatLng>? trackedPath;
   final double positionAccuracy;
   final TrackingState? trackingState;
+  final String? currentCompetition;
 
   LocationUpdate({
     required this.type,
@@ -23,6 +25,7 @@ class LocationUpdate {
     required this.totalDistance,
     this.elapsedTime,
     required this.elevationGain,
+    required this.elevationLoss,
     required this.avgSpeed,
     required this.pace,
     required this.steps,
@@ -30,6 +33,7 @@ class LocationUpdate {
     required this.positionAccuracy,
     this.trackingState,
     this.trackedPath,
+    this.currentCompetition,
   });
 
   Map<String, dynamic> toJson() {
@@ -40,6 +44,7 @@ class LocationUpdate {
       'totalDistance': totalDistance,
       'elapsedTime': elapsedTime?.inSeconds,
       'elevationGain': elevationGain,
+      'elevationLoss': elevationLoss,
       'avgSpeed': avgSpeed,
       'pace': pace,
       'steps': steps,
@@ -65,6 +70,7 @@ class LocationUpdate {
       totalDistance: (json['totalDistance'] ?? 0).toDouble(),
       elapsedTime: Duration(seconds: json['elapsedTime'] ?? 0),
       elevationGain: (json['elevationGain'] ?? 0).toDouble(),
+      elevationLoss: (json['elevationLoss'] ?? 0).toDouble(),
       avgSpeed: (json['avgSpeed'] ?? 0).toDouble(),
       pace: (json['pace'] ?? 0).toDouble(),
       steps: json['steps'] ?? 0,

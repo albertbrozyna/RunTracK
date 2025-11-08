@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/common/widgets/no_items_msg.dart';
 import 'package:run_track/features/activities/widgets/activity_block.dart';
 import 'package:run_track/services/activity_service.dart';
 import 'package:run_track/services/user_service.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 
 import '../../../common/utils/app_data.dart';
 import '../../../common/widgets/page_container.dart';
@@ -16,13 +17,13 @@ class ActivitiesPage extends StatefulWidget {
   const ActivitiesPage({super.key});
 
   @override
-  _ActivitiesState createState() => _ActivitiesState();
+  State<ActivitiesPage> createState() => _ActivitiesPageState();
 }
 
-class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderStateMixin {
+class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<User>? friendsActivities;
-  model.User? currentUser = AppData.currentUser;
+  model.User? currentUser = AppData.instance.currentUser;
 
   final List<Activity> _myActivities = [];
   final List<Activity> _friendsActivities = [];
@@ -48,10 +49,6 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
 
   final int _limit = 10; // Activities per page
 
-  // Reset last page at start
-
-
-
   @override
   void dispose() {
     _tabController.dispose();
@@ -69,14 +66,8 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
   }
 
   void initialize() {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil('/start', (route) => false);
-    }
-    // Reset pages
-    ActivityService.lastFetchedDocumentMyActivities = null;
-    ActivityService.lastFetchedDocumentFriendsActivities = null;
-    ActivityService.lastFetchedDocumentAllActivities = null;
+    UserService.checkAppUseState(context);
+
     // Load activities on start
     _loadMyActivities();
     _loadFriendsActivities();
@@ -113,17 +104,17 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
       _isLoadingMy = true;
     });
 
-    final activities = await ActivityService.fetchMyLatestActivitiesPage(
+    final activitiesFetchResult = await ActivityService.fetchMyLatestActivitiesPage(
       FirebaseAuth.instance.currentUser?.uid ?? "",
       _limit,
       _lastPageMyActivities,
     );
 
     setState(() {
-      _myActivities.addAll(activities);
-      _lastPageMyActivities = activities.isNotEmpty ? ActivityService.lastFetchedDocumentMyActivities : null;
+      _myActivities.addAll(activitiesFetchResult.activities);
+      _lastPageMyActivities = activitiesFetchResult.lastDocument;
       _isLoadingMy = false;
-      if (activities.length < _limit) {
+      if (activitiesFetchResult.activities.length < _limit) {
         _hasMoreMy = false;
       }
     });
@@ -137,20 +128,19 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
       _isLoadingFriends = true;
     });
 
-    final activities = await ActivityService.fetchLastFriendsActivitiesPage(
+    final activitiesFetchResult = await ActivityService.fetchLastFriendsActivitiesPage(
       _limit,
       _lastPageFriendsActivities,
       currentUser?.friendsUid ?? {},
     );
 
-
     setState(() {
-      if (activities.isEmpty) {
+      if (activitiesFetchResult.activities.isEmpty) {
         _hasMoreFriends = false;
       } else {
-        _friendsActivities.addAll(activities);
-        _lastPageFriendsActivities = ActivityService.lastFetchedDocumentFriendsActivities;
-        if (activities.length < _limit) {
+        _friendsActivities.addAll(activitiesFetchResult.activities);
+        _lastPageFriendsActivities = activitiesFetchResult.lastDocument;
+        if (activitiesFetchResult.activities.length < _limit) {
           _hasMoreFriends = false;
         }
       }
@@ -169,10 +159,10 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
     final activities = await ActivityService.fetchLatestActivitiesPage(_limit, _lastPageAllActivities);
 
     setState(() {
-      _allActivities.addAll(activities);
-      _lastPageAllActivities = activities.isNotEmpty ? ActivityService.lastFetchedDocumentAllActivities : null;
+      _allActivities.addAll(activities.activities);
+      _lastPageAllActivities = activities.lastDocument;
       _isLoadingAll = false;
-      if (activities.length < _limit) {
+      if (activities.activities.length < _limit) {
         _hasMoreAll = false;
       }
     });
@@ -208,7 +198,7 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
               children: [
                 Container(
                   padding: EdgeInsets.only(top: 10),
-                  child: _myActivities.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
+                  child: _myActivities.isEmpty ? NoItemsMsg(textMessage: "No activities found") : ListView.builder(
                   controller: _scrollControllerMy,
                     itemCount: _myActivities.length + (_hasMoreMy ? 1 : 0),
                     itemBuilder: (context, index) {
@@ -228,7 +218,7 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
                 // Friends
                 Container(
                   padding: EdgeInsets.only(top: 10),
-                  child: _friendsActivities.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
+                  child: _friendsActivities.isEmpty ? NoItemsMsg(textMessage: "No activities found") : ListView.builder(
                     controller: _scrollControllerFriends,
                     itemCount: _friendsActivities.length + (_hasMoreFriends ? 1 : 0),
                     itemBuilder: (context, index) {
@@ -243,7 +233,7 @@ class _ActivitiesState extends State<ActivitiesPage> with SingleTickerProviderSt
                 // All last activities
                 Container(
                   padding: EdgeInsets.only(top: 10),
-                  child: _allActivities.isEmpty ? Center(child: Text("No activities found")) : ListView.builder(
+                  child: _allActivities.isEmpty ? NoItemsMsg(textMessage: "No activities found") : ListView.builder(
                     controller: _scrollControllerAll,
                     itemCount: _allActivities.length + (_hasMoreAll ? 1 : 0),
                     itemBuilder: (context, index) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:run_track/theme/colors.dart';
+import 'package:run_track/theme/app_colors.dart';
 
 import '../../theme/ui_constants.dart';
 

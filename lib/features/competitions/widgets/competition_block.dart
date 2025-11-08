@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:run_track/common/utils/app_data.dart';
-import 'package:run_track/features/competitions/pages/competition_details.dart';
+import 'package:run_track/config/assets/app_images.dart';
+import 'package:run_track/config/routes/app_routes.dart';
 import 'package:run_track/models/competition.dart';
 import 'package:run_track/theme/ui_constants.dart';
 
-import '../../../common/enums/competition_goal.dart';
 import '../../../common/enums/competition_role.dart';
 import '../../../common/utils/utils.dart';
 import '../../../services/user_service.dart';
@@ -36,9 +36,7 @@ class CompetitionBlock extends StatefulWidget {
        profilePhotoUrl = profilePhotoUrl ?? "";
 
   @override
-  State<StatefulWidget> createState() {
-    return _CompetitionBlockState();
-  }
+  State<StatefulWidget> createState() => _CompetitionBlockState();
 }
 
 class _CompetitionBlockState extends State<CompetitionBlock> {
@@ -80,23 +78,8 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
     firstName = widget.firstName;
     lastName = widget.lastName;
 
-    // Parse activity type
-
-    if (widget.competition.competitionGoalType == CompetitionGoal.distance) {
-      goalType = "Distance";
-      goalFormatted = '${widget.competition.goal} km';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.longestDistance) {
-      goalType = "Longest\ndistance";
-      goalFormatted = '${widget.competition.goal} km';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.timedActivity) {
-      goalType = "Timed activity";
-      goalFormatted = '${widget.competition.goal} minutes';
-    } else if (widget.competition.competitionGoalType == CompetitionGoal.steps) {
-      goalType = "Amount of steps";
-      goalFormatted = '${widget.competition.goal} steps';
-    } else {
-      goalType = "Unknown";
-    }
+    goalType = "Distance";
+    goalFormatted = '${widget.competition.distanceToGo} km';
 
     if (widget.competition.location != null) {
       String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
@@ -134,12 +117,10 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
 
   /// On competition block tap
   void onTapBlock(BuildContext context) {
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CompetitionDetails(enterContext: enterContext, competitionData: widget.competition, initTab: widget.initIndex),
-      ),
+      AppRoutes.competitionDetails,
+      arguments: {'enterContext': enterContext, 'competitionData': widget.competition, 'initTab': widget.initIndex},
     );
   }
 
@@ -170,7 +151,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                       radius: 18,
                       backgroundImage: widget.profilePhotoUrl != null && widget.profilePhotoUrl!.isNotEmpty
                           ? NetworkImage(widget.profilePhotoUrl!)
-                          : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                          : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                     ),
                   ),
                   SizedBox(width: 4),
@@ -302,18 +283,18 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                       children: [
                         TextSpan(
                           text: "Meeting place: ",
-                          style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         TextSpan(
                           text: meetingPlace,
-                          style: const TextStyle(fontWeight: FontWeight.normal,fontSize: 16),
+                          style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
                         ),
                       ],
                     ),
                   ),
                 ),
               // Photos from the run
-              if (widget.competition.photos.isNotEmpty && AppData.images)
+              if (widget.competition.photos.isNotEmpty && AppData.instance.images)
                 SizedBox(
                   height: 120,
                   child: ListView.builder(

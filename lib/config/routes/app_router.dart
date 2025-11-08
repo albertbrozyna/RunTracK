@@ -4,12 +4,15 @@ import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/auth/login/pages/login_page.dart';
 import 'package:run_track/features/auth/register/pages/register_page.dart';
 import 'package:run_track/features/auth/start/pages/start_page.dart';
+import 'package:run_track/features/competitions/pages/competition_details.dart';
 import 'package:run_track/features/competitions/pages/competition_page.dart';
 import 'package:run_track/features/home/home_page.dart';
 import 'package:run_track/features/profile/pages/profile_page.dart';
 import 'package:run_track/features/settings/pages/settings_page.dart';
+import 'package:run_track/models/competition.dart';
 
 
+import '../../common/enums/competition_role.dart';
 import '../../common/enums/enter_context.dart';
 import '../../common/pages/users_list.dart';
 import '../../features/track/pages/activity_choose.dart';
@@ -59,6 +62,15 @@ class AppRouter {
 
       case AppRoutes.competitions:
         return MaterialPageRoute(builder: (_) => const CompetitionsPage());
+      case AppRoutes.competitionDetails:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final enterContext = args?['enterContext']  as CompetitionContext;
+        final competitionData = args?['competitionData'] as Competition?;
+        final initTab = args?['initTab'] as int;
+
+        return MaterialPageRoute(builder: (_) => CompetitionDetailsPage(enterContext: enterContext,competitionData: competitionData, initTab: initTab));
+
       case AppRoutes.profile:
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
