@@ -245,12 +245,18 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   }
 
   /// On pressed add competition button
-  void onPressedAddCompetition(BuildContext context) {
-    Navigator.pushNamed(
+  void onPressedAddCompetition(BuildContext context) async {
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': CompetitionContext.ownerCreate, 'competitionData': null, 'initTab': _tabController.index},
     );
+
+    if(result != null && result is Competition){  // Add created competition to list
+      setState(() {
+        _myCompetitions.insert(0, result);
+      });
+    }
   }
 
   @override

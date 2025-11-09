@@ -3,22 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/navigation/app_routes.dart';
+import 'package:run_track/features/track/presentation/widgets/action_buttons.dart';
+import 'package:run_track/features/track/presentation/widgets/current_competition_banner.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/preference_names.dart';
 import '../../../../core/enums/tracking_state.dart';
-import '../../../../core/models/activity.dart';
 import '../../../../core/services/activity_service.dart';
 import '../../../../core/services/preferences_service.dart';
-import '../../../../core/widgets/custom_button.dart';
-import '../../../../l10n/app_localizations.dart';
+
 import '../../data/models/track_state.dart';
 import '../widgets/activity_stats.dart';
 import '../widgets/fab_location.dart';
-import 'activity_choose.dart';
-import 'activity_summary.dart';
 
 //import 'package:flutter_map_animations/flutter_map_animations.dart';
 
@@ -51,8 +50,6 @@ class TrackScreenState extends State<TrackScreen> {
   bool _followUser = true;
   TextEditingController activityController = TextEditingController();
   String? activityName = AppData.instance.currentUser?.activityNames?.first; // Assign default on the start
-  final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
-  Timer? _finishTimer;
 
   @override
   void dispose() {
@@ -66,139 +63,28 @@ class TrackScreenState extends State<TrackScreen> {
   }
 
   Future<void> initialize() async {
-    if(AppData.instance.currentCompetition != null){  // Set activity type from competition
+    if (AppData.instance.currentCompetition != null) {
+      // Set activity type from competition
       activityController.text = AppData.instance.currentCompetition!.name;
-    }else{
+    } else {
       final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
-        activityName = lastActivity;
-        activityController.text = lastActivity;
+      activityName = lastActivity;
+      activityController.text = lastActivity;
     }
 
     TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
 
-  void handleStopTracking() async {
-    await TrackState.trackStateInstance.stopRun();
-
-    // Wait for last sync
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ActivitySummary(
-            readonly: false,
-            activityData: Activity(
-              uid: AppData.instance.currentUser!.uid,
-              activityType: activityController.text.trim(),
-              avgSpeed: TrackState.trackStateInstance.avgSpeed,
-              calories: TrackState.trackStateInstance.calories,
-              steps: TrackState.trackStateInstance.steps,
-              elevationGain: TrackState.trackStateInstance.elevationGain,
-              trackedPath: TrackState.trackStateInstance.trackedPath,
-              elapsedTime: TrackState.trackStateInstance.elapsedTime.inSeconds.toInt(),
-              totalDistance: TrackState.trackStateInstance.totalDistance,
-              pace: TrackState.trackStateInstance.pace,
-              startTime: TrackState.trackStateInstance.startTime,
-              createdAt: DateTime.now(),
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  // Controls with pace time and start/stop buttons
-  Widget buildActionButtons() {
-    switch (TrackState.trackStateInstance.trackingState) {
-      case TrackingState.stopped:
-        return CustomButton(
-          backgroundColor: AppColors.secondary,
-          text: AppLocalizations.of(context)!.trackScreenStartTraining,
-          onPressed: () => TrackState.trackStateInstance.startRun(context),
-        );
-
-      case TrackingState.running:
-        return CustomButton(width: 50, text: "Stop", onPressed: TrackState.trackStateInstance.pauseRun);
-
-      case TrackingState.paused:
-        return Column(
-          children: [
-            Row(
-              children: [
-                // Resume Button
-                Expanded(
-                  child: CustomButton(height: 50, text: "Resume", onPressed: TrackState.trackStateInstance.resumeRun),
-                ),
-                const SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-
-                Expanded(
-                  child: GestureDetector(
-                    onLongPressStart: (_) {
-                      _finishProgressNotifier.value = 0.0;
-                      _finishTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-                        _finishProgressNotifier.value += 0.04;
-                        if (_finishProgressNotifier.value >= 1.0) {
-                          _finishTimer?.cancel();
-                          handleStopTracking();
-                        }
-                      });
-                    },
-                    onLongPressEnd: (_) {
-                      _finishTimer?.cancel();
-                      _finishProgressNotifier.value = 0.0;
-                    },
-                    child: SizedBox(
-                      height: 50,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CustomButton(
-                            text: "",
-                            onPressed: () {}, // Normal tap disabled
-                          ),
-                          ValueListenableBuilder<double>(
-                            valueListenable: _finishProgressNotifier,
-                            builder: (context, progress, _) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusButtons),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 50,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.third),
-                                  backgroundColor: Colors.transparent,
-                                ),
-                              );
-                            },
-                          ),
-                          // Text overlay
-                          const Center(
-                            child: Text(
-                              "Finish",
-                              style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-    }
-  }
-
   /// Method invoked when user wants to select change activity
   void onTapActivity() async {
-    final selectedActivity = await Navigator.push(
+    final selectedActivity = await Navigator.pushNamed(
       context,
-      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
+      AppRoutes.activityChoose,
+      arguments: {'currentActivity': activityController.text.trim()},
     );
 
     // If the user selected something, update the TextField
-    if (selectedActivity != null && selectedActivity.isNotEmpty) {
+    if (selectedActivity != null && selectedActivity is String) {
       activityController.text = selectedActivity;
       AppData.instance.lastActivityString = selectedActivity;
       // Save it to local preferences
@@ -228,76 +114,27 @@ class TrackScreenState extends State<TrackScreen> {
                           readOnly: true,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.zero),
-                            suffixIcon: IconButton(onPressed: AppData.instance.currentCompetition == null ? () => onTapActivity() : null, icon: Icon(Icons.edit, size: 26,color: AppData.instance.currentCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),)),
+                            suffixIcon: IconButton(
+                              onPressed: AppData.instance.currentCompetition == null ? () => onTapActivity() : null,
+                              icon: Icon(
+                                Icons.edit,
+                                size: 26,
+                                color: AppData.instance.currentCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  if (AppData.instance.currentCompetition != null || true)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.emoji_events,
-                            color: Colors.yellow[600],
-                            size: 32,
-                          ),
-                          const SizedBox(width: 12),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "You are currently participating in:",
-                                  style: TextStyle(
-                                    color: Colors.white.withAlpha(80),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  AppData.instance.currentCompetition!.name,
-                                  // AppData.instance.currentCompetition!.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                                Text(
-                                  "Distance to go: ${AppData.instance.currentCompetition!.distanceToGo}",
-                                  // AppData.instance.currentCompetition!.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  CurrentCompetitionBanner(),
 
                   // Expanded map
                   Expanded(
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: TrackState.trackStateInstance.currentPosition ?? LatLng(0,0),
+                        initialCenter: TrackState.trackStateInstance.currentPosition ?? LatLng(0, 0),
                         initialZoom: 15.0,
                         interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
@@ -372,7 +209,7 @@ class TrackScreenState extends State<TrackScreen> {
                           ? 16
                           : 0,
                     ),
-                    child: buildActionButtons(),
+                    child: ActionButtons(activityController: activityController),
                   ),
                 ),
               ),
@@ -386,6 +223,7 @@ class TrackScreenState extends State<TrackScreen> {
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
+            TrackState.trackStateInstance.followUser = !_followUser;
             if (_followUser && TrackState.trackStateInstance.currentPosition != null) {
               _mapController.move(TrackState.trackStateInstance.currentPosition!, _mapController.camera.zoom);
             }

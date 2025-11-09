@@ -9,13 +9,12 @@ import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/preference_names.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/widgets/section.dart';
-import '../../data/services/validators.dart';
 
 class CompetitionGoalSection extends StatefulWidget{
-  bool readOnly;
-  TextEditingController activityController;
-  TextEditingController goalController;
-  CompetitionGoalSection({super.key,required this.readOnly,required this.activityController,required this.goalController});
+  final bool readOnly;
+  final TextEditingController activityController;
+  final TextEditingController goalController;
+  const CompetitionGoalSection({super.key,required this.readOnly,required this.activityController,required this.goalController});
 
   @override
   State<CompetitionGoalSection>  createState() => _CompetitionGoalSectionState();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
@@ -11,8 +12,9 @@ import '../../features/activities/pages/user_activities.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/start_page.dart';
-import '../../features/competitions/presentation/pages/competition_details.dart';
+import '../../features/competitions/presentation/pages/competition_det.dart';
 import '../../features/competitions/presentation/pages/competition_page.dart';
+import '../../features/competitions/presentation/pages/meeting_place_map.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -84,14 +86,19 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => SettingsPage());
       case AppRoutes.usersList:
         final args = settings.arguments as Map<String, dynamic>?;
-        final usersUid = args?['usersUid'] ?? [];
-        final usersUid2 = args?['usersUid2'] ?? [];
-        final usersUid3 = args?['usersUid3'] ?? [];
+        final usersUid = (args?['usersUid'] as Set?)?.cast<String>() ?? <String>{};
+        final usersUid2 = (args?['usersUid2'] as Set?)?.cast<String>() ?? <String>{};
+        final usersUid3 = (args?['usersUid3'] as Set?)?.cast<String>() ?? <String>{};
         final enterContext = args?['enterContext']  as EnterContextUsersList;
 
         return MaterialPageRoute(builder: (_) => UsersList(usersUid: usersUid,usersUid2: usersUid2,usersUid3: usersUid3,enterContext: enterContext));
       case AppRoutes.notifications:
         return MaterialPageRoute(builder: (_) => NotificationsPage());
+      case AppRoutes.meetingPlaceMap:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final latLng = args?['latLng'] as LatLng?;
+        return MaterialPageRoute(builder: (_) => MeetingPlaceMap(latLng: latLng));
+
 
       default:
         return MaterialPageRoute(
