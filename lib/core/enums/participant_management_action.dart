@@ -1,7 +1,6 @@
 enum ParticipantManagementAction {
   invite,
-  revokeInvitation,
-  approveRequest,
-  rejectRequest,
+  declineInvitation,
+  acceptInvitation,
   kick
 }

@@ -11,6 +11,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/preference_names.dart';
 import '../../../../core/enums/competition_role.dart';
+import '../../../../core/enums/participant_management_action.dart';
 import '../../../../core/enums/visibility.dart' as enums;
 import '../../../../core/models/competition.dart';
 import '../../../../core/services/competition_service.dart';
@@ -276,6 +277,18 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         );
       },
     );
+  }
+
+  void acceptInvitation(){
+    CompetitionService.manageParticipant(competition.competitionId, FirebaseAuth.instance.currentUser!.uid, competition.organizerUid, ParticipantManagementAction.acceptInvitation)
+  }
+
+  void declineInvitation(){
+    CompetitionService.manageParticipant(competition.competitionId, FirebaseAuth.instance.currentUser!.uid, competition.organizerUid, ParticipantManagementAction.declineInvitation);
+    setState
+  }
+
+  void declineInvitation(){
   }
 
   /// Save competition to database

@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/services/notification_service.dart';
 
 import '../enums/participant_management_action.dart';
 import '../enums/visibility.dart';
 import '../models/competition.dart';
+import '../models/notification.dart';
 
 class CompetitionFetchResult {
   final List<Competition> competitions;
@@ -247,7 +249,6 @@ class CompetitionService {
     if (targetUserId == adminUid) {
       return false;
     }
-
     AppNotification? notification;
 
     try {
@@ -258,34 +259,21 @@ class CompetitionService {
         final targetUserRef = FirebaseFirestore.instance
             .collection(FirestoreCollections.users)
             .doc(targetUserId);
-        final adminUserRef = FirebaseFirestore.instance
-            .collection(FirestoreCollections.users)
-            .doc(adminUid);
 
         final competitionSnap = await transaction.get(competitionRef);
         final targetUserSnap = await transaction.get(targetUserRef);
-        final adminSnap = await transaction.get(adminUserRef);
 
-        if (!competitionSnap.exists || !targetUserSnap.exists || !adminSnap.exists) {
+        if (!competitionSnap.exists || !targetUserSnap.exists) {
           throw Exception("One or more documents not found");
         }
 
         final competitionName = competitionSnap.data()?['name'] ?? 'a competition';
-        final adminName = adminSnap.data()?['firstName'] ?? 'The organizer';
 
-        final participantsList =
-        Set<String>.from(competitionSnap.data()?['participantsUid'] ?? []);
-        final invitedList =
-        Set<String>.from(competitionSnap.data()?['invitedParticipantsUid'] ?? []);
-        final joinRequestsList =
-        Set<String>.from(competitionSnap.data()?['joinRequestsUid'] ?? []);
+        final participantsList = Set<String>.from(competitionSnap.data()?['participantsUid'] ?? []);
+        final invitedList = Set<String>.from(competitionSnap.data()?['invitedParticipantsUid'] ?? []);
 
-        final userParticipatedList =
-        Set<String>.from(targetUserSnap.data()?['participatedCompetitions'] ?? []);
-        final userReceivedInvitesList = Set<String>.from(
-            targetUserSnap.data()?['receivedInvitationsToCompetitions'] ?? []);
-        final userSentRequestsList =
-        Set<String>.from(targetUserSnap.data()?['sentJoinRequests'] ?? []);
+        final userParticipatedList = Set<String>.from(targetUserSnap.data()?['participatedCompetitions'] ?? []);
+        final userReceivedInvitesList = Set<String>.from(targetUserSnap.data()?['receivedInvitationsToCompetitions'] ?? []);
 
         switch (action) {
           case ParticipantManagementAction.invite:
@@ -294,71 +282,37 @@ class CompetitionService {
             notification = AppNotification(
               notificationId: "",
               uid: targetUserId,
-              title: "$adminName invited you to join '$competitionName'",
+              title: "You are invited you to join '$competitionName'",
               createdAt: DateTime.now(),
               seen: false,
-              type: NotificationType.competitionInvite,
+              type: NotificationType.inviteCompetition,
             );
             break;
 
           case ParticipantManagementAction.kick:
             participantsList.remove(targetUserId);
             userParticipatedList.remove(competitionId);
-            notification = AppNotification(
-              notificationId: "",
-              uid: targetUserId,
-              title: "You have been removed from '$competitionName'",
-              createdAt: DateTime.now(),
-              seen: false,
-              type: NotificationType.other,
-            );
             break;
 
-          case ParticipantManagementAction.revokeInvitation:
+          case ParticipantManagementAction.declineInvitation:
             invitedList.remove(targetUserId);
             userReceivedInvitesList.remove(competitionId);
             break;
 
-          case ParticipantManagementAction.rejectRequest:
-            joinRequestsList.remove(targetUserId);
-            userSentRequestsList.remove(competitionId);
-            notification = AppNotification(
-              notificationId: "",
-              uid: targetUserId,
-              title: "Your request to join '$competitionName' was rejected",
-              createdAt: DateTime.now(),
-              seen: false,
-              type: NotificationType.other,
-            );
-            break;
-
-          case ParticipantManagementAction.approveRequest:
-            joinRequestsList.remove(targetUserId);
-            userSentRequestsList.remove(competitionId);
+          case ParticipantManagementAction.acceptInvitation:
             participantsList.add(targetUserId);
             userParticipatedList.add(competitionId);
-            notification = AppNotification(
-              notificationId: "",
-              uid: targetUserId,
-              title: "Your request to join '$competitionName' was approved!",
-              createdAt: DateTime.now(),
-              seen: false,
-              type: NotificationType.other,
-            );
             break;
         }
-
 
         transaction.update(competitionRef, {
           'participantsUid': participantsList.toList(),
           'invitedParticipantsUid': invitedList.toList(),
-          'joinRequestsUid': joinRequestsList.toList(),
         });
 
         transaction.update(targetUserRef, {
           'participatedCompetitions': userParticipatedList.toList(),
           'receivedInvitationsToCompetitions': userReceivedInvitesList.toList(),
-          'sentJoinRequests': userSentRequestsList.toList(),
         });
       });
 
