@@ -8,6 +8,8 @@ import '../models/user.dart' as model;
 
 
 class GoogleService {
+  GoogleService._();
+
   static final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   /// Sign in with google

@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService{
+  PreferencesService._();
 
   /// Method to save a string to shared preferences
   static Future<void> saveString(String key, String value) async {

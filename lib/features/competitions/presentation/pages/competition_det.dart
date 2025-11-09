@@ -18,7 +18,6 @@ import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/alert_dialog.dart';
-import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../widgets/competition_goal_section.dart';
 import '../widgets/location_and_participants_section.dart';
@@ -50,19 +49,15 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final TextEditingController _meetingPlaceController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
 
+  late Competition? competitionBeforeSave = widget.competitionData;
   late Competition competition;
   String appBarTitle = "Competition details";
-  bool competitionAdded = false;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
-  bool canPause = true;
-  bool edit = true; // Can we edit a competition?
   bool readOnly = false;
-  bool acceptedInvitation = false; // If users is invited and enter context is context invited users can accept invitation or not
-  bool declined = false; // If users is invited and enter context is context invited users can decline invitation
   String message = "";
 
   bool saveInProgress = false;
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -285,7 +280,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   /// Save competition to database
   void handleSaveCompetition() async {
-    if(saveInProgress == false){
+    if (saveInProgress == false) {
       saveInProgress = true;
     }
     if (!_formKey.currentState!.validate()) {
@@ -298,17 +293,17 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (result) {
       if (widget.enterContext == CompetitionContext.ownerCreate) {
         if (mounted) {
-          AppUtils.showMessage(context, "Competition saved successfully");
+          AppUtils.showMessage(context, "Competition saved successfully", messageType: MessageType.success);
         }
 
+        // Leave after success
         await Future.delayed(const Duration(milliseconds: 1500));
-
         if (mounted) Navigator.of(context).pop(competition);
       } else if (widget.enterContext == CompetitionContext.ownerModify) {
+        competitionBeforeSave = compData;
         if (mounted) {
           AppUtils.showMessage(context, "Changes saved successfully");
         }
-        competitionAdded = true;
       }
     } else {
       if (mounted) AppUtils.showMessage(context, "Error saving competition");
@@ -330,7 +325,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     var compData = _getDataFromForm();
 
     // If there is no changes, just pop
-    if (widget.competitionData == null || (widget.competitionData?.isEqual(compData) ?? false)) {
+    if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
       Navigator.of(context).pop();
       return;
     }
@@ -382,7 +377,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
               child: Column(
                 children: [
                   TopInfoBanner(competition: competition, enterContext: widget.enterContext),
-      
+
                   BasicInfoSection(
                     readOnly: readOnly,
                     visibility: _visibility,
@@ -392,9 +387,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     descriptionController: _descriptionController,
                     setVisibility: setVisibility,
                   ),
-      
+
                   CompetitionGoalSection(readOnly: readOnly, activityController: _activityController, goalController: _goalController),
-      
+
                   TimeSettingsSection(
                     enterContext: widget.enterContext,
                     readOnly: readOnly,
@@ -404,33 +399,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     maxTimeToCompleteActivityHoursController: _maxTimeToCompleteActivityHoursController,
                     maxTimeToCompleteActivityMinutesController: _maxTimeToCompleteActivityMinutesController,
                   ),
-      
+
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-      
+
                   LocationAndParticipantsSection(
                     enterContext: widget.enterContext,
                     competition: competition,
                     meetingPlaceController: _meetingPlaceController,
                   ),
-      
-                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                  if (widget.enterContext == CompetitionContext.ownerCreate)
-                    CustomButton(
-                      text: "Add competition",
-                      onPressed: handleSaveCompetition,
-                    ),
-                  if (widget.enterContext == CompetitionContext.ownerModify && (competition.startDate?.isAfter(DateTime.now()) ?? false))
-                    CustomButton(text: "Save changes", onPressed: () => handleSaveCompetition()),
-                  if (widget.enterContext == CompetitionContext.ownerModify &&
-                      (competition.startDate?.isBefore(DateTime.now()) ?? false)) ...[
-                    SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                    CustomButton(text: "Close competition", backgroundColor: AppColors.gray, onPressed: () => closeCompetition()),
-                  ],
-                  if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
-                    CustomButton(text: "Accept invitation", onPressed: () => closeCompetition()),
-      
-                  if (widget.enterContext == CompetitionContext.invited && declined == false && acceptedInvitation == false)
-                    CustomButton(text: "Decline invitation", onPressed: () => closeCompetition()),
                 ],
               ),
             ),

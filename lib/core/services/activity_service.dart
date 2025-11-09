@@ -18,6 +18,9 @@ class ActivitiesFetchResult {
 }
 
 class ActivityService {
+  ActivityService._();
+
+
   /// Format elapsed time from duration to hh:mm:ss
   static String formatElapsedTime(Duration duration) {
     return formatElapsedTimeFromSeconds(duration.inSeconds);

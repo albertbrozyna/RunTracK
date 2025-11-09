@@ -14,6 +14,7 @@ class NotificationFetchResult {
 }
 
 class NotificationService {
+  NotificationService._();
 
   /// Save notification to database
   static Future<bool> saveNotification(AppNotification notification) async {

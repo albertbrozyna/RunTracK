@@ -2,28 +2,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 
+import '../enums/participant_management_action.dart';
 import '../enums/visibility.dart';
 import '../models/competition.dart';
-
-
 
 class CompetitionFetchResult {
   final List<Competition> competitions;
   final DocumentSnapshot? lastDocument;
 
-  CompetitionFetchResult({
-    required this.competitions,
-    this.lastDocument,
-  });
+  CompetitionFetchResult({required this.competitions, this.lastDocument});
 }
 
 class CompetitionService {
+  CompetitionService._();
+
   static Future<Competition?> fetchCompetition(String competitionId) async {
-    if(competitionId.isEmpty){
+    if (competitionId.isEmpty) {
       return null;
     }
-    final docSnapshot = await FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId).get(); // Fetch existing document
-    if (docSnapshot.exists)  {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection(FirestoreCollections.competitions)
+        .doc(competitionId)
+        .get(); // Fetch existing document
+    if (docSnapshot.exists) {
       final data = docSnapshot.data() as Map<String, dynamic>;
       return Competition.fromMap(data);
     } else {
@@ -31,12 +32,13 @@ class CompetitionService {
     }
   }
 
-
-    static Future<bool> saveCompetition(Competition competition) async {
+  static Future<bool> saveCompetition(Competition competition) async {
     try {
       if (competition.competitionId.isNotEmpty) {
         // Competition exists, edit it
-        final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competition.competitionId); // Fetch existing document
+        final docRef = FirebaseFirestore.instance
+            .collection(FirestoreCollections.competitions)
+            .doc(competition.competitionId); // Fetch existing document
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
           await docRef.set(competition.toMap());
@@ -52,7 +54,7 @@ class CompetitionService {
     }
     return true;
   }
-  
+
   /// Fetch last page of user activities
   static Future<CompetitionFetchResult> fetchLatestCompetitionsPage(int limit, DocumentSnapshot? lastDocument) async {
     try {
@@ -76,10 +78,10 @@ class CompetitionService {
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
           .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
-      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
+      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
       print("Error: $e");
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
   }
 
@@ -90,7 +92,7 @@ class CompetitionService {
     Set<String> friendsUids,
   ) async {
     if (friendsUids.isEmpty) {
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
 
     try {
@@ -116,10 +118,10 @@ class CompetitionService {
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
           .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
-      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
+      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
       print("Error: $e");
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
   }
 
@@ -142,10 +144,10 @@ class CompetitionService {
         newLastDocument = querySnapshot.docs.last;
       }
       final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
+      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
       print("Error fetching latest competitions: $e");
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
   }
 
@@ -171,10 +173,10 @@ class CompetitionService {
         newLastDocument = querySnapshot.docs.last;
       }
       final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
+      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
       print("Error fetching latest competitions: $e");
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
   }
 
@@ -199,10 +201,10 @@ class CompetitionService {
         newLastDocument = querySnapshot.docs.last;
       }
       final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return CompetitionFetchResult(competitions: competitions,lastDocument: newLastDocument);
+      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
       print("Error fetching latest competitions: $e");
-      return CompetitionFetchResult(competitions: [],lastDocument: null);
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
   }
 
@@ -236,90 +238,142 @@ class CompetitionService {
     }
   }
 
-  /// Accept invitation to competition
-  static Future<bool> acceptInvitation(Competition competition) async {
+  static Future<bool> manageParticipant(
+      String competitionId,
+      String targetUserId,
+      String adminUid,
+      ParticipantManagementAction action,
+      ) async {
+    if (targetUserId == adminUid) {
+      return false;
+    }
+
+    AppNotification? notification;
+
     try {
-
-      await FirebaseFirestore.instance.runTransaction((transaction)async {
-        final competitionReference = FirebaseFirestore.instance
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final competitionRef = FirebaseFirestore.instance
             .collection(FirestoreCollections.competitions)
-            .doc(competition.competitionId);
-        final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(FirebaseAuth.instance.currentUser?.uid);
+            .doc(competitionId);
+        final targetUserRef = FirebaseFirestore.instance
+            .collection(FirestoreCollections.users)
+            .doc(targetUserId);
+        final adminUserRef = FirebaseFirestore.instance
+            .collection(FirestoreCollections.users)
+            .doc(adminUid);
 
-        final competitionS = await transaction.get(competitionReference);
-        if (!competitionS.exists) {
-          throw Exception("Competition not found in database");
+        final competitionSnap = await transaction.get(competitionRef);
+        final targetUserSnap = await transaction.get(targetUserRef);
+        final adminSnap = await transaction.get(adminUserRef);
+
+        if (!competitionSnap.exists || !targetUserSnap.exists || !adminSnap.exists) {
+          throw Exception("One or more documents not found");
         }
 
-        final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
-        updatedInviteList.remove(FirebaseAuth.instance.currentUser?.uid);
+        final competitionName = competitionSnap.data()?['name'] ?? 'a competition';
+        final adminName = adminSnap.data()?['firstName'] ?? 'The organizer';
 
-        transaction.update(competitionReference, {
-          'invitedParticipantsUid': updatedInviteList,
+        final participantsList =
+        Set<String>.from(competitionSnap.data()?['participantsUid'] ?? []);
+        final invitedList =
+        Set<String>.from(competitionSnap.data()?['invitedParticipantsUid'] ?? []);
+        final joinRequestsList =
+        Set<String>.from(competitionSnap.data()?['joinRequestsUid'] ?? []);
+
+        final userParticipatedList =
+        Set<String>.from(targetUserSnap.data()?['participatedCompetitions'] ?? []);
+        final userReceivedInvitesList = Set<String>.from(
+            targetUserSnap.data()?['receivedInvitationsToCompetitions'] ?? []);
+        final userSentRequestsList =
+        Set<String>.from(targetUserSnap.data()?['sentJoinRequests'] ?? []);
+
+        switch (action) {
+          case ParticipantManagementAction.invite:
+            invitedList.add(targetUserId);
+            userReceivedInvitesList.add(competitionId);
+            notification = AppNotification(
+              notificationId: "",
+              uid: targetUserId,
+              title: "$adminName invited you to join '$competitionName'",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.competitionInvite,
+            );
+            break;
+
+          case ParticipantManagementAction.kick:
+            participantsList.remove(targetUserId);
+            userParticipatedList.remove(competitionId);
+            notification = AppNotification(
+              notificationId: "",
+              uid: targetUserId,
+              title: "You have been removed from '$competitionName'",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.other,
+            );
+            break;
+
+          case ParticipantManagementAction.revokeInvitation:
+            invitedList.remove(targetUserId);
+            userReceivedInvitesList.remove(competitionId);
+            break;
+
+          case ParticipantManagementAction.rejectRequest:
+            joinRequestsList.remove(targetUserId);
+            userSentRequestsList.remove(competitionId);
+            notification = AppNotification(
+              notificationId: "",
+              uid: targetUserId,
+              title: "Your request to join '$competitionName' was rejected",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.other,
+            );
+            break;
+
+          case ParticipantManagementAction.approveRequest:
+            joinRequestsList.remove(targetUserId);
+            userSentRequestsList.remove(competitionId);
+            participantsList.add(targetUserId);
+            userParticipatedList.add(competitionId);
+            notification = AppNotification(
+              notificationId: "",
+              uid: targetUserId,
+              title: "Your request to join '$competitionName' was approved!",
+              createdAt: DateTime.now(),
+              seen: false,
+              type: NotificationType.other,
+            );
+            break;
+        }
+
+
+        transaction.update(competitionRef, {
+          'participantsUid': participantsList.toList(),
+          'invitedParticipantsUid': invitedList.toList(),
+          'joinRequestsUid': joinRequestsList.toList(),
         });
-        final userS = await transaction.get(userReference);
 
-        // Updated received invitation list
-
-        List<String> receivedInvitationsToCompetitions = userS['receivedInvitationsToCompetitions'] ?? [];
-        receivedInvitationsToCompetitions.remove(competition.competitionId);
-
-        transaction.update(userReference, {
-          'receivedInvitationsToCompetitions': receivedInvitationsToCompetitions,
-          'participatedCompetitions':
-          FieldValue.arrayUnion([competition.competitionId]),
+        transaction.update(targetUserRef, {
+          'participatedCompetitions': userParticipatedList.toList(),
+          'receivedInvitationsToCompetitions': userReceivedInvitesList.toList(),
+          'sentJoinRequests': userSentRequestsList.toList(),
         });
+      });
 
-    });
+      if (notification != null) {
+        await NotificationService.saveNotification(notification!);
+      }
+
       return true;
     } catch (e) {
-      print("Error accepting invitation: $e");
+      print("Error managing participant ($action): $e");
       return false;
     }
   }
 
-  /// Decline invitation to competition
-  static Future<bool> declineInvitation(Competition competition) async {
-
-
-      try {
-        // Do this in one transaction
-        await FirebaseFirestore.instance.runTransaction((transaction)async {
-          final competitionReference = FirebaseFirestore.instance
-              .collection(FirestoreCollections.competitions)
-              .doc(competition.competitionId);
-          final userReference = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(FirebaseAuth.instance.currentUser?.uid);
-
-          final competitionS = await transaction.get(competitionReference);
-          if (!competitionS.exists) {
-            throw Exception("Competition not found in database");
-          }
-
-          final updatedInviteList = List<String>.from(competitionS['invitedParticipantsUid'] ?? []);
-          updatedInviteList.remove(FirebaseAuth.instance.currentUser?.uid);
-
-          transaction.update(competitionReference, {
-            'invitedParticipantsUid': updatedInviteList,
-          });
-
-          final userS = await transaction.get(userReference);
-          // Updated received invitation list
-          List<String> receivedInvitationsToCompetitions = userS['receivedInvitationsToCompetitions'] ?? [];
-          receivedInvitationsToCompetitions.remove(competition.competitionId);
-
-          transaction.update(userReference, {
-            'receivedInvitationsToCompetitions': receivedInvitationsToCompetitions,
-          });
-
-        });
-        return true;
-      } catch (e) {
-        print("Error accepting invitation: $e");
-        return false;
-      }
-    }
-
-    /// Update field in competition
+  /// Update field in competition
   static Future<void> updateFields(String competitionId, List<String> fields, List<dynamic> values) async {
     if (competitionId.isEmpty || fields.isEmpty || values.isEmpty) {
       return;
@@ -337,5 +391,4 @@ class CompetitionService {
       print("Error closing competition: $e");
     }
   }
-
 }
