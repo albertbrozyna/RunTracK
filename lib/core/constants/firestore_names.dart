@@ -1,4 +1,5 @@
 class FirestoreCollections {
+  FirestoreCollections._();
   static const String users = 'users';
   static const String competitions = 'competitions';
   static const String activities = 'activities';

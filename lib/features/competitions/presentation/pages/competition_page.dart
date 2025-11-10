@@ -63,6 +63,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   DocumentSnapshot? _lastPageInvites;
   DocumentSnapshot? _lastPageParticipating;
 
+  bool _isNavigating = false;
+
   final int _limit = 10; // Competitions per page
 
   @override
@@ -122,7 +124,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
 
   Future<void> initializeAsync() async {}
 
-  /// Load my activities
+  /// Load my competitions
   Future<void> _loadMyCompetitions() async {
     if (_isLoadingMy == true || _hasMoreMy == false) {
       return;
@@ -137,6 +139,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _lastPageMyCompetitions,
     );
 
+    if (!mounted) return;
     setState(() {
       _myCompetitions.addAll(competitionFetchResult.competitions);
       _lastPageMyCompetitions = competitionFetchResult.lastDocument;
@@ -161,6 +164,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _lastPageFriendsCompetitions,
       currentUser?.friendsUid ?? {},
     );
+    if (!mounted) return;
 
     setState(() {
       _friendsCompetitions.addAll(competitionFetchResult.competitions);
@@ -183,6 +187,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
 
     final competitionFetchResult = await CompetitionService.fetchLatestCompetitionsPage(_limit, _lastPageAllCompetitions);
+    if (!mounted) return;
 
     setState(() {
       _allCompetitions.addAll(competitionFetchResult.competitions);
@@ -208,6 +213,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _limit,
       _lastPageInvites,
     );
+    if (!mounted) return;
 
     setState(() {
       _invitedCompetitions.addAll(competitionFetchResult.competitions);
@@ -218,6 +224,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       }
     });
   }
+
+
 
   /// Load competitions which user is participating
   Future<void> _loadMyParticipatedCompetitions() async {
@@ -233,6 +241,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _limit,
       _lastPageParticipating,
     );
+    if (!mounted) return;
 
     setState(() {
       _participatedCompetitions.addAll(competitionFetchResult.competitions);
@@ -244,18 +253,139 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
   }
 
+  /// On competition block tap
+  void onTapBlock(BuildContext context,Competition competition) async{
+    if (_isNavigating) {
+      return;
+    }
+
+    setState(() {
+      _isNavigating = true;
+    });
+
+
+    CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
+
+    if (_tabController.index == 0) {
+      // Set enter context
+      enterContext = CompetitionContext.ownerModify;
+    } else if (_tabController.index == 1 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
+    } else if (_tabController.index == 1 && (competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerAbleToJoin;
+    } else if (_tabController.index == 2 && (competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerAbleToJoin;
+    } else if (_tabController.index == 2 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
+    } else if (_tabController.index == 3 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.participant;
+    } else if (_tabController.index == 4 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.invited;
+    }
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.competitionDetails,
+      arguments: {'enterContext': enterContext, 'competitionData': competition, 'initTab': _tabController.index},
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isNavigating = false;
+    });
+
+    if (result != null && result is Competition) {
+      setState(() {
+        if (_tabController.index == 0) {
+          _myCompetitions.insert(0, result);
+        } else if (_tabController.index == 1) {
+          _friendsCompetitions.insert(0, result);
+        } else if (_tabController.index == 2) {
+          _allCompetitions.insert(0, result);
+        }
+      });
+    } else if (result != null && result is bool) {
+     _reloadCurrentTab();
+    }
+  }
+
   /// On pressed add competition button
   void onPressedAddCompetition(BuildContext context) async {
+    if (_isNavigating) {
+      return;
+    }
+
+    setState(() {
+      _isNavigating = true;
+    });
+
     final result = await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': CompetitionContext.ownerCreate, 'competitionData': null, 'initTab': _tabController.index},
     );
 
-    if(result != null && result is Competition){  // Add created competition to list
+    if (!mounted) return;
+    setState(() {
+      _isNavigating = false;
+    });
+
+    if (result != null && result is Competition) {
       setState(() {
-        _myCompetitions.insert(0, result);
+        if (_tabController.index == 0) {
+          _myCompetitions.insert(0, result);
+        } else if (_tabController.index == 1) {
+          _friendsCompetitions.insert(0, result);
+        } else if (_tabController.index == 2) {
+          _allCompetitions.insert(0, result);
+        }
       });
+    } else if (result != null && result is bool) {
+      _reloadCurrentTab();
+    }
+  }
+
+  void _reloadCurrentTab() {
+    int index = _tabController.index;
+
+    if (index == 0) {
+      setState(() {
+        _myCompetitions.clear();
+        _hasMoreMy = true;
+        _lastPageMyCompetitions = null;
+      });
+      _loadMyCompetitions();
+
+    } else if (index == 1) {
+      setState(() {
+        _friendsCompetitions.clear();
+        _hasMoreFriends = true;
+        _lastPageFriendsCompetitions = null;
+      });
+      _loadFriendsCompetitions();
+
+    } else if (index == 2) {
+      setState(() {
+        _allCompetitions.clear();
+        _hasMoreAll = true;
+        _lastPageAllCompetitions = null;
+      });
+      _loadAllCompetitions();
+
+    } else if (index == 3) {
+      setState(() {
+        _invitedCompetitions.clear();
+        _hasMoreInvites = true;
+        _lastPageInvites = null;
+      });
+      _loadMyInvitedCompetitions();
+
+    } else if (index == 4) {
+      setState(() {
+        _participatedCompetitions.clear();
+        _hasMoreParticipating = true;
+        _lastPageParticipating = null;
+      });
+      _loadMyParticipatedCompetitions();
     }
   }
 
@@ -264,9 +394,9 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     return Scaffold(
       floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 70),
       floatingActionButton: Visibility(
-        visible: [0, 1, 2].contains(_tabController.index), // Show add button only for my friends and all
+        visible: [0, 1, 2].contains(_tabController.index),
         child: FloatingActionButton(
-          onPressed: () => onPressedAddCompetition(context),
+          onPressed: _isNavigating ? null : () => onPressedAddCompetition(context),
           backgroundColor: AppColors.primary,
           shape: const CircleBorder(),
           child: Icon(Icons.add_card, color: Colors.white),
@@ -281,11 +411,13 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
               decoration: BoxDecoration(color: AppColors.primary),
               child: TabBar(
                 controller: _tabController,
-                isScrollable: true,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white.withAlpha(100),
                 labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorColor: Colors.white,
                 unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, backgroundColor: AppColors.primary),
+                isScrollable: true,
                 tabs: [
                   Tab(text: "My"),
                   Tab(text: "Friends"),
@@ -318,12 +450,15 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 final competition = _myCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
-                                  child: CompetitionBlock(
-                                    key: ValueKey(competition.competitionId),
-                                    firstName: currentUser!.firstName,
-                                    lastName: currentUser!.lastName,
-                                    competition: competition,
-                                    initIndex: 0,
+                                  child: InkWell(
+                                    onTap: () => onTapBlock(context, competition),
+                                    child: CompetitionBlock(
+                                      key: ValueKey(competition.competitionId),
+                                      firstName: currentUser?.firstName ?? "",
+                                      lastName: currentUser?.lastName ?? "",
+                                      competition: competition,
+                                      initIndex: 0,
+                                    ),
                                   ),
                                 );
                               },
@@ -385,7 +520,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                               controller: _scrollControllerInvites,
                               itemCount: _invitedCompetitions.length + (_hasMoreInvites ? 1 : 0),
                               itemBuilder: (context, index) {
-                                if (index == _allCompetitions.length) {
+                                if (index == _invitedCompetitions.length) {
                                   return Center(child: CircularProgressIndicator());
                                 }
                                 final competition = _invitedCompetitions[index];
@@ -415,7 +550,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 if (index == _participatedCompetitions.length) {
                                   return Center(child: CircularProgressIndicator());
                                 }
-                                final competition = _allCompetitions[index];
+                                final competition = _participatedCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
                                   child: CompetitionBlock(

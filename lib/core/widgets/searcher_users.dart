@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/core/services/competition_service.dart';
+import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
 import '../enums/enter_context.dart';
@@ -51,6 +53,7 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
         showResults(context);
       }
     }else{
+      //bool added = await CompetitionService.manageParticipant(FirebaseAuth.instance.currentUser?.uid ?? "", uid);
       invitedUsers.add(uid);
       rebuildNotifier.value++;
       showResults(context);
@@ -136,7 +139,7 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
                     radius: 18,
                     backgroundImage: user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty
                         ? NetworkImage(user.profilePhotoUrl!)
-                        : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                        : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                   ),
                   onTap: () => onTapUser(context, user.uid),
                   title: Text("${user.firstName} ${user.lastName}"),

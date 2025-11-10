@@ -296,6 +296,9 @@ void onStart(ServiceInstance serviceInstance) async {
   if (trackingState != TrackingState.stopped) {
     print("MYLOG auto start");
     startLocationTimerAndStream();
+    if (serviceInstance is AndroidServiceInstance) {
+      serviceInstance.setAsForegroundService();
+    }
   }
 
   print("MYLOG test nowy kod");
@@ -309,7 +312,6 @@ class ForegroundTrackService {
   final FlutterBackgroundService service = FlutterBackgroundService();
   bool _initialized = false;
 
-  @pragma('vm:entry-point')
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
@@ -317,7 +319,7 @@ class ForegroundTrackService {
     await service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
-        isForegroundMode: false,
+        isForegroundMode: true,
         initialNotificationTitle: "Tracking location",
         initialNotificationContent: "RunTracK tracks your activity!",
         foregroundServiceNotificationId: 911,

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/features/auth/models/auth_response.dart';
 
@@ -110,10 +109,9 @@ class UserService {
     return null;
   }
 
-  /// Fetch  user firstName LastName and profile photo uri data
   static Future<model.User?> fetchUserForBlock(String uid) async {
     final userDoc = await FirebaseFirestore.instance
-        .collection('users')
+        .collection(FirestoreCollections.users)
         .doc(uid)
         .get();
 
@@ -122,14 +120,8 @@ class UserService {
       if (data != null) {
         final firstName = data['firstName'] as String?;
         final lastName = data['lastName'] as String?;
-        final gender = data['gender'] as String?;
-        final email = data['email'] as String?;
-        final profilePhotoUrl = data['profilePhotoUrl'] as String?;
 
-        if (firstName == null ||
-            lastName == null ||
-            gender == null ||
-            email == null) {
+        if (firstName == null || lastName == null) {
           return null;
         }
 
@@ -137,15 +129,14 @@ class UserService {
           uid: uid,
           firstName: firstName,
           lastName: lastName,
-          email: email,
-          gender: gender,
-          profilePhotoUrl: profilePhotoUrl,
+          profilePhotoUrl: data['profilePhotoUrl'] as String?,
+          email: "",
+          gender: "",
         );
       }
     }
     return null;
   }
-
   /// Fetch users list from firestore
   static Future<List<model.User>> fetchUsers({
     required List<String> uids,

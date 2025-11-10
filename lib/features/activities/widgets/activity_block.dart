@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/config/app_images.dart';
 
 import '../../../core/models/activity.dart';
 import '../../../core/services/activity_service.dart';
@@ -121,7 +122,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                         radius: 18,
                         backgroundImage: widget.profilePhotoUrl != null
                             ? NetworkImage(widget.profilePhotoUrl!)
-                            : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                            : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                       ),
                     ),
                     SizedBox(width: 10),

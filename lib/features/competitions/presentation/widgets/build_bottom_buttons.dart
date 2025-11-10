@@ -16,6 +16,8 @@ class BottomButtons extends StatefulWidget {
   final VoidCallback closeCompetition;
   final VoidCallback acceptInvitation;
   final VoidCallback declineInvitation;
+  final VoidCallback joinCompetition;
+  final VoidCallback resignFromCompetition;
 
   const BottomButtons({
     super.key,
@@ -25,6 +27,8 @@ class BottomButtons extends StatefulWidget {
     required this.closeCompetition,
     required this.acceptInvitation,
     required this.declineInvitation,
+    required this.joinCompetition,
+    required this.resignFromCompetition,
   });
 
   @override
@@ -38,6 +42,7 @@ class _BottomButtonsState extends State<BottomButtons> {
   bool open = false;
   bool alreadyParticipate = false;
   bool weAreOwner = false;
+  bool weParticipate = false;
   @override
   void initState() {
     super.initState();
@@ -58,18 +63,14 @@ class _BottomButtonsState extends State<BottomButtons> {
     weAreOwner = widget.competition.organizerUid == (FirebaseAuth.instance.currentUser?.uid ?? false);
     weParticipate = widget.competition.participantsUid.contains(FirebaseAuth.instance.currentUser!.uid);
 
-    if(!weAreOwner){
-
+    if(!weAreOwner && !weParticipate){
+      if(widget.competition.visibility == ComVisibility.everyone){
+        open = true;
+      } else if((AppData.instance.currentUser?.friendsUid.contains(widget.competition.organizerUid) ?? false) &&
+          widget.competition.visibility == ComVisibility.friends) { // If we are friends and
+        open = true;
+      }
     }
-
-
-    if(widget.competition.visibility == ComVisibility.everyone){
-      open = true;
-    } else if((AppData.instance.currentUser?.friendsUid.contains(widget.competition.organizerUid) ?? false) &&
-    widget.competition.visibility == ComVisibility.friends) { // If we are friends and
-      open = true;
-    }
-
 
     if (widget.competition.invitedParticipantsUid.contains(FirebaseAuth.instance.currentUser!.uid)) {
       invited = true;
@@ -87,7 +88,7 @@ class _BottomButtonsState extends State<BottomButtons> {
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Close competition", backgroundColor: AppColors.gray, onPressed: widget.closeCompetition),
         ],
-        if (invited) ...[
+        if (invited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Accept invitation", onPressed: widget.acceptInvitation),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
@@ -95,7 +96,17 @@ class _BottomButtonsState extends State<BottomButtons> {
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
         ],
 
-        if (open && !invited) ...[],
+        if (open && !invited && !weAreOwner && !weParticipate) ...[
+          SizedBox(height: AppUiConstants.verticalSpacingButtons),
+          CustomButton(text: "Join competition", onPressed: widget.acceptInvitation),
+          SizedBox(height: AppUiConstants.verticalSpacingButtons),
+        ],
+
+        if (open && !invited && !weAreOwner && weParticipate) ...[
+          SizedBox(height: AppUiConstants.verticalSpacingButtons),
+          CustomButton(text: "Resign from competition", onPressed: widget.declineInvitation),
+          SizedBox(height: AppUiConstants.verticalSpacingButtons),
+        ],
       ],
     );
   }

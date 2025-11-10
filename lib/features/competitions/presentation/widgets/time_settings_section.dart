@@ -8,15 +8,15 @@ import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/section.dart' show Section;
 
 class TimeSettingsSection extends StatefulWidget{
-  CompetitionContext enterContext;
-  bool readOnly;
- TextEditingController startTimeController;
- TextEditingController endTimeController;
- TextEditingController registerDeadlineController;
- TextEditingController maxTimeToCompleteActivityHoursController;
- TextEditingController maxTimeToCompleteActivityMinutesController;
+  final CompetitionContext enterContext;
+  final bool readOnly;
+ final TextEditingController startTimeController;
+ final TextEditingController endTimeController;
+ final TextEditingController registerDeadlineController;
+ final TextEditingController maxTimeToCompleteActivityHoursController;
+ final TextEditingController maxTimeToCompleteActivityMinutesController;
 
- TimeSettingsSection({super.key,required this.enterContext,required this.readOnly,required this.startTimeController,required this.endTimeController,required this.registerDeadlineController,required this.maxTimeToCompleteActivityHoursController,required this.maxTimeToCompleteActivityMinutesController});
+ const TimeSettingsSection({super.key,required this.enterContext,required this.readOnly,required this.startTimeController,required this.endTimeController,required this.registerDeadlineController,required this.maxTimeToCompleteActivityHoursController,required this.maxTimeToCompleteActivityMinutesController});
 
   @override
   State<TimeSettingsSection>  createState() => _TimeSettingsSectionState();
@@ -24,8 +24,6 @@ class TimeSettingsSection extends StatefulWidget{
 
 
 class _TimeSettingsSectionState extends State<TimeSettingsSection> {
-
-
 
 // Start date
   String? validateStartDate(String? value) {
@@ -118,7 +116,13 @@ class _TimeSettingsSectionState extends State<TimeSettingsSection> {
 
 // Max time to complete activity hours
   String? validateHours(String? value) {
-    if (value != null && value
+    if (value == null || value
+        .trim()
+        .isEmpty) {
+      return 'Please pick hour';
+    }
+
+    if (value
         .trim()
         .isNotEmpty) {
       if (int.tryParse(value.trim()) == null) {
@@ -133,7 +137,13 @@ class _TimeSettingsSectionState extends State<TimeSettingsSection> {
 
 // Max time to complete activity minutes
   String? validateMinutes(String? value) {
-    if (value != null && value
+    if (value == null || value
+        .trim()
+        .isEmpty) {
+      return 'Please pick minutes';
+    }
+
+    if (value
         .trim()
         .isNotEmpty) {
       if (int.tryParse(value.trim()) == null) {

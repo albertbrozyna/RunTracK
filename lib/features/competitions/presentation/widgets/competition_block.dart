@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
-import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../../../core/models/competition.dart';
@@ -41,7 +40,6 @@ class CompetitionBlock extends StatefulWidget {
 }
 
 class _CompetitionBlockState extends State<CompetitionBlock> {
-  CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
   String firstName = "";
   String lastName = "";
   String profilePhotoUrl = "";
@@ -59,23 +57,6 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
   }
 
   void initialize() {
-    if (widget.initIndex == 0) {
-      // Set enter context
-      enterContext = CompetitionContext.ownerModify;
-    } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerNotAbleToJoin;
-    } else if (widget.initIndex == 1 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerAbleToJoin;
-    } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerAbleToJoin;
-    } else if (widget.initIndex == 2 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerNotAbleToJoin;
-    } else if (widget.initIndex == 3 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.participant;
-    } else if (widget.initIndex == 4 && (widget.competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.invited;
-    }
-
     firstName = widget.firstName;
     lastName = widget.lastName;
 
@@ -116,20 +97,10 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
     }
   }
 
-  /// On competition block tap
-  void onTapBlock(BuildContext context) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.competitionDetails,
-      arguments: {'enterContext': enterContext, 'competitionData': widget.competition, 'initTab': widget.initIndex},
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onTapBlock(context),
-      child: Container(
+    return Container(
         decoration: AppUiConstants.decorationBlock,
         child: Padding(
           // Inside padding
@@ -316,7 +287,6 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

@@ -312,7 +312,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      "assets/DefaultProfilePhoto.png",
+                      AppImages.defaultProfilePhoto,
                       width: MediaQuery.of(context).size.width / 2,
                       height: MediaQuery.of(context).size.width / 2,
                       fit: BoxFit.cover,

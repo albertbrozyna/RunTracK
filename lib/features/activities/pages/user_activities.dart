@@ -112,6 +112,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
       _lastPageMyActivities,
     );
 
+    if(!mounted) return;
     setState(() {
       _myActivities.addAll(activitiesFetchResult.activities);
       _lastPageMyActivities = activitiesFetchResult.lastDocument;
@@ -135,6 +136,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
       _lastPageFriendsActivities,
       currentUser?.friendsUid ?? {},
     );
+    if(!mounted) return;
 
     setState(() {
       if (activitiesFetchResult.activities.isEmpty) {
@@ -159,6 +161,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
     });
 
     final activities = await ActivityService.fetchLatestActivitiesPage(_limit, _lastPageAllActivities);
+    if(!mounted) return;
 
     setState(() {
       _allActivities.addAll(activities.activities);

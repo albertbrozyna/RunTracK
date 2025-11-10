@@ -47,7 +47,6 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
     AppData.instance.currentCompetition = null;
     AppData.instance.currentUser?.currentCompetition = "";
     UserService.updateUser(AppData.instance.currentUser!);
-
     setState(() {});
   }
 
@@ -61,13 +60,10 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
         widget.competition.startDate!.isBefore(DateTime.now()) &&
         widget.competition.endDate!.isAfter(DateTime.now());
 
-    final bool isFinished =
-        widget.competition.results?.containsKey(FirebaseAuth.instance.currentUser?.uid) ?? false;
+    final bool isFinished = widget.competition.results?.containsKey(FirebaseAuth.instance.currentUser?.uid) ?? false;
 
-    final bool isCurrent =
-        AppData.instance.currentCompetition?.competitionId == widget.competition.competitionId;
+    final bool isCurrent = AppData.instance.currentCompetition?.competitionId == widget.competition.competitionId;
 
-    // This logic is a bit confusing, but I'm sticking to your original definition
     final bool ownerCreate = widget.enterContext != CompetitionContext.ownerCreate;
 
     final bool inProgress = isCurrent &&
@@ -83,20 +79,15 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
       competitionState = CompetitionState.canStart;
       message = "You can join this competition.";
     } else if (isCurrent && !inProgress && !isFinished) {
-      // Special case: it's set as current, but hasn't started yet
       competitionState = CompetitionState.canStart;
       message = "This is your current competition.";
     }
 
-    // If 'competitionState' is null, don't show anything
     if (competitionState == null) {
-      return const SizedBox.shrink(); // More efficient than SizedBox()
+      return const SizedBox.shrink();
     }
 
-    // --- UI Building ---
-
-    // Default colors for the banner
-    Color bannerColor = AppColors.primary; // Neutral color
+    Color bannerColor = AppColors.primary;
     IconData bannerIcon = Icons.info_outline;
 
     if (competitionState == CompetitionState.inProgress) {
@@ -106,24 +97,22 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
       bannerColor = Colors.grey.shade600;
       bannerIcon = Icons.check_circle_outline;
     } else if (competitionState == CompetitionState.canStart) {
-      bannerColor = AppColors.primary; // Encouraging color
+      bannerColor = AppColors.primary;
       bannerIcon = Icons.flag_outlined;
     }
 
     return Card(
-      // We use Card for a nice shadow and background
       margin: EdgeInsets.symmetric(
         vertical: AppUiConstants.verticalSpacingButtons,
         horizontal: 12.0,
       ),
       elevation: 4,
-      clipBehavior: Clip.antiAlias, // Prevents the background color from bleeding out
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
       ),
       child: Column(
         children: [
-          // 1. Top info banner
           Container(
             color: bannerColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -146,7 +135,7 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
           ),
 
           // 2. Button section
-          if (competitionState != CompetitionState.finished) // Don't show buttons after finishing
+          if (competitionState != CompetitionState.finished)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: _buildActionButtons(competitionState, isCurrent),
@@ -159,21 +148,18 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
   /// Helper for building action buttons
   Widget _buildActionButtons(CompetitionState state, bool isCurrent) {
     if (isCurrent) {
-      // Competition is CURRENTLY set. Show "Cancel" button.
       return CustomButton(
         text: "Clear current competition",
         onPressed: _clearCurrentCompetition,
       );
     } else if (state == CompetitionState.canStart) {
-      // Competition CAN be set. Show "Set" button.
       return CustomButton(
         text: "Set as current competition",
         onPressed: _setAsCurrentCompetition,
-        backgroundColor: AppColors.green, // Primary action color
+        backgroundColor: AppColors.green,
       );
     }
 
-    // Otherwise, don't show buttons (e.g., in progress but not current)
     return const SizedBox.shrink();
   }
 }

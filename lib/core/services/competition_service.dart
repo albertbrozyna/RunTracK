@@ -129,6 +129,9 @@ class CompetitionService {
 
   /// Fetch my latest activities by pages
   static Future<CompetitionFetchResult> fetchMyLatestCompetitionsPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
+    if(uid.isEmpty){
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
+    }
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -159,6 +162,9 @@ class CompetitionService {
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
+    if(competitionsIds.isEmpty){
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
+    }
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -188,6 +194,9 @@ class CompetitionService {
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
+    if(competitionsIds.isEmpty){
+      return CompetitionFetchResult(competitions: [], lastDocument: null);
+    }
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
@@ -288,7 +297,7 @@ class CompetitionService {
               type: NotificationType.inviteCompetition,
             );
             break;
-
+          case ParticipantManagementAction.resignFromCompetition:
           case ParticipantManagementAction.kick:
             participantsList.remove(targetUserId);
             userParticipatedList.remove(competitionId);
@@ -299,6 +308,7 @@ class CompetitionService {
             userReceivedInvitesList.remove(competitionId);
             break;
 
+          case ParticipantManagementAction.joinCompetition:
           case ParticipantManagementAction.acceptInvitation:
             participantsList.add(targetUserId);
             userParticipatedList.add(competitionId);

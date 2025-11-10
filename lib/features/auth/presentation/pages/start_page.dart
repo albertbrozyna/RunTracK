@@ -6,7 +6,7 @@ import '../../../../app/config/app_icons.dart';
 import '../../../../app/config/app_images.dart';
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/ui_constants.dart';
-import '../../../../core/enums/SignInStatus.dart';
+import '../../../../core/enums/sign_in_status.dart';
 import '../../../../core/models/sign_in_result.dart';
 import '../../../../core/models/user.dart' as model show User;
 import '../../../../core/services/google_service.dart';

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/competitions/presentation/widgets/basic_info_section.dart';
+import 'package:run_track/features/competitions/presentation/widgets/build_bottom_buttons.dart';
 import 'package:run_track/features/competitions/presentation/widgets/time_settings_section.dart';
 import 'package:run_track/features/competitions/presentation/widgets/top_info_banner.dart';
 
@@ -56,9 +57,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool readOnly = false;
   String message = "";
-
+  bool change = false;  // Change was done to competition, reload it all
   bool saveInProgress = false;
-
+  bool saved = false;
+  bool leavingPage = false;
   @override
   void dispose() {
     _nameController.dispose();
@@ -109,7 +111,21 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   /// Sync data to controllers
   void _populateFormFromData(Competition data) {
     _nameController.text = data.name;
-    _organizerController.text = data.name;
+    if(data.organizerUid == FirebaseAuth.instance.currentUser?.uid){
+      _organizerController.text = AppData.instance.currentUser?.fullName ?? "User Unknown";
+    }else{
+     UserService.fetchUserForBlock(competition.organizerUid)
+          .then((user) {
+        setState(() {
+          String fullName = user?.firstName ?? "User";
+          fullName += user?.lastName ?? "Unknown";
+          _organizerController.text = fullName;
+        });
+      })
+          .catchError((error) {
+        print("Error fetching user data: $error");
+      });
+    }
     _descriptionController.text = data.description ?? "";
     _startTimeController.text = AppUtils.formatDateTime(data.startDate);
     _endTimeController.text = AppUtils.formatDateTime(data.endDate);
@@ -178,12 +194,16 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       }
     }
 
-    await setLastActivityType();
+    if(widget.enterContext == CompetitionContext.ownerCreate){
+      await setLastActivityType();  // Set last used activity
+    }
     setState(() {});
   }
 
   void setVisibility(enums.ComVisibility visibility) {
-    _visibility = visibility;
+    setState(() {
+      _visibility = visibility;
+    });
   }
 
   /// Set last activity type that was used in adding
@@ -242,96 +262,176 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     );
   }
 
-  /// Delete  competition
-  void deleteCompetition(BuildContext context) async {
-    showDialog(
+  void deleteCompetition() async {
+    final screenContext = context;
+    final competitionId = widget.competitionData!.competitionId;
+
+    final bool? didConfirm = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AppAlertDialog(
           titleText: "Warning",
           contentText:
-              "Are you sure you want to delete this activity?\n\n"
+          "Are you sure you want to delete this activity?\n\n"
               "This action cannot be undone.",
           textRight: "Yes",
           textLeft: "Cancel",
           colorBackgroundButtonRight: AppColors.danger,
           colorButtonForegroundRight: AppColors.white,
-          onPressedRight: () async {
-            bool res = await CompetitionService.deleteCompetition(widget.competitionData!.competitionId);
 
-            if (res) {
-              AppUtils.showMessage(context, "Competition deleted successfully");
-            }
-            if (!res) {
-              AppUtils.showMessage(context, "Error deleting competition");
-            }
-            if (mounted) {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Two times to close dialog and screen
-            }
+          onPressedRight: () {
+            Navigator.of(dialogContext).pop(true);
           },
+
           onPressedLeft: () {
-            Navigator.of(context).pop();
+            Navigator.of(dialogContext).pop(false);
           },
         );
       },
     );
+
+    if (didConfirm != true) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    final bool res = await CompetitionService.deleteCompetition(competitionId);
+
+    if (!mounted) return;
+
+    if (res) {
+      AppUtils.showMessage(screenContext, "Competition deleted successfully");
+      Navigator.of(screenContext).pop(true);
+    } else {
+      AppUtils.showMessage(screenContext, "Error deleting competition");
+    }
   }
 
-  void acceptInvitation(){
-    CompetitionService.manageParticipant(competition.competitionId, FirebaseAuth.instance.currentUser!.uid, competition.organizerUid, ParticipantManagementAction.acceptInvitation)
+  void acceptInvitation() async {
+    if (await CompetitionService.manageParticipant(
+          competition.competitionId,
+          FirebaseAuth.instance.currentUser!.uid,
+          competition.organizerUid,
+          ParticipantManagementAction.acceptInvitation,
+        ) ==
+        false) {
+      if (!mounted) return;
+      AppUtils.showMessage(context, "Error accepting invitation");
+      return;
+    }
+    change = true;
+    setState(() {});
   }
 
-  void declineInvitation(){
-    CompetitionService.manageParticipant(competition.competitionId, FirebaseAuth.instance.currentUser!.uid, competition.organizerUid, ParticipantManagementAction.declineInvitation);
-    setState
+  void declineInvitation() async {
+    if (await CompetitionService.manageParticipant(
+          competition.competitionId,
+          FirebaseAuth.instance.currentUser!.uid,
+          competition.organizerUid,
+          ParticipantManagementAction.declineInvitation,
+        ) ==
+        false) {
+      if (!mounted) return;
+      AppUtils.showMessage(context, "Error accepting invitation");
+      return;
+    }
+    change = true;
+    setState(() {});
   }
 
-  void declineInvitation(){
+  void joinCompetition() async {
+    if (await CompetitionService.manageParticipant(
+          competition.competitionId,
+          FirebaseAuth.instance.currentUser!.uid,
+          competition.organizerUid,
+          ParticipantManagementAction.joinCompetition,
+        ) ==
+        false) {
+      if (!mounted) return;
+      AppUtils.showMessage(context, "Error accepting invitation");
+      return;
+    }
+    change = true;
+    setState(() {});
+  }
+
+  void resignFromCompetition() async {
+    if (await CompetitionService.manageParticipant(
+          competition.competitionId,
+          FirebaseAuth.instance.currentUser!.uid,
+          competition.organizerUid,
+          ParticipantManagementAction.resignFromCompetition,
+        ) ==
+        false) {
+      if (!mounted) return;
+      AppUtils.showMessage(context, "Error accepting invitation");
+      return;
+    }
+    change = true;
+    setState(() {});
   }
 
   /// Save competition to database
   void handleSaveCompetition() async {
-    if (saveInProgress == false) {
+    if (saveInProgress == false && saved == false) {
       saveInProgress = true;
     }
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    var compData = _getDataFromForm();
-    bool result = await CompetitionService.saveCompetition(compData);
+    final navigator = Navigator.of(context);
+    final currentContext = context;
+
+    competition = _getDataFromForm();
+    bool result = await CompetitionService.saveCompetition(competition);
+
+    if (!mounted) return;
 
     if (result) {
       if (widget.enterContext == CompetitionContext.ownerCreate) {
-        if (mounted) {
-          AppUtils.showMessage(context, "Competition saved successfully", messageType: MessageType.success);
-        }
+        AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
 
-        // Leave after success
-        await Future.delayed(const Duration(milliseconds: 1500));
-        if (mounted) Navigator.of(context).pop(competition);
+        await Future.delayed(const Duration(milliseconds: 2200));
+
+        if (!mounted) return;
+
+        saved = true;
+        navigator.pop(competition);
+
       } else if (widget.enterContext == CompetitionContext.ownerModify) {
-        competitionBeforeSave = compData;
-        if (mounted) {
-          AppUtils.showMessage(context, "Changes saved successfully");
-        }
+        competitionBeforeSave = competition;
+        change = true;
+        AppUtils.showMessage(currentContext, "Changes saved successfully");
       }
     } else {
-      if (mounted) AppUtils.showMessage(context, "Error saving competition");
+      AppUtils.showMessage(currentContext, "Error saving competition");
     }
     saveInProgress = false;
   }
 
   /// Leave page if changes are done
-  void leavePage(BuildContext context) {
+  void leavePage() async{
+    if(leavingPage){
+      return;
+    }
+    leavingPage = true;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.hideCurrentSnackBar();  // Hide snack to avoid _debugLocked
+
+    await Future.delayed(const Duration(milliseconds: 50));
+    if (!mounted) return;
+
     if (widget.enterContext != CompetitionContext.ownerModify) {
       // If it is not owner and he is not modifying competition, leave
       Navigator.of(context).pop();
+      leavingPage = false;
       return;
     }
     if (!_formKey.currentState!.validate()) {
+      leavingPage = false;
       return;
     }
 
@@ -339,13 +439,17 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     // If there is no changes, just pop
     if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
-      Navigator.of(context).pop();
+      if(change){ // Something was changes, rebuild competitions page
+        Navigator.of(context).pop(true);
+      }else{
+        Navigator.of(context).pop();
+      }
       return;
     }
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AppAlertDialog(
           titleText: "Warning",
           contentText:
@@ -355,29 +459,40 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           textLeft: "Cancel",
           textRight: "Yes",
           onPressedLeft: () {
-            Navigator.of(context).pop();
+            Navigator.of(dialogContext).pop();
+            leavingPage = false;
           },
           onPressedRight: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pop();
+            Navigator.of(dialogContext).pop();
+            if(mounted){
+              if(change){
+                Navigator.of(context).pop(true); // There is change, return true to reload all competitions
+              }else{
+                Navigator.of(context).pop();
+              }
+            }
           },
         );
-      }, // Close builder
-    ); // Close showDialog
+      },
+    );
+    leavingPage = false;
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !false,
-      onPopInvokedWithResult: (didPop, result) => leavePage(context),
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        leavePage();
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(appBarTitle),
           actions: [
             if (widget.enterContext == CompetitionContext.ownerModify)
               IconButton(
-                onPressed: () => deleteCompetition(context),
+                onPressed: deleteCompetition,
                 icon: Icon(Icons.delete, color: Colors.white),
               ),
           ],
@@ -419,6 +534,17 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     enterContext: widget.enterContext,
                     competition: competition,
                     meetingPlaceController: _meetingPlaceController,
+                  ),
+
+                  BottomButtons(
+                    enterContext: widget.enterContext,
+                    competition: competition,
+                    handleSaveCompetition: handleSaveCompetition,
+                    closeCompetition: closeCompetition,
+                    acceptInvitation: acceptInvitation,
+                    declineInvitation: declineInvitation,
+                    joinCompetition: joinCompetition,
+                    resignFromCompetition: resignFromCompetition,
                   ),
                 ],
               ),

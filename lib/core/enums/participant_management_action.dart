@@ -2,5 +2,7 @@ enum ParticipantManagementAction {
   invite,
   declineInvitation,
   acceptInvitation,
-  kick
+  kick,
+  joinCompetition,
+  resignFromCompetition,
 }
