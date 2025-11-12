@@ -22,9 +22,7 @@ class StartPage extends StatefulWidget {
   const StartPage({super.key});
 
   @override
-  State<StatefulWidget> createState() {
-    return StartPageState();
-  }
+  State<StatefulWidget> createState() => StartPageState();
 }
 
 class StartPageState extends State<StartPage> {
@@ -110,6 +108,7 @@ class StartPageState extends State<StartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageContainer(
+        darken: false,
         assetPath: AppImages.appBg4,
         child: SafeArea(
           child: LayoutBuilder(

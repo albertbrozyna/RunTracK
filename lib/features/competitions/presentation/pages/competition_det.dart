@@ -164,14 +164,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     }
 
     competition = Competition(
-      organizerUid: AppData.instance.currentUser!.uid,
+      organizerUid: AppData.instance.currentUser?.uid ?? "",
       name: "",
       description: "",
       startDate: DateTime.now(),
       endDate: DateTime.now(),
       visibility: _visibility,
       distanceToGo: 10,
-      participantsUid: {FirebaseAuth.instance.currentUser!.uid}, // Set owner as first participant
+      participantsUid: {FirebaseAuth.instance.currentUser?.uid ?? ""}, // Set owner as first participant
     );
   }
 
@@ -211,7 +211,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
-      if (AppData.instance.currentUser?.activityNames!.contains(lastCompetition) ?? false) {
+      if (AppData.instance.currentUser?.activityNames?.contains(lastCompetition) ?? false) {
         _activityController.text = lastCompetition;
         return;
       }
@@ -264,7 +264,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void deleteCompetition() async {
     final screenContext = context;
-    final competitionId = widget.competitionData!.competitionId;
+    final competitionId = widget.competitionData?.competitionId;
 
     final bool? didConfirm = await showDialog<bool>(
       context: context,
@@ -297,7 +297,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     if (!mounted) return;
 
-    final bool res = await CompetitionService.deleteCompetition(competitionId);
+    final bool res = await CompetitionService.deleteCompetition(competitionId ?? "");
 
     if (!mounted) return;
 
@@ -311,10 +311,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void acceptInvitation() async {
     if (await CompetitionService.manageParticipant(
-          competition.competitionId,
-          FirebaseAuth.instance.currentUser!.uid,
-          competition.organizerUid,
-          ParticipantManagementAction.acceptInvitation,
+          competitionId: competition.competitionId,
+          targetUserId: FirebaseAuth.instance.currentUser?.uid ?? "",
+          action: ParticipantManagementAction.acceptInvitation,
         ) ==
         false) {
       if (!mounted) return;
@@ -327,10 +326,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void declineInvitation() async {
     if (await CompetitionService.manageParticipant(
-          competition.competitionId,
-          FirebaseAuth.instance.currentUser!.uid,
-          competition.organizerUid,
-          ParticipantManagementAction.declineInvitation,
+          competitionId:  competition.competitionId,
+      targetUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+          action:  ParticipantManagementAction.declineInvitation,
         ) ==
         false) {
       if (!mounted) return;
@@ -343,10 +341,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void joinCompetition() async {
     if (await CompetitionService.manageParticipant(
-          competition.competitionId,
-          FirebaseAuth.instance.currentUser!.uid,
-          competition.organizerUid,
-          ParticipantManagementAction.joinCompetition,
+          competitionId: competition.competitionId,
+          targetUserId:  FirebaseAuth.instance.currentUser?.uid ?? "",
+          action:  ParticipantManagementAction.joinCompetition,
         ) ==
         false) {
       if (!mounted) return;
@@ -359,10 +356,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void resignFromCompetition() async {
     if (await CompetitionService.manageParticipant(
-          competition.competitionId,
-          FirebaseAuth.instance.currentUser!.uid,
-          competition.organizerUid,
-          ParticipantManagementAction.resignFromCompetition,
+          competitionId: competition.competitionId,
+          targetUserId:  FirebaseAuth.instance.currentUser?.uid ?? "",
+          action:  ParticipantManagementAction.resignFromCompetition,
         ) ==
         false) {
       if (!mounted) return;
@@ -430,10 +426,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       leavingPage = false;
       return;
     }
-    if (!_formKey.currentState!.validate()) {
-      leavingPage = false;
-      return;
-    }
 
     var compData = _getDataFromForm();
 
@@ -458,6 +450,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
               "Are you sure you want to leave?",
           textLeft: "Cancel",
           textRight: "Yes",
+          colorBackgroundButtonRight: AppColors.danger,
+          colorButtonForegroundRight: AppColors.white,
+          colorBackgroundButtonLeft: AppColors.gray,
+          colorButtonForegroundLeft: AppColors.white,
           onPressedLeft: () {
             Navigator.of(dialogContext).pop();
             leavingPage = false;

@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/core/widgets/page_container.dart';
+import 'package:run_track/features/auth/presentation/widgets/field_form.dart';
 
 import '../../../../app/config/app_data.dart';
+import '../../../../app/config/app_images.dart';
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -34,10 +37,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    UserService.signOutUser();
   }
-
-  // TODO ADD VALIDATORS HERE
 
   void handleLogin() {
     if (!isEmailValid(_emailController.text.trim())) {
@@ -92,12 +92,9 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(title: Text("Log in")),
       body: Form(
         key: _formKey,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(image: AssetImage("assets/appBg4.jpg"), fit: BoxFit.cover),
-          ),
+        child: PageContainer(
+          darken: false,
+          assetPath: AppImages.appBg4,
           child: Center(
             child: Transform.translate(
               offset: Offset(0, -50),
@@ -109,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                       // Logo
                       Padding(
                         padding: const EdgeInsetsGeometry.only(bottom: 0),
-                        child: Image.asset("assets/runtrack-app-icon-round.png", width: 300),
+                        child: Image.asset(AppImages.runtrackAppIcon, width: 300),
                       ),
                       // App name
                       Padding(
@@ -122,13 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       // Form
                       Form(
-                        child: Container(
-                          padding: AppUiConstants.paddingInsideForm,
-                          decoration: BoxDecoration(
-                            color: AppColors.textFieldsBackground,
-                            borderRadius: AppUiConstants.borderRadiusForm,
-                            boxShadow: AppUiConstants.boxShadowForm,
-                          ),
+                        child: FieldForm(
                           child: Column(
                             children: [
                               TextFormField(

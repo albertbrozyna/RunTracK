@@ -37,13 +37,13 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final Activity? activity = args?['activity'] as Activity?;
 
-        if(activity == null){
-          return MaterialPageRoute(builder: (_) => Scaffold(
-            // TODO ERROR PAGE
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
+        if (activity == null) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              // TODO ERROR PAGE
+              body: Center(child: Text('No route defined for ${settings.name}')),
             ),
-          ),);
+          );
         }
 
         final firstName = args?['firstName'] ?? '';
@@ -51,7 +51,10 @@ class AppRouter {
         final readOnly = args?['readOnly'] ?? '';
         final editMode = args?['editMode'] ?? '';
 
-        return MaterialPageRoute(builder: (_) => ActivitySummary(firstName: firstName, lastName: lastName, readonly: readOnly, editMode: editMode,activityData: activity,));
+        return MaterialPageRoute(
+          builder: (_) =>
+              ActivitySummary(firstName: firstName, lastName: lastName, readonly: readOnly, editMode: editMode, activityData: activity),
+        );
 
       case AppRoutes.activityChoose:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -66,11 +69,13 @@ class AppRouter {
       case AppRoutes.competitionDetails:
         final args = settings.arguments as Map<String, dynamic>?;
 
-        final enterContext = args?['enterContext']  as CompetitionContext;
+        final enterContext = args?['enterContext'] as CompetitionContext;
         final competitionData = args?['competitionData'] as Competition?;
         final initTab = args?['initTab'] as int;
 
-        return MaterialPageRoute(builder: (_) => CompetitionDetailsPage(enterContext: enterContext,competitionData: competitionData, initTab: initTab));
+        return MaterialPageRoute(
+          builder: (_) => CompetitionDetailsPage(enterContext: enterContext, competitionData: competitionData, initTab: initTab),
+        );
 
       case AppRoutes.profile:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -80,7 +85,9 @@ class AppRouter {
         final invitedUsers = args?['invitedUsers'] ?? [];
         final receivedInvites = args?['receivedInvites'] ?? [];
 
-        return MaterialPageRoute(builder: (_) => ProfilePage(uid: uid,usersList: usersList,invitedUsers: invitedUsers,receivedInvites: receivedInvites));
+        return MaterialPageRoute(
+          builder: (_) => ProfilePage(uid: uid, usersList: usersList, invitedUsers: invitedUsers, receivedInvites: receivedInvites),
+        );
 
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => SettingsPage());
@@ -89,9 +96,17 @@ class AppRouter {
         final usersUid = (args?['usersUid'] as Set?)?.cast<String>() ?? <String>{};
         final usersUid2 = (args?['usersUid2'] as Set?)?.cast<String>() ?? <String>{};
         final usersUid3 = (args?['usersUid3'] as Set?)?.cast<String>() ?? <String>{};
-        final enterContext = args?['enterContext']  as EnterContextUsersList;
-
-        return MaterialPageRoute(builder: (_) => UsersList(usersUid: usersUid,usersUid2: usersUid2,usersUid3: usersUid3,enterContext: enterContext));
+        final enterContext = args?['enterContext'] as EnterContextUsersList;
+        final competitionId = args?['competitionId'] as String;
+        return MaterialPageRoute(
+          builder: (_) => UsersList(
+            usersUid: usersUid,
+            usersUid2: usersUid2,
+            usersUid3: usersUid3,
+            enterContext: enterContext,
+            competitionId: competitionId,
+          ),
+        );
       case AppRoutes.notifications:
         return MaterialPageRoute(builder: (_) => NotificationsPage());
       case AppRoutes.meetingPlaceMap:
@@ -99,14 +114,9 @@ class AppRouter {
         final latLng = args?['latLng'] as LatLng?;
         return MaterialPageRoute(builder: (_) => MeetingPlaceMap(latLng: latLng));
 
-
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
-          ),
+          builder: (_) => Scaffold(body: Center(child: Text('No route defined for ${settings.name}'))),
         );
     }
   }

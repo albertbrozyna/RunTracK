@@ -19,8 +19,9 @@ class UsersList extends StatefulWidget {
   final Set<String> usersUid2; // For participants context it is list of invited
   final Set<String> usersUid3; // For friends it is list of invitations to friends
   final EnterContextUsersList enterContext;
+  final String competitionId;
 
-  const UsersList({super.key, required this.usersUid, required this.usersUid2, required this.usersUid3, required this.enterContext});
+  const UsersList({super.key, required this.usersUid, required this.usersUid2, required this.usersUid3, required this.enterContext, required this.competitionId});
 
   @override
   State<StatefulWidget> createState() => _UsersListState();
@@ -132,6 +133,7 @@ class _UsersListState extends State<UsersList> {
         listUsers: _usersUid.toSet(),
         invitedUsers: _usersUid2.toSet(),
         receivedInvitations: _usersUid3.toSet(),
+        competitionId: widget.competitionId
       ),
     );
 

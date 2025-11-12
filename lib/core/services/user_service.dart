@@ -416,8 +416,7 @@ class UserService {
             notification = AppNotification(
               notificationId: "",
               uid: receiverUid,
-              title:
-                  "$receiverFirstName $receiverLastName accepted your friend request",
+              title: "$receiverFirstName $receiverLastName accepted your friend request",
               createdAt: DateTime.now(),
               seen: false,
               type: NotificationType.inviteFriends,
@@ -438,6 +437,7 @@ class UserService {
           'friendsUid': senderFriendsList,
           'receivedInvitationsToFriends': senderReceivedInvitationList,
         });
+
         transaction.update(userReceiverReference, {
           'pendingInvitationsToFriends': receiverPendingInvitationsList,
           'friendsUid': receiverFriendsList,
@@ -496,6 +496,7 @@ class UserService {
         email: email.trim().toLowerCase(),
         gender: gender.trim().toLowerCase(),
         dateOfBirth: dateOfBirth,
+        createdAt: DateTime.now(),
         profilePhotoUrl: "",
         activityNames: AppUtils.getDefaultActivities(),
         friendsUid: {},

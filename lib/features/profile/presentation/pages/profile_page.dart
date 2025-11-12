@@ -20,15 +20,13 @@ import '../widgets/profile_action_button.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile
-  final model.User? passedUser; // Data of user which we are showing
-  final Set<String> usersList;
+ final Set<String> usersList;
   final Set<String> invitedUsers;
   final Set<String> receivedInvites;
 
   const ProfilePage({
     super.key,
     this.uid,
-    this.passedUser,
     this.usersList = const {},
     this.invitedUsers = const {},
     this.receivedInvites = const {},
@@ -45,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late Set<String> usersList;
   late Set<String> invitedUsers;
   late Set<String> receivedInvitations;
-  model.User? user; // User which we are showing
+  model.User? user;
   UserRelationshipStatus relationshipStatus =
       UserRelationshipStatus.notConnected;
 
@@ -224,6 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
         'usersUid2': user?.pendingInvitationsToFriends ?? [],
         'usersUid3': user?.receivedInvitationsToFriends ?? [],
         'enterContext': enterContext,
+        'competitionId': ''
       },
     );
 
@@ -342,14 +341,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       ListInfoTile(
                         icon: Icons.cake,
                         title: AppUtils.formatDateTime(
-                          user!.dateOfBirth,
+                          user?.dateOfBirth,
                           onlyDate: true,
                         ),
                       ),
                       ListInfoTile(
                         icon: Icons.card_membership,
                         title:
-                            "Member since: ${AppUtils.formatDateTime(user!.createdAt, onlyDate: true)}",
+                            "Member since: ${AppUtils.formatDateTime(user?.createdAt, onlyDate: true)}",
                       ),
                       InkWell(
                         onTap: onTapFriends,
@@ -387,7 +386,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             onTap: onTapFriends,
                             child: StatCard(
                               title: "Created\ncompetitions",
-                              value: user!.competitionsCount.toString(),
+                              value: user?.competitionsCount.toString() ?? 'Unknown',
                               icon: Icon(Icons.run_circle_outlined),
                               cardWidth: cardWidth,
                               cardHeight: cardHeight,

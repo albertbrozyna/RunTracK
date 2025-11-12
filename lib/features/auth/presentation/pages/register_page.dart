@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/features/auth/presentation/widgets/field_form.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -167,7 +169,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } else {
       // Success
       if (mounted) {
-        AppUtils.showMessage(context, "Registered successfully!",messageType: MessageType.success);
+        AppUtils.showMessage(context, "Registered successfully!", messageType: MessageType.success);
         FirebaseAuth.instance.signOut();
       }
 
@@ -182,18 +184,10 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text("Sign up"),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(image: AssetImage("assets/appBg6.jpg"), fit: BoxFit.cover),
-        ),
+      appBar: AppBar(title: Text("Sign up")),
+      body: PageContainer(
+        darken: false,
+        assetPath: AppImages.appBg4,
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -202,171 +196,126 @@ class _RegisterPageState extends State<RegisterPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    PageContainer(
-                      child: Column(
-                        children: [
-                          // First Name
-                          TextFormField(
-                            controller: _firstNameController,
-                            validator: (value) => validateFields('firstName', value),
-                            keyboardType: TextInputType.text,
-                            style: AppUiConstants.textStyleTextFields,
-                            decoration: InputDecoration(
-                              labelText: "First Name",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              prefixIcon: Icon(Icons.person,color: AppColors.white,),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                            ),
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          // Last name
-                          TextFormField(
-                            controller: _lastNameController,
-                            validator: (value) => validateFields('lastName', value),
-                            keyboardType: TextInputType.text,
-                            style: TextStyle(color: AppColors.white),
-                            decoration: InputDecoration(
-                              labelText: "Last name",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              prefixIcon: Icon(Icons.person,color: AppColors.white,),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
-                            ),
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          // Date of birth
-                          TextFormField(
-                            controller: _dateController,
-                            validator: (value) => validateFields('dateOfBirth', value),
-                            readOnly: true,
-                            style: TextStyle(color: AppColors.white),
-                            decoration: InputDecoration(
-                              labelText: "Date of Birth",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              prefixIcon: Icon(Icons.calendar_today,color: AppColors.white,),
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
-                            ),
-                            onTap: () async {
-                              AppUtils.pickDate(context, DateTime(1900), DateTime.now(), _dateController, true);
-                            },
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          // Gender
-                          DropdownButtonFormField<String>(
-                            dropdownColor: AppColors.primary,
-                            initialValue: _selectedGender,
-                            style: AppUiConstants.textStyleTextFields,
-
-                            decoration: InputDecoration(
-                              labelText: "Gender",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              prefixIcon: Icon(Icons.person_outline,color: AppColors.white,),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
-                            ),
-                            items: AppConstants.genders.map((String gender) {
-                              return DropdownMenuItem<String>(value: gender, child: Text(gender));
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedGender = newValue;
-                              });
-                            },
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          // Email field
-                          TextFormField(
-                            controller: _emailController,
-                            validator: (value) => validateFields('email', value),
-                            keyboardType: TextInputType.emailAddress,
-                            style: TextStyle(color: AppColors.white),
-                            decoration: InputDecoration(
-                              labelText: "Email",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              prefixIcon: Icon(Icons.email,color: AppColors.white,),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
-
-                            ),
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          TextFormField(
-                            controller: _passwordController,
-                            validator: (value) => validateFields('password', value),
-                            keyboardType: TextInputType.visiblePassword,
-                            obscureText: _isPasswordHidden,
-                            style: TextStyle(color: AppColors.white),
-                            decoration: InputDecoration(
-                              labelText: "Password",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              prefixIcon: Icon(Icons.password,color: AppColors.white,),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordHidden = !_isPasswordHidden;
-                                  });
-                                },
-                                icon: Icon(_isPasswordHidden ? Icons.visibility_off : Icons.visibility,color: AppColors.white,),
+                     FieldForm(
+                       child: Column(
+                          children: [
+                            // First Name
+                            TextFormField(
+                              controller: _firstNameController,
+                              validator: (value) => validateFields('firstName', value),
+                              keyboardType: TextInputType.text,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "First Name",
+                                prefixIcon: Icon(Icons.person, color: AppColors.white),
                               ),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
-
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
-                          ),
-                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-                          // Repeat password
-                          TextFormField(
-                            controller: _repeatPasswordController,
-                            validator: (value) => validateFields('repeatPassword', value),
-                            keyboardType: TextInputType.visiblePassword,
-                            obscureText: _isPasswordRepeatHidden,
-                            style: TextStyle(color: AppColors.white),
-
-                            decoration: InputDecoration(
-                              labelText: "Repeat password",
-                              labelStyle: AppUiConstants.labelStyleTextFields,
-                              enabledBorder: AppUiConstants.enabledBorderTextFields,
-                              focusedBorder: AppUiConstants.focusedBorderTextFields,
-                              errorBorder: AppUiConstants.errorBorderTextFields,
-                              focusedErrorBorder: AppUiConstants.focusedErrorBorderTextFields,
-                              prefixIcon: Icon(Icons.password,color: AppColors.white,),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordRepeatHidden = !_isPasswordRepeatHidden;
-                                  });
-                                },
-                                icon: Icon(_isPasswordRepeatHidden ? Icons.visibility_off : Icons.visibility,color: AppColors.white,),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            // Last name
+                            TextFormField(
+                              controller: _lastNameController,
+                              validator: (value) => validateFields('lastName', value),
+                              keyboardType: TextInputType.text,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "Last name",
+                                prefixIcon: Icon(Icons.person, color: AppColors.white),
                               ),
-                              border: OutlineInputBorder(borderRadius: AppUiConstants.borderRadiusTextFields),
-                              contentPadding: AppUiConstants.contentPaddingTextFields,
                             ),
-                          ),
-                          // Register button
-                          SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 60,
-                            child: CustomButton(text: "Register", onPressed: handleRegister, textSize: 20),
-                          ),
-                        ],
-                      ),
-                    ),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            // Date of birth
+                            TextFormField(
+                              controller: _dateController,
+                              validator: (value) => validateFields('dateOfBirth', value),
+                              readOnly: true,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "Date of Birth",
+                                prefixIcon: Icon(Icons.calendar_today, color: AppColors.white),
+                              ),
+                              onTap: () async {
+                                AppUtils.pickDate(context, DateTime(1900), DateTime.now(), _dateController, true);
+                              },
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            // Gender
+                            DropdownButtonFormField<String>(
+                              dropdownColor: AppColors.primary,
+                              initialValue: _selectedGender,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "Gender",
+                                prefixIcon: Icon(Icons.person_outline, color: AppColors.white),
+                              ),
+                              items: AppConstants.genders.map((String gender) {
+                                return DropdownMenuItem<String>(value: gender, child: Text(gender));
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedGender = newValue;
+                                });
+                              },
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            // Email field
+                            TextFormField(
+                              controller: _emailController,
+                              validator: (value) => validateFields('email', value),
+                              keyboardType: TextInputType.emailAddress,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "Email",
+                                prefixIcon: Icon(Icons.email, color: AppColors.white),
+                              ),
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            TextFormField(
+                              controller: _passwordController,
+                              validator: (value) => validateFields('password', value),
+                              keyboardType: TextInputType.visiblePassword,
+                              obscureText: _isPasswordHidden,
+                              style: TextStyle(color: AppColors.white),
+                              decoration: InputDecoration(
+                                labelText: "Password",
+                                prefixIcon: Icon(Icons.password, color: AppColors.white),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isPasswordHidden = !_isPasswordHidden;
+                                    });
+                                  },
+                                  icon: Icon(_isPasswordHidden ? Icons.visibility_off : Icons.visibility, color: AppColors.white),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                            // Repeat password
+                            TextFormField(
+                              controller: _repeatPasswordController,
+                              validator: (value) => validateFields('repeatPassword', value),
+                              keyboardType: TextInputType.visiblePassword,
+                              obscureText: _isPasswordRepeatHidden,
+                              style: TextStyle(color: AppColors.white),
+
+                              decoration: InputDecoration(
+                                labelText: "Repeat password",
+                                prefixIcon: Icon(Icons.password, color: AppColors.white),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isPasswordRepeatHidden = !_isPasswordRepeatHidden;
+                                    });
+                                  },
+                                  icon: Icon(_isPasswordRepeatHidden ? Icons.visibility_off : Icons.visibility, color: AppColors.white),
+                                ),
+                              ),
+                            ),
+                            // Register button
+                            SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                            CustomButton(text: "Register", onPressed: handleRegister, textSize: 20),
+                          ],
+                        ),
+                     ),
                   ],
                 ),
               ),

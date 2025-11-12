@@ -25,7 +25,7 @@ class CompetitionService {
     final docSnapshot = await FirebaseFirestore.instance
         .collection(FirestoreCollections.competitions)
         .doc(competitionId)
-        .get(); // Fetch existing document
+        .get();
     if (docSnapshot.exists) {
       final data = docSnapshot.data() as Map<String, dynamic>;
       return Competition.fromMap(data);
@@ -129,7 +129,7 @@ class CompetitionService {
 
   /// Fetch my latest activities by pages
   static Future<CompetitionFetchResult> fetchMyLatestCompetitionsPage(String uid, int limit, DocumentSnapshot? lastDocument) async {
-    if(uid.isEmpty){
+    if (uid.isEmpty) {
       return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
     try {
@@ -162,7 +162,7 @@ class CompetitionService {
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
-    if(competitionsIds.isEmpty){
+    if (competitionsIds.isEmpty) {
       return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
     try {
@@ -194,7 +194,7 @@ class CompetitionService {
     int limit,
     DocumentSnapshot? lastDocument,
   ) async {
-    if(competitionsIds.isEmpty){
+    if (competitionsIds.isEmpty) {
       return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
     try {
@@ -249,25 +249,20 @@ class CompetitionService {
     }
   }
 
-  static Future<bool> manageParticipant(
-      String competitionId,
-      String targetUserId,
-      String adminUid,
-      ParticipantManagementAction action,
-      ) async {
-    if (targetUserId == adminUid) {
+  static Future<bool> manageParticipant({
+    required String competitionId,
+    required String targetUserId,
+    required ParticipantManagementAction action,
+  }) async {
+    if (competitionId.isEmpty || targetUserId.isEmpty) {
       return false;
     }
     AppNotification? notification;
 
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final competitionRef = FirebaseFirestore.instance
-            .collection(FirestoreCollections.competitions)
-            .doc(competitionId);
-        final targetUserRef = FirebaseFirestore.instance
-            .collection(FirestoreCollections.users)
-            .doc(targetUserId);
+        final competitionRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitions).doc(competitionId);
+        final targetUserRef = FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(targetUserId);
 
         final competitionSnap = await transaction.get(competitionRef);
         final targetUserSnap = await transaction.get(targetUserRef);
@@ -315,10 +310,7 @@ class CompetitionService {
             break;
         }
 
-        transaction.update(competitionRef, {
-          'participantsUid': participantsList.toList(),
-          'invitedParticipantsUid': invitedList.toList(),
-        });
+        transaction.update(competitionRef, {'participantsUid': participantsList.toList(), 'invitedParticipantsUid': invitedList.toList()});
 
         transaction.update(targetUserRef, {
           'participatedCompetitions': userParticipatedList.toList(),
