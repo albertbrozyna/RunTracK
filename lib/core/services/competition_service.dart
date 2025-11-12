@@ -297,7 +297,7 @@ class CompetitionService {
             participantsList.remove(targetUserId);
             userParticipatedList.remove(competitionId);
             break;
-
+          case ParticipantManagementAction.cancelInvitation:
           case ParticipantManagementAction.declineInvitation:
             invitedList.remove(targetUserId);
             userReceivedInvitesList.remove(competitionId);

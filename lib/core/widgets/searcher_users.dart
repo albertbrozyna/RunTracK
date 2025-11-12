@@ -9,15 +9,25 @@ import '../enums/enter_context.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 
-class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
+class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
   final Set<String> listUsers; // Participants list or friends list
-  final Set<String> invitedUsers;  // Invited to participate or to friends
+  final Set<String> invitedUsers; // Invited to participate or to friends
   final Set<String> receivedInvitations; // Participants list or friends list
   EnterContextSearcher enterContext;
   String competitionId;
-  final List<User>suggestedUsers = [];
-  UserSearcher({required this.enterContext,required this.invitedUsers,required this.listUsers,required this.receivedInvitations,required this.competitionId});
-  final ValueNotifier<int> rebuildNotifier = ValueNotifier(0);  // Notifier to rebuild result list after sending a friend request
+  final List<User> suggestedUsers = [];
+
+  UserSearcher({
+    required this.enterContext,
+    required this.invitedUsers,
+    required this.listUsers,
+    required this.receivedInvitations,
+    required this.competitionId,
+  });
+
+  final ValueNotifier<int> rebuildNotifier = ValueNotifier(
+    0,
+  ); // Notifier to rebuild result list after sending a friend request
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -25,15 +35,20 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   @override
   TextStyle? get searchFieldStyle => TextStyle(color: Colors.white);
 
-
-  Icon getIconForUser(String uid){
-    if(listUsers.contains(uid)){
-      return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
+  Icon getIconForUser(String uid) {
+    if (listUsers.contains(uid)) {
+      return Icon(
+        Icons.check,
+        color: Colors.green,
+      ); // Participate in or is on our friend list
     }
-    if(invitedUsers.contains(uid)){
-      return Icon(Icons.mail_outline, color:AppColors.secondary); // We send a request
+    if (invitedUsers.contains(uid)) {
+      return Icon(
+        Icons.mail_outline,
+        color: AppColors.secondary,
+      ); // We send a request
     }
-    if(receivedInvitations.contains(uid)) {
+    if (receivedInvitations.contains(uid)) {
       return Icon(Icons.mark_email_unread, color: AppColors.secondary);
     }
 
@@ -41,39 +56,55 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   }
 
   /// Add user uid to list
-  void onPressedPersonAdd(String uid,BuildContext context)async{
-    if(listUsers.contains(uid) || invitedUsers.contains(uid) || receivedInvitations.contains(uid)){  // We can't do action from this look
+  void onPressedPersonAdd(String uid, BuildContext context) async {
+    if (listUsers.contains(uid) || invitedUsers.contains(uid) ||
+        receivedInvitations.contains(uid)) {
+      // We can't do action from this look
       showResults(context);
       return;
     }
 
-    if(enterContext == EnterContextSearcher.friends){
-      bool added = await UserService.actionToUsers(FirebaseAuth.instance.currentUser?.uid ?? "", uid, UserAction.inviteToFriends);
+    if (enterContext == EnterContextSearcher.friends) {
+      bool added = await UserService.actionToUsers(
+        FirebaseAuth.instance.currentUser?.uid ?? "",
+        uid,
+        UserAction.inviteToFriends,
+      );
       if (added) {
         invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
       }
-    }else if(enterContext == EnterContextSearcher.participants){
-      bool added = await CompetitionService.manageParticipant(competitionId: competitionId,targetUserId: uid,action: ParticipantManagementAction.invite );
-      if(added){
+    } else if (enterContext == EnterContextSearcher.participants) {
+      if(competitionId.isNotEmpty){ // If it is empty it means we are creating competition
+        bool added = await CompetitionService.manageParticipant(
+          competitionId: competitionId,
+          targetUserId: uid,
+          action: ParticipantManagementAction.invite,
+        );
+      }
         invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
-      }
+
     }
   }
 
   /// Navigate to user profile and return list of users
-  void onTapUser(BuildContext context,String uid) async {
-    final result = await Navigator.pushNamed(context, AppRoutes.profile,arguments: {  // Navigate to profile and pass this list
-      'uid': uid,
-      'usersList': listUsers,
-      'invitedUsers': invitedUsers,
-      'receivedInvites': receivedInvitations,
-    });
+  void onTapUser(BuildContext context, String uid) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.profile,
+      arguments: {
+        // Navigate to profile and pass this list
+        'uid': uid,
+        'usersList': listUsers,
+        'invitedUsers': invitedUsers,
+        'receivedInvites': receivedInvitations,
+      },
+    );
 
-    if(result != null && result is Map){
+    if (result != null && result is Map) {
       final Set<String> usersUid = (result['usersUid'] as Set<String>?) ?? {};
       final Set<String> usersUid2 = (result['usersUid2'] as Set<String>?) ?? {};
       final Set<String> usersUid3 = (result['usersUid3'] as Set<String>?) ?? {};
@@ -85,6 +116,7 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
       receivedInvitations.clear();
       receivedInvitations.addAll(usersUid3);
       rebuildNotifier.value++;
+      showResults(context);
     }
   }
 
@@ -104,9 +136,10 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   /// Leading buttons
   @override
   Widget? buildLeading(BuildContext context) {
-    return IconButton(  // Return with invited users
+    return IconButton(
+      // Return with invited users
       icon: Icon(Icons.arrow_back),
-      onPressed: () => close(context,{
+      onPressed: () => close(context, {
         'usersUid': listUsers,
         'usersUid2': invitedUsers,
         'usersUid3': receivedInvitations,
@@ -124,7 +157,11 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
       valueListenable: rebuildNotifier,
       builder: (context, value, child) {
         return FutureBuilder<List<User>>(
-          future: UserService.searchUsers(query,exceptMe: true,myUid: FirebaseAuth.instance.currentUser?.uid ?? ""),
+          future: UserService.searchUsers(
+            query,
+            exceptMe: true,
+            myUid: FirebaseAuth.instance.currentUser?.uid ?? "",
+          ),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
@@ -140,19 +177,25 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
                 return ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundImage: user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty
+                    backgroundImage:
+                        user.profilePhotoUrl != null &&
+                            user.profilePhotoUrl!.isNotEmpty
                         ? NetworkImage(user.profilePhotoUrl!)
-                        : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
+                        : AssetImage(AppImages.defaultProfilePhoto)
+                              as ImageProvider,
                   ),
                   onTap: () => onTapUser(context, user.uid),
                   title: Text("${user.firstName} ${user.lastName}"),
-                  trailing: IconButton(onPressed: () => onPressedPersonAdd(user.uid,context), icon: getIconForUser(user.uid)),
+                  trailing: IconButton(
+                    onPressed: () => onPressedPersonAdd(user.uid, context),
+                    icon: getIconForUser(user.uid),
+                  ),
                 );
               },
             );
           },
         );
-      }
+      },
     );
   }
 
@@ -176,9 +219,11 @@ class UserSearcher extends SearchDelegate<Map<String,Set<String>?>> {
   // TODO add a
   Widget buildSuggestions(BuildContext context) {
     final suggestions = suggestedUsers
-        .where((user) =>
-    user.firstName.toLowerCase().contains(query.toLowerCase()) ||
-        user.lastName.toLowerCase().contains(query.toLowerCase()))
+        .where(
+          (user) =>
+              user.firstName.toLowerCase().contains(query.toLowerCase()) ||
+              user.lastName.toLowerCase().contains(query.toLowerCase()),
+        )
         .toList();
 
     return ListView.builder(

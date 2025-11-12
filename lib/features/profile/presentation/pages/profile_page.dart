@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/participant_management_action.dart';
+import 'package:run_track/core/services/competition_service.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -7,6 +9,7 @@ import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/enter_context.dart';
+import '../../../../core/enums/user_mode.dart';
 import '../../../../core/enums/user_relationship.dart';
 import '../../../../core/models/user.dart' as model;
 import '../../../../core/services/user_service.dart';
@@ -20,16 +23,20 @@ import '../widgets/profile_action_button.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? uid; // uid of the user which we need to show a profile
- final Set<String> usersList;
-  final Set<String> invitedUsers;
-  final Set<String> receivedInvites;
+  final Set<String> usersList; // Friends or participants
+  final Set<String> invitedUsers; // Invited to participate or to friends
+  final Set<String> receivedInvites; // received invitations
+  final UserMode userMode;
+  final String competitionId;
 
   const ProfilePage({
     super.key,
+    required this.userMode,
     this.uid,
     this.usersList = const {},
     this.invitedUsers = const {},
     this.receivedInvites = const {},
+    this.competitionId = "",
   });
 
   @override
@@ -69,20 +76,16 @@ class _ProfilePageState extends State<ProfilePage> {
       user = await UserService.fetchUser(widget.uid!);
     }
 
-
-
     if (user != null) {
       // Check user relationship
       if (user!.friendsUid.contains(AppData.instance.currentUser?.uid)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends.contains(
-            user!.uid,
-          ) ??
+      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends
+              .contains(user!.uid) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends.contains(
-            user!.uid,
-          ) ??
+      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends
+              .contains(user!.uid) ??
           false) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
       } else if (user!.uid == AppData.instance.currentUser?.uid) {
@@ -93,8 +96,61 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {});
   }
 
+  /// Invite to competition
+  void onPressedInviteToCompetition() {
+    if (user != null) {
+      invitedUsers.add(user?.uid ?? "");
+
+      if (widget.competitionId.isNotEmpty && (user?.uid.isNotEmpty ?? false)) {
+        CompetitionService.manageParticipant(
+          competitionId: widget.competitionId,
+          targetUserId: user?.uid ?? "",
+          action: ParticipantManagementAction.invite,
+        );
+      }
+    }
+  }
+
+  /// Remove competitor
+  void onPressedRemoveCompetitor() {
+    if (user != null) {
+      setState(() {
+        usersList.remove(user?.uid ?? "");
+        invitedUsers.remove(user?.uid ?? "");
+        relationshipStatus = UserRelationshipStatus.competitionNotConnected;
+      });
+      if (widget.competitionId.isNotEmpty && (user?.uid.isNotEmpty ?? false)) {
+        CompetitionService.manageParticipant(
+          competitionId: widget.competitionId,
+          targetUserId: user?.uid ?? "",
+          action: ParticipantManagementAction.kick,
+        );
+      }
+    }
+  }
+
+  /// Remove competitor
+  void onPressedRemoveInvitationToCompetition() {
+    if (user != null) {
+      setState(() {
+        usersList.remove(user?.uid ?? "");
+        invitedUsers.remove(user?.uid ?? "");
+        relationshipStatus = UserRelationshipStatus.competitionNotConnected;
+      });
+
+      if (widget.competitionId.isNotEmpty && (user?.uid.isNotEmpty ?? false)) {
+        CompetitionService.manageParticipant(
+          competitionId: widget.competitionId,
+          targetUserId: user?.uid ?? "",
+          action: ParticipantManagementAction.cancelInvitation,
+
+        );
+      }
+    }
+  }
+
   /// Accept invitation
-  void onPressedAcceptInvitation() async {
+  void onPressedAcceptInvitationToFriends() async {
     bool added = await UserService.actionToUsers(
       user!.uid,
       FirebaseAuth.instance.currentUser?.uid ?? "",
@@ -118,7 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   /// Decline invitation
-  void onPressedDeclineInvitation() async {
+  void onPressedDeclineInvitationToFriends() async {
     bool added = await UserService.actionToUsers(
       user!.uid,
       FirebaseAuth.instance.currentUser?.uid ?? "",
@@ -222,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
         'usersUid2': user?.pendingInvitationsToFriends ?? [],
         'usersUid3': user?.receivedInvitationsToFriends ?? [],
         'enterContext': enterContext,
-        'competitionId': ''
+        'competitionId': '',
       },
     );
 
@@ -291,10 +347,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ProfileActionButton(
                       userRelationshipStatus: relationshipStatus,
                       onPressedRemoveFriends: onPressedDeleteFriend,
-                      onPressedRemoveInvitation: onPressedRemoveInviteToFriends,
-                      onPressedSendInvitation: onPressedAddFriend,
-                      onPressedAcceptInvitation: onPressedAcceptInvitation,
-                      onPressedDeclineInvitation: onPressedDeclineInvitation,
+                      onPressedRemoveInvitationToFriends:
+                          onPressedRemoveInviteToFriends,
+                      onPressedSendInvitationToFriends: onPressedAddFriend,
+                      onPressedAcceptInvitationToFriends:
+                          onPressedAcceptInvitationToFriends,
+                      onPressedDeclineInvitationToFriends:
+                          onPressedDeclineInvitationToFriends,
+                      onPressedSendInvitationToCompetition:
+                          onPressedInviteToCompetition,
+                      onPressedRemoveInvitationToCompetition:
+                          onPressedRemoveInvitationToCompetition,
+                      onPressedRemoveCompetitor: onPressedRemoveCompetitor,
                     ),
                   ),
                 ),
@@ -386,7 +450,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             onTap: onTapFriends,
                             child: StatCard(
                               title: "Created\ncompetitions",
-                              value: user?.competitionsCount.toString() ?? 'Unknown',
+                              value:
+                                  user?.competitionsCount.toString() ??
+                                  'Unknown',
                               icon: Icon(Icons.run_circle_outlined),
                               cardWidth: cardWidth,
                               cardHeight: cardHeight,

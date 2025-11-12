@@ -1,0 +1,4 @@
+enum UserMode{
+  friends,
+  competitors
+}

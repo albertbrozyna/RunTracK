@@ -7,21 +7,31 @@ import '../../../../core/widgets/alert_dialog.dart';
 
 
 class ProfileActionButton extends StatefulWidget {
+
   final UserRelationshipStatus userRelationshipStatus;
   final VoidCallback onPressedRemoveFriends;
-  final VoidCallback onPressedRemoveInvitation;
-  final VoidCallback onPressedSendInvitation;
-  final VoidCallback onPressedAcceptInvitation;
-  final VoidCallback onPressedDeclineInvitation;
+  final VoidCallback onPressedRemoveInvitationToFriends;
+  final VoidCallback onPressedSendInvitationToFriends;
+  final VoidCallback onPressedAcceptInvitationToFriends;
+  final VoidCallback onPressedDeclineInvitationToFriends;
+  final VoidCallback onPressedSendInvitationToCompetition;
+  final VoidCallback onPressedRemoveInvitationToCompetition;
+  final VoidCallback onPressedRemoveCompetitor;
+
+
+
 
   const ProfileActionButton({
     super.key,
     required this.userRelationshipStatus,
     required this.onPressedRemoveFriends,
-    required this.onPressedRemoveInvitation,
-    required this.onPressedSendInvitation,
-    required this.onPressedAcceptInvitation,
-    required this.onPressedDeclineInvitation,
+    required this.onPressedRemoveInvitationToFriends,
+    required this.onPressedSendInvitationToFriends,
+    required this.onPressedAcceptInvitationToFriends,
+    required this.onPressedDeclineInvitationToFriends,
+    required this.onPressedSendInvitationToCompetition,
+    required this.onPressedRemoveInvitationToCompetition,
+    required this.onPressedRemoveCompetitor,
   });
 
   @override
@@ -58,7 +68,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
     );
   }
 
-  // TODO REFACTOR
   @override
   Widget build(BuildContext context) {
     if (widget.userRelationshipStatus == UserRelationshipStatus.myProfile) {
@@ -147,7 +156,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             ),
 
             InkWell(
-              onTap: widget.onPressedRemoveInvitation,
+              onTap: widget.onPressedRemoveInvitationToFriends,
               child: Row(
                 children: [
                   Text("Remove invitation", style: TextStyle(color: Colors.white)),
@@ -173,7 +182,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             InkWell(
-              onTap: widget.onPressedDeclineInvitation,
+              onTap: widget.onPressedDeclineInvitationToFriends,
               child: Row(
                 children: [
                   Padding(
@@ -185,7 +194,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
               ),
             ),
             InkWell(
-              onTap: widget.onPressedAcceptInvitation,
+              onTap: widget.onPressedAcceptInvitationToFriends,
               child: Row(
                 children: [
                   Text("Accept friend", style: TextStyle(color: Colors.green)),
@@ -213,7 +222,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              onPressed: widget.onPressedSendInvitation,
+              onPressed: widget.onPressedSendInvitationToFriends,
               icon: Icon(Icons.person_add, color: Colors.white, size: 26),
             ),
           ),

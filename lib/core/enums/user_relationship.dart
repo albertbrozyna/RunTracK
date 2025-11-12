@@ -3,5 +3,8 @@ enum UserRelationshipStatus { // User status for us
   pendingSent,  // Sent invitation
   pendingReceived, // received invitation
   notConnected,
-  myProfile
+  myProfile,
+  competitionPendingSent, // Send invitation to competition
+  competitionNotConnected, // No connection
+  competitionParticipant  // Participant
 }

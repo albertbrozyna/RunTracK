@@ -3,9 +3,9 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
+import '../../core/enums/user_mode.dart';
 import '../../core/models/activity.dart';
 import '../../core/models/competition.dart';
-import '../../core/models/user.dart';
 import '../../core/pages/notifications_page.dart';
 import '../../core/pages/users_list.dart';
 import '../../features/activities/pages/user_activities.dart';
@@ -80,13 +80,14 @@ class AppRouter {
       case AppRoutes.profile:
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
-        final passedUser = args?['passedUser'] as User?;
+        final UserMode userMode = args?['userMode'] ?? UserMode.friends;
         final usersList = args?['usersList'] ?? [];
         final invitedUsers = args?['invitedUsers'] ?? [];
         final receivedInvites = args?['receivedInvites'] ?? [];
+        final competitionId = args?['competitionId'] ?? '';
 
         return MaterialPageRoute(
-          builder: (_) => ProfilePage(uid: uid, usersList: usersList, invitedUsers: invitedUsers, receivedInvites: receivedInvites),
+          builder: (_) => ProfilePage(userMode: userMode, competitionId: competitionId, uid: uid, usersList: usersList, invitedUsers: invitedUsers, receivedInvites: receivedInvites),
         );
 
       case AppRoutes.settings:
