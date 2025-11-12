@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/models/activity.dart';
-import 'package:run_track/services/activity_service.dart';
+import 'package:run_track/app/config/app_images.dart';
 
-import '../../../common/utils/utils.dart';
-import '../../../services/user_service.dart';
-import '../../track/pages/activity_summary.dart';
-import '../../../common/widgets/stat_card.dart';
+import '../../../core/models/activity.dart';
+import '../../../core/services/activity_service.dart';
+import '../../../core/services/user_service.dart';
+import '../../../core/utils/utils.dart';
+import '../../../core/widgets/stat_card.dart';
+import '../../track/presentation/pages/activity_summary.dart';
+
 
 class ActivityBlock extends StatefulWidget {
   final String? profilePhotoUrl;
@@ -28,7 +30,7 @@ class ActivityBlock extends StatefulWidget {
   lastName = lastName ?? "";
 
   @override
-  _ActivityBlockState createState() => _ActivityBlockState();
+  State<ActivityBlock> createState() => _ActivityBlockState();
 }
 
 class _ActivityBlockState extends State<ActivityBlock> {
@@ -120,7 +122,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                         radius: 18,
                         backgroundImage: widget.profilePhotoUrl != null
                             ? NetworkImage(widget.profilePhotoUrl!)
-                            : AssetImage('assets/DefaultProfilePhoto.png') as ImageProvider,
+                            : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                       ),
                     ),
                     SizedBox(width: 10),

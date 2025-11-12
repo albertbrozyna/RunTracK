@@ -1,0 +1,48 @@
+import 'package:flutter/material.dart';
+
+import '../../../../core/models/user.dart';
+
+class ProfileBlock extends StatelessWidget {
+  final User? user;
+  const ProfileBlock({super.key, this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            children: [
+              ClipOval(
+                child: user != null && user!.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
+                    ? Image.network(
+                  user!.profilePhotoUrl!,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                )
+                    : Image.asset(
+                  "assets/DefaultProfilePhoto.png",
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${user?.firstName ?? "Unknown"} ${user?.lastName ?? ""}",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
