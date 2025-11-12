@@ -18,9 +18,6 @@ class ProfileActionButton extends StatefulWidget {
   final VoidCallback onPressedRemoveInvitationToCompetition;
   final VoidCallback onPressedRemoveCompetitor;
 
-
-
-
   const ProfileActionButton({
     super.key,
     required this.userRelationshipStatus,
@@ -39,7 +36,7 @@ class ProfileActionButton extends StatefulWidget {
 }
 
 class _ProfileActionButtonState extends State<ProfileActionButton> {
-  /// Logout button action
+
   void logoutButtonPressed(BuildContext context) {
     AppAlertDialog alert = AppAlertDialog(
       titleText: "Logout",
@@ -61,7 +58,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
 
     showDialog(
       context: context,
-      barrierDismissible: true, // Allow closing by outside tap
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return alert;
       },
@@ -70,164 +67,259 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
 
   @override
   Widget build(BuildContext context) {
+
     if (widget.userRelationshipStatus == UserRelationshipStatus.myProfile) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          InkWell(
-            onTap: () => logoutButtonPressed(context),
-            child: Row(
-              children: [
-                Icon(Icons.logout, color: Colors.white, size: 26),
-
-                Text("Logout", style: TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
-          InkWell(
-            onTap: () => {Navigator.pushNamed(context, '/settings')},
-            child: Row(
-              children: [
-                Text("Settings", style: TextStyle(color: Colors.white)),
-                Icon(Icons.settings, color: Colors.white, size: 26),
-              ],
-            ),
-          ),
-        ],
-      );
+      return _buildMyProfile(context);
     }
 
-    if (widget.userRelationshipStatus == UserRelationshipStatus.friend) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Icon(Icons.check_box, color: Colors.green, size: 26),
-                ),
-                Text("Friends", style: TextStyle(color: Colors.white)),
-              ],
-            ),
+    final Widget childRow;
 
-            InkWell(
-              onTap: widget.onPressedRemoveFriends,
-              child: Row(
-                children: [
-                  Text("Remove friend", style: TextStyle(color: Colors.white)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.settings, color: Colors.white, size: 26),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+    switch (widget.userRelationshipStatus) {
+      case UserRelationshipStatus.friend:
+        childRow = _buildFriend(context);
+        break;
+      case UserRelationshipStatus.pendingSent:
+        childRow = _buildPendingSent(context);
+        break;
+      case UserRelationshipStatus.pendingReceived:
+        childRow = _buildPendingReceived(context);
+        break;
+
+      case UserRelationshipStatus.competitionParticipant:
+        childRow = _buildCompetitor(context);
+        break;
+      case UserRelationshipStatus.competitionPendingSent:
+        childRow = _buildCompetitionPendingSent(context);
+        break;
+      case UserRelationshipStatus.competitionNotConnected:
+        childRow = _buildNotCompetitor(context);
+        break;
+      default:
+        childRow = _buildNotFriend(context);
     }
 
-    if (widget.userRelationshipStatus == UserRelationshipStatus.pendingSent) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: IconButton(
-                    onPressed: () => (),
-                    icon: Icon(Icons.hourglass_top, color: Colors.white, size: 26),
-                  ),
-                ),
-                Text("Pending", style: TextStyle(color: Colors.white)),
-              ],
-            ),
-
-            InkWell(
-              onTap: widget.onPressedRemoveInvitationToFriends,
-              child: Row(
-                children: [
-                  Text("Remove invitation", style: TextStyle(color: Colors.white)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.remove, color: Colors.red, size: 26),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (widget.userRelationshipStatus == UserRelationshipStatus.pendingReceived) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            InkWell(
-              onTap: widget.onPressedDeclineInvitationToFriends,
-              child: Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Icon(Icons.close, color: Colors.red, size: 26),
-                  ),
-                  Text("Decline", style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: widget.onPressedAcceptInvitationToFriends,
-              child: Row(
-                children: [
-                  Text("Accept friend", style: TextStyle(color: Colors.green)),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.check, color: Colors.green, size: 26),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.secondary,
         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Add friend", style: TextStyle(color: Colors.white)),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              onPressed: widget.onPressedSendInvitationToFriends,
-              icon: Icon(Icons.person_add, color: Colors.white, size: 26),
-            ),
-          ),
-        ],
-      ),
+      child: childRow,
     );
   }
+
+  Widget _buildMyProfile(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () => logoutButtonPressed(context),
+          child: Row(
+            children: [
+              Icon(Icons.logout, color: Colors.white, size: 26),
+              Text("Logout", style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () => Navigator.pushNamed(context, '/settings'),
+          child: Row(
+            children: [
+              Text("Settings", style: TextStyle(color: Colors.white)),
+              Icon(Icons.settings, color: Colors.white, size: 26),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildFriend(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.check_box, color: Colors.green, size: 26),
+            ),
+            Text("Friends", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        InkWell(
+          onTap: widget.onPressedRemoveFriends,
+          child: Row(
+            children: [
+              Text("Remove friend", style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.settings, color: Colors.white, size: 26),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildPendingSent(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.hourglass_top, color: Colors.white, size: 26),
+            ),
+            Text("Pending", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        InkWell(
+          onTap: widget.onPressedRemoveInvitationToFriends,
+          child: Row(
+            children: [
+              Text("Remove invitation", style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.remove, color: Colors.red, size: 26),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildPendingReceived(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: widget.onPressedDeclineInvitationToFriends,
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Icon(Icons.close, color: Colors.red, size: 26),
+              ),
+              Text("Decline", style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: widget.onPressedAcceptInvitationToFriends,
+          child: Row(
+            children: [
+              Text("Accept friend", style: TextStyle(color: Colors.green)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.check, color: Colors.green, size: 26),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildNotFriend(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text("Add friend", style: TextStyle(color: Colors.white)),
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: IconButton(
+            onPressed: widget.onPressedSendInvitationToFriends,
+            icon: Icon(Icons.person_add, color: Colors.white, size: 26),
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+  Widget _buildCompetitor(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.emoji_events, color: Colors.amber, size: 26),
+            ),
+            Text("Competitor", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        InkWell(
+          onTap: widget.onPressedRemoveCompetitor,
+          child: Row(
+            children: [
+              Text("Remove competitor", style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.do_not_disturb_on, color: Colors.red, size: 26),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildCompetitionPendingSent(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.hourglass_top, color: Colors.white, size: 26),
+            ),
+            Text("Competition Pending", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        InkWell(
+          onTap: widget.onPressedRemoveInvitationToCompetition,
+          child: Row(
+            children: [
+              Text("Remove invitation", style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.remove, color: Colors.red, size: 26),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildNotCompetitor(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text("Add to competition", style: TextStyle(color: Colors.white)),
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: IconButton(
+            onPressed: widget.onPressedSendInvitationToCompetition,
+            icon: Icon(Icons.add_moderator, color: Colors.white, size: 26),
+          ),
+        ),
+      ],
+    );
+  }
+
 }

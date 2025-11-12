@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/user_mode.dart';
 
 import '../../../app/config/app_data.dart';
 import '../../../core/services/competition_service.dart';
@@ -68,7 +69,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void initialize() {
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(uid:  FirebaseAuth.instance.currentUser?.uid,)];
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(userMode:UserMode.friends,uid:  FirebaseAuth.instance.currentUser?.uid,)];
   }
 
   Future<void> initializeAsync() async {

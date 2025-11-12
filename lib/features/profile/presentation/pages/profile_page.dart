@@ -76,20 +76,24 @@ class _ProfilePageState extends State<ProfilePage> {
       user = await UserService.fetchUser(widget.uid!);
     }
 
-    if (user != null) {
-      // Check user relationship
-      if (user!.friendsUid.contains(AppData.instance.currentUser?.uid)) {
+    // Check user relations and set status
+    if (user != null && widget.userMode == UserMode.friends) {
+      if (usersList.contains(user?.uid)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends
-              .contains(user!.uid) ??
-          false) {
+      } else if (receivedInvitations.contains(user!.uid)) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends
-              .contains(user!.uid) ??
-          false) {
+      } else if (invitedUsers.contains(user?.uid)) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
-      } else if (user!.uid == AppData.instance.currentUser?.uid) {
+      } else if (user?.uid == AppData.instance.currentUser?.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
+      }
+    }else if( user != null && widget.userMode == UserMode.competitors) {
+      if (invitedUsers.contains(user?.uid)) {
+        relationshipStatus = UserRelationshipStatus.competitionPendingSent;
+      } else if (usersList.contains(user?.uid)) {
+        relationshipStatus = UserRelationshipStatus.competitionParticipant;
+      } else {
+        relationshipStatus = UserRelationshipStatus.competitionNotConnected;
       }
     }
 
