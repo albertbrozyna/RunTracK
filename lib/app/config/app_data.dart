@@ -9,11 +9,13 @@ class AppData{
   static AppData get instance => _instance;
 
   User? currentUser;
+  Competition? currentCompetition;
+  Competition? currentUserCompetition;
+
   bool googleLogin = false;
-  bool images = false; // Handling images
+  
   final ValueNotifier<bool> isLoading = ValueNotifier(false);
   // Saved locally
   String? lastActivityString;
 
-  Competition? currentCompetition;
 }

@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void initialize() {
-    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(userMode:UserMode.friends,uid:  FirebaseAuth.instance.currentUser?.uid,)];
+    _pages = [TrackScreen(), ActivitiesPage(), CompetitionsPage(), ProfilePage(userMode:UserMode.friends,uid:  FirebaseAuth.instance.currentUser?.uid ?? "")];
   }
 
   Future<void> initializeAsync() async {

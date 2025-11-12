@@ -162,7 +162,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     final competitionFetchResult = await CompetitionService.fetchLastFriendsCompetitionsPage(
       _limit,
       _lastPageFriendsCompetitions,
-      currentUser?.friendsUid ?? {},
+      currentUser?.friends ?? {},
     );
     if (!mounted) return;
 

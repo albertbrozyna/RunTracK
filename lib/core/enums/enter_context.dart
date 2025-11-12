@@ -1,7 +1,6 @@
 enum EnterContextUsersList{
   participantsModify,
   participantsReadOnly,
-  participantsLookAndInvite,
   friendsModify,
   friendReadOnly
 }

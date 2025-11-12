@@ -66,7 +66,7 @@ class _BottomButtonsState extends State<BottomButtons> {
     if(!weAreOwner && !weParticipate){
       if(widget.competition.visibility == ComVisibility.everyone){
         open = true;
-      } else if((AppData.instance.currentUser?.friendsUid.contains(widget.competition.organizerUid) ?? false) &&
+      } else if((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ?? false) &&
           widget.competition.visibility == ComVisibility.friends) { // If we are friends and
         open = true;
       }

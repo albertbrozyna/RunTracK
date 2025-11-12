@@ -81,13 +81,10 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
         final UserMode userMode = args?['userMode'] ?? UserMode.friends;
-        final usersList = args?['usersList'] ?? [];
-        final invitedUsers = args?['invitedUsers'] ?? [];
-        final receivedInvites = args?['receivedInvites'] ?? [];
         final competitionId = args?['competitionId'] ?? '';
 
         return MaterialPageRoute(
-          builder: (_) => ProfilePage(userMode: userMode, competitionId: competitionId, uid: uid, usersList: usersList, invitedUsers: invitedUsers, receivedInvites: receivedInvites),
+          builder: (_) => ProfilePage(userMode: userMode, competitionId: competitionId, uid: uid),
         );
 
       case AppRoutes.settings:

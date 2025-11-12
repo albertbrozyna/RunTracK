@@ -129,7 +129,6 @@ class UserService {
           uid: uid,
           firstName: firstName,
           lastName: lastName,
-          profilePhotoUrl: data['profilePhotoUrl'] as String?,
           email: "",
           gender: "",
         );
@@ -219,7 +218,6 @@ class UserService {
       final lastName = data['lastName'].toString();
       final email = data['email'].toString();
       final gender = data['gender'].toString();
-      final profilePhotoUrl = data['profilePhotoUrl'].toString();
 
       return model.User(
         uid: doc.id,
@@ -227,7 +225,6 @@ class UserService {
         lastName: lastName,
         email: email,
         gender: gender,
-        profilePhotoUrl: profilePhotoUrl,
       );
     }).toList();
 
@@ -309,11 +306,10 @@ class UserService {
   }
 
   /// Do action in one transaction to users depending on action type
-  static Future<bool> actionToUsers(
-    String senderUid,
-    String receiverUid,
-    UserAction action,
-  ) async {
+  static Future<bool> manageUsers({
+    required String senderUid, // Who makes action
+    required String receiverUid,
+    required UserAction action}) async {
     if (senderUid.isEmpty || receiverUid.isEmpty || senderUid == receiverUid) {
       return false;
     }
@@ -340,17 +336,17 @@ class UserService {
         }
 
         final senderFriendsList = Set<String>.from(
-          senderSnap['friendsUid'] ?? [],
+          senderSnap['friends'] ?? [],
         );
         final senderPendingInvitationsList = Set<String>.from(
           senderSnap['pendingInvitationsToFriends'] ?? [],
         );
         final senderReceivedInvitationList = Set<String>.from(
-          senderSnap['receivedInvitationsToFriends'],
+          senderSnap['receivedInvitationsToFriends'] ?? [],
         );
 
         final receiverFriendsList = Set<String>.from(
-          receiverSnap['friendsUid'] ?? [],
+          receiverSnap['friends'] ?? [],
         );
         final receiverPendingInvitationsList = Set<String>.from(
           receiverSnap['pendingInvitationsToFriends'] ?? [],
@@ -411,8 +407,8 @@ class UserService {
           case UserAction.acceptInvitationToFriends:
             senderFriendsList.add(receiverUid);
             receiverFriendsList.add(senderUid);
-            senderPendingInvitationsList.remove(receiverUid);
-            receiverReceivedInvitationsList.remove(senderUid);
+            senderReceivedInvitationList.remove(receiverUid);
+            receiverPendingInvitationsList.remove(senderUid);
             notification = AppNotification(
               notificationId: "",
               uid: receiverUid,
@@ -434,16 +430,21 @@ class UserService {
 
         transaction.update(userSenderReference, {
           'pendingInvitationsToFriends': senderPendingInvitationsList,
-          'friendsUid': senderFriendsList,
+          'friends': senderFriendsList,
           'receivedInvitationsToFriends': senderReceivedInvitationList,
         });
 
         transaction.update(userReceiverReference, {
           'pendingInvitationsToFriends': receiverPendingInvitationsList,
-          'friendsUid': receiverFriendsList,
+          'friends': receiverFriendsList,
           'receivedInvitationsToFriends': receiverReceivedInvitationsList,
         });
+
+        AppData.instance.currentUser?.friends = senderFriendsList;
+        AppData.instance.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
+        AppData.instance.currentUser?.receivedInvitationsToFriends = senderReceivedInvitationList;
       });
+
 
       if (notification != null) {
         await NotificationService.saveNotification(notification!);
@@ -497,9 +498,8 @@ class UserService {
         gender: gender.trim().toLowerCase(),
         dateOfBirth: dateOfBirth,
         createdAt: DateTime.now(),
-        profilePhotoUrl: "",
         activityNames: AppUtils.getDefaultActivities(),
-        friendsUid: {},
+        friends: {},
       ),
     );
 
@@ -512,16 +512,13 @@ class UserService {
         u1.lastName == u2.lastName &&
         u1.fullName == u2.fullName &&
         u1.email == u2.email &&
-        u1.profilePhotoUrl == u2.profilePhotoUrl &&
         u1.gender == u2.gender &&
         u1.dateOfBirth == u2.dateOfBirth &&
         u1.kilometers == u2.kilometers &&
         u1.burnedCalories == u2.burnedCalories &&
         u1.hoursOfActivity == u2.hoursOfActivity &&
-        u1.userDefaultLocation.latitude == u2.userDefaultLocation.latitude &&
-        u1.userDefaultLocation.longitude == u2.userDefaultLocation.longitude &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
-        AppUtils.setsEqual(u1.friendsUid, u2.friendsUid) &&
+        AppUtils.setsEqual(u1.friends, u2.friends) &&
         AppUtils.setsEqual(
           u1.pendingInvitationsToFriends,
           u2.pendingInvitationsToFriends,
@@ -540,12 +537,10 @@ class UserService {
         );
   }
 
-  /// Check if the user account exists in firestore
-  // TODO TO FIX THIS with returning true
   static Future<bool> checkIfUserAccountExists(String uid) async {
     try {
       final docSnapshot = await FirebaseFirestore.instance
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .doc(uid)
           .get();
       return docSnapshot.exists;

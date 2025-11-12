@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/ui_constants.dart';
-import '../../../../core/enums/competition_role.dart';
 import '../../../../core/models/competition.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
@@ -271,25 +269,6 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                         ),
                       ],
                     ),
-                  ),
-                ),
-              // Photos from the run
-              if (widget.competition.photos.isNotEmpty && AppData.instance.images)
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    // From left to right
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.competition.photos.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(widget.competition.photos[index], width: 120, height: 120, fit: BoxFit.cover),
-                        ),
-                      );
-                    },
                   ),
                 ),
             ],

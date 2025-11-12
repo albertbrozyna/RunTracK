@@ -101,7 +101,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void _setupCompetitionData() {
     if (widget.competitionData != null) {
-      competition = widget.competitionData!;
+      AppData.instance.currentCompetition =  competition = widget.competitionData!;
       _populateFormFromData(competition);
     } else {
       _createNewCompetition();
@@ -211,11 +211,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     String? lastCompetition = await PreferencesService.loadString(PreferenceNames.lastUsedPreferenceAddCompetition);
 
     if (lastCompetition != null && lastCompetition.isNotEmpty) {
-      if (AppData.instance.currentUser?.activityNames?.contains(lastCompetition) ?? false) {
+      if (AppData.instance.currentUser?.activityNames.contains(lastCompetition) ?? false) {
         _activityController.text = lastCompetition;
         return;
       }
-      _activityController.text = AppData.instance.currentUser?.activityNames?.first ?? "Unknown";
+      _activityController.text = AppData.instance.currentUser?.activityNames.first ?? "Unknown";
     }
   }
 

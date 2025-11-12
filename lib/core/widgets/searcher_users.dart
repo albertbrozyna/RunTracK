@@ -6,6 +6,7 @@ import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
 import '../enums/enter_context.dart';
+import '../enums/user_mode.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 
@@ -65,7 +66,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
     }
 
     if (enterContext == EnterContextSearcher.friends) {
-      bool added = await UserService.actionToUsers(
+      bool added = await UserService.manageUsers(
         FirebaseAuth.instance.currentUser?.uid ?? "",
         uid,
         UserAction.inviteToFriends,
@@ -86,7 +87,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
         invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
-
     }
   }
 
@@ -97,10 +97,12 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
       AppRoutes.profile,
       arguments: {
         // Navigate to profile and pass this list
+        'userMode': UserMode.friends,
         'uid': uid,
         'usersList': listUsers,
         'invitedUsers': invitedUsers,
         'receivedInvites': receivedInvitations,
+        'competitionId': '',
       },
     );
 

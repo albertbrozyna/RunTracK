@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/config/app_data.dart';
 import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
@@ -15,27 +16,23 @@ import '../widgets/user_profile_list.dart';
 
 
 class UsersList extends StatefulWidget {
-  final Set<String> usersUid; // Friends for example or list of participants
-  final Set<String> usersUid2; // For participants context it is list of invited
-  final Set<String> usersUid3; // For friends it is list of invitations to friends
+  final List<String> usersList;  // List of user
   final EnterContextUsersList enterContext;
   final String competitionId;
 
-  const UsersList({super.key, required this.usersUid, required this.usersUid2, required this.usersUid3, required this.enterContext, required this.competitionId});
+  const UsersList({super.key,required this.enterContext});
 
   @override
   State<StatefulWidget> createState() => _UsersListState();
 }
 
 class _UsersListState extends State<UsersList> {
-  final List<User> _users = [];
-  List<String> _usersUid = []; // List of participants
-  List<String> _usersUid2 = []; // For participants context it is list of invited
-  List<String> _usersUid3 = []; // For participants context it is list of invited
-  bool visibleFabAdd = false;
-  String? lastUid; // Last uid for pagination
   final ScrollController _scrollController = ScrollController();
   final int _limit = 20; // Users per page
+  final List<User> _users = [];
+  List<String> _usersUid = [];
+  bool visibleFabAdd = false;
+  String? lastUid; // Last uid for pagination
   bool _hasMore = true;
   bool _isLoading = false;
   String pageTitle = "";
@@ -55,11 +52,7 @@ class _UsersListState extends State<UsersList> {
   }
 
   void initialize() {
-    if (!UserService.isUserLoggedIn()) {
-      UserService.signOutUser();
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
-      return;
-    }
+    UserService.checkAppUseState(context);
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent) {
@@ -67,20 +60,23 @@ class _UsersListState extends State<UsersList> {
       }
     });
 
-    // Set title and message depends on context
-    if (widget.enterContext == EnterContextUsersList.participantsModify ||
-        widget.enterContext == EnterContextUsersList.participantsReadOnly) {
-      pageTitle = "Participants";
-      noItemsMessage = "No participants found";
-    } else if (widget.enterContext == EnterContextUsersList.friendsModify) {
+    if(widget.enterContext == EnterContextUsersList.friendsModify){
       pageTitle = "Friends";
       noItemsMessage = "No friends found";
+      _usersUid = AppData.instance.currentUser?.friends.toList() ?? []; // My friends
+    }else if(widget.enterContext == EnterContextUsersList.friendReadOnly){
+      pageTitle = "Friends";
+      noItemsMessage = "No friends found";
+      _usersUid = widget.usersList; // Another profile friends
+    }else if(widget.enterContext == EnterContextUsersList.participantsModify){
+      pageTitle = "Participants";
+      noItemsMessage = "No participants found";
+      _usersUid = AppData.instance.currentCompetition?.participantsUid.toList() ?? [];  // Competitors
+    }else if(widget.enterContext == EnterContextUsersList.participantsReadOnly){
+      pageTitle = "Participants";
+      noItemsMessage = "No participants found";
+      _usersUid = widget.usersList;  // Competitors
     }
-
-    _usersUid = widget.usersUid.toList();
-    _usersUid2 = widget.usersUid2.toList();
-    _usersUid3 = widget.usersUid3.toList();
-
     _loadUsers();
   }
 
@@ -122,7 +118,7 @@ class _UsersListState extends State<UsersList> {
   /// On pressed button add users
   void onPressedAddUsers() async {
     EnterContextSearcher enterContextSearcher = EnterContextSearcher.friends;
-    if (widget.enterContext == EnterContextUsersList.participantsLookAndInvite) {
+    if (widget.enterContext == EnterContextUsersList.participantsModify) {
       enterContextSearcher = EnterContextSearcher.participants;
     }
 

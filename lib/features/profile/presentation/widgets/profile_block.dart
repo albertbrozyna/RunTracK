@@ -15,19 +15,8 @@ class ProfileBlock extends StatelessWidget {
           child: Column(
             children: [
               ClipOval(
-                child: user != null && user!.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty
-                    ? Image.network(
-                  user!.profilePhotoUrl!,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                )
-                    : Image.asset(
-                  "assets/DefaultProfilePhoto.png",
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset(
+                  "assets/DefaultProfilePhoto.png",),
               ),
               SizedBox(width: 10),
               Column(
