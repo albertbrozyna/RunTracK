@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/core/services/notification_service.dart';
 
+import '../../app/config/app_data.dart';
 import '../enums/participant_management_action.dart';
 import '../enums/visibility.dart';
 import '../models/competition.dart';
@@ -316,6 +317,12 @@ class CompetitionService {
           'participatedCompetitions': userParticipatedList.toList(),
           'receivedInvitationsToCompetitions': userReceivedInvitesList.toList(),
         });
+
+        // Change current competition
+        if(AppData.instance.currentCompetition != null && AppData.instance.currentCompetition!.competitionId == competitionId){
+          AppData.instance.currentCompetition!.participantsUid = participantsList;
+          AppData.instance.currentCompetition!.invitedParticipantsUid = invitedList;
+        }
       });
 
       if (notification != null) {

@@ -5,16 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_images.dart';
 
+import '../../../app/navigation/app_routes.dart';
 import '../../../core/models/activity.dart';
 import '../../../core/services/activity_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/utils/utils.dart';
 import '../../../core/widgets/stat_card.dart';
-import '../../track/presentation/pages/activity_summary.dart';
 
 
 class ActivityBlock extends StatefulWidget {
-  final String? profilePhotoUrl;
   final String firstName;
   final String lastName;
   final Activity activity;
@@ -25,7 +24,7 @@ class ActivityBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const ActivityBlock({super.key, required this.activity,String? firstName, String? lastName,  this.profilePhotoUrl}):
+  const ActivityBlock({super.key, required this.activity,String? firstName, String? lastName}):
   firstName = firstName ?? "",
   lastName = lastName ?? "";
 
@@ -56,7 +55,6 @@ class _ActivityBlockState extends State<ActivityBlock> {
     }
     firstname = widget.firstName;
     lastname = widget.lastName;
-    profilePhotoUrl = widget.profilePhotoUrl;
   }
 
   Future<void> initializeAsync() async {
@@ -67,7 +65,6 @@ class _ActivityBlockState extends State<ActivityBlock> {
             setState(() {
               firstname = user?.firstName;
               lastname = user?.lastName;
-              profilePhotoUrl = user?.profilePhotoUrl;
             });
           })
           .catchError((error) {
@@ -78,18 +75,13 @@ class _ActivityBlockState extends State<ActivityBlock> {
 
   /// On activity block tap
   void onTapBlock(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ActivitySummary(
-          activityData: widget.activity,
-          readonly: readonly,
-          editMode: edit,
-          firstName: widget.firstName,
-          lastName: widget.lastName,
-        ),
-      ),
-    );
+    Navigator.pushNamed(context,AppRoutes.activitySummary, arguments: {
+      "activity": widget.activity,
+      "readonly": readonly,
+      "editMode": edit,
+      "firstName": firstname,
+      "lastName": lastname,
+    });
   }
 
   @override
@@ -120,9 +112,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                       ),
                       child: CircleAvatar(
                         radius: 18,
-                        backgroundImage: widget.profilePhotoUrl != null
-                            ? NetworkImage(widget.profilePhotoUrl!)
-                            : AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
+                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                       ),
                     ),
                     SizedBox(width: 10),

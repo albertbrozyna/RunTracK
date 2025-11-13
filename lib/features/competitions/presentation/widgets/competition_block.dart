@@ -86,7 +86,6 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
             setState(() {
               firstName = user?.firstName ?? "User";
               lastName = user?.lastName ?? "Unknown";
-              profilePhotoUrl = user?.profilePhotoUrl ?? "";
             });
           })
           .catchError((error) {

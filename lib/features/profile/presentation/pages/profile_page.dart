@@ -25,13 +25,11 @@ import '../widgets/profile_action_button.dart';
 class ProfilePage extends StatefulWidget {
   final String uid;
   final UserMode userMode;
-  final String competitionId;
 
   const ProfilePage({
     super.key,
     required this.userMode,
     required this.uid,
-    this.competitionId = "",
   });
 
   @override
@@ -94,7 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void onPressedInviteToCompetition() async {
     if (AppData.instance.currentCompetition != null && user != null) {
       bool success = await CompetitionService.manageParticipant(
-        competitionId: widget.competitionId,
+        competitionId: AppData.instance.currentCompetition!.competitionId,
         targetUserId: user!.uid,
         action: ParticipantManagementAction.invite,
       );
@@ -108,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void onPressedRemoveCompetitor()async {
     if (AppData.instance.currentCompetition != null && user != null) {
       bool success = await CompetitionService.manageParticipant(
-        competitionId: widget.competitionId,
+        competitionId: AppData.instance.currentCompetition!.competitionId,
         targetUserId: user!.uid,
         action: ParticipantManagementAction.kick,
       );
@@ -123,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void onPressedRemoveInvitationToCompetition() async {
     if (AppData.instance.currentCompetition != null && user != null) {
       bool success = await CompetitionService.manageParticipant(
-        competitionId: widget.competitionId,
+        competitionId: AppData.instance.currentCompetition!.competitionId,
         targetUserId: user!.uid,
         action: ParticipantManagementAction.cancelInvitation,
       );
@@ -200,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
       enterContext = EnterContextUsersList.friendsModify;
     }
     await Navigator.pushNamed(context, AppRoutes.usersList,
-      arguments: {'userMode': widget.userMode, 'uid': widget.uid, 'competitionId': ''},
+      arguments: {'enterContext': enterContext, 'users': user?.friends ?? <String>{}},
     );
   }
 

@@ -1,12 +1,8 @@
-import 'dart:io';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -51,7 +47,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   late Activity passedActivity = widget.activityData;
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
-  List<XFile> _pickedImages = [];
   final MapController _mapController = MapController();
 
   @override
@@ -177,19 +172,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     if (widget.readonly) {
       return;
     }
-    // Photos from activity
-    List<String> uploadedUrls = [];
-    if (AppData.instance.images) {
-      // If images are enabled in app
-      for (var image in _pickedImages) {
-        final ref = FirebaseStorage.instance.ref().child(
-          'users/${AppData.instance.currentUser?.uid}/activities/${DateTime.now().millisecondsSinceEpoch}_${image.name}',
-        );
-        await ref.putFile(File(image.path));
-        final url = await ref.getDownloadURL();
-        uploadedUrls.add(url);
-      }
-    }
 
     // Activity data
     Activity userActivity = Activity(
@@ -203,7 +185,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       visibility: _visibility,
       startTime: widget.activityData.startTime,
       trackedPath: widget.activityData.trackedPath,
-      photos: uploadedUrls,
       pace: widget.activityData.pace,
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,

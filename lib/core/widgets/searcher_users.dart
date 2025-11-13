@@ -1,34 +1,31 @@
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
 import 'package:run_track/core/services/competition_service.dart';
 import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
-import '../enums/enter_context.dart';
 import '../enums/user_mode.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 
 class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
-  final Set<String> listUsers; // Participants list or friends list
+  final Set<String> users; // Participants list or friends list
   final Set<String> invitedUsers; // Invited to participate or to friends
   final Set<String> receivedInvitations; // Participants list or friends list
-  EnterContextSearcher enterContext;
-  String competitionId;
+  UserMode userMode;
   final List<User> suggestedUsers = [];
-
-  UserSearcher({
-    required this.enterContext,
-    required this.invitedUsers,
-    required this.listUsers,
-    required this.receivedInvitations,
-    required this.competitionId,
-  });
-
   final ValueNotifier<int> rebuildNotifier = ValueNotifier(
     0,
   ); // Notifier to rebuild result list after sending a friend request
+
+  UserSearcher({
+    required this.userMode,
+    required this.users,
+    required this.invitedUsers,
+    required this.receivedInvitations,
+  });
 
   @override
   String? get searchFieldLabel => "Search users";
@@ -37,17 +34,11 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
   TextStyle? get searchFieldStyle => TextStyle(color: Colors.white);
 
   Icon getIconForUser(String uid) {
-    if (listUsers.contains(uid)) {
-      return Icon(
-        Icons.check,
-        color: Colors.green,
-      ); // Participate in or is on our friend list
+    if (users.contains(uid)) {
+      return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
     }
     if (invitedUsers.contains(uid)) {
-      return Icon(
-        Icons.mail_outline,
-        color: AppColors.secondary,
-      ); // We send a request
+      return Icon(Icons.mail_outline, color: AppColors.secondary); // We send a request
     }
     if (receivedInvitations.contains(uid)) {
       return Icon(Icons.mark_email_unread, color: AppColors.secondary);
@@ -58,68 +49,63 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
 
   /// Add user uid to list
   void onPressedPersonAdd(String uid, BuildContext context) async {
-    if (listUsers.contains(uid) || invitedUsers.contains(uid) ||
-        receivedInvitations.contains(uid)) {
+    if (users.contains(uid) || invitedUsers.contains(uid) || receivedInvitations.contains(uid)) {
       // We can't do action from this look
       showResults(context);
       return;
     }
 
-    if (enterContext == EnterContextSearcher.friends) {
+    if (userMode == UserMode.friends) {
       bool added = await UserService.manageUsers(
-        FirebaseAuth.instance.currentUser?.uid ?? "",
-        uid,
-        UserAction.inviteToFriends,
+        senderUid: AppData.instance.currentUser?.uid ?? "",
+        receiverUid: uid,
+        action: UserAction.inviteToFriends,
       );
       if (added) {
         invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
       }
-    } else if (enterContext == EnterContextSearcher.participants) {
-      if(competitionId.isNotEmpty){ // If it is empty it means we are creating competition
+    } else if (userMode == UserMode.competitors) {
+      if (AppData.instance.currentCompetition != null) {
+        // If it is empty it means we are creating competition
         bool added = await CompetitionService.manageParticipant(
-          competitionId: competitionId,
+          competitionId: AppData.instance.currentCompetition!.competitionId,
           targetUserId: uid,
           action: ParticipantManagementAction.invite,
         );
+
+        if (added) {
+          invitedUsers.add(uid);
+          rebuildNotifier.value++;
+          showResults(context);
+        }
       }
-        invitedUsers.add(uid);
-        rebuildNotifier.value++;
-        showResults(context);
     }
   }
 
   /// Navigate to user profile and return list of users
   void onTapUser(BuildContext context, String uid) async {
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       AppRoutes.profile,
-      arguments: {
-        // Navigate to profile and pass this list
-        'userMode': UserMode.friends,
-        'uid': uid,
-        'usersList': listUsers,
-        'invitedUsers': invitedUsers,
-        'receivedInvites': receivedInvitations,
-        'competitionId': '',
-      },
+      arguments: {'userMode': userMode, 'uid': uid},
     );
 
-    if (result != null && result is Map) {
-      final Set<String> usersUid = (result['usersUid'] as Set<String>?) ?? {};
-      final Set<String> usersUid2 = (result['usersUid2'] as Set<String>?) ?? {};
-      final Set<String> usersUid3 = (result['usersUid3'] as Set<String>?) ?? {};
-      // Set invited participants
-      listUsers.clear();
-      listUsers.addAll(usersUid);
-      invitedUsers.clear();
-      invitedUsers.addAll(usersUid2);
-      receivedInvitations.clear();
-      receivedInvitations.addAll(usersUid3);
-      rebuildNotifier.value++;
-      showResults(context);
+    users.clear();
+    invitedUsers.clear();
+    receivedInvitations.clear();
+
+    if (userMode == UserMode.friends) {
+      users.addAll(AppData.instance.currentUser?.friends ?? {});
+      invitedUsers.addAll(AppData.instance.currentUser?.pendingInvitationsToFriends ?? {});
+      receivedInvitations.addAll(AppData.instance.currentUser?.receivedInvitationsToFriends ?? {});
+    } else if (userMode == UserMode.competitors) {
+      users.addAll(AppData.instance.currentCompetition?.participantsUid ?? {});
+      invitedUsers.addAll(AppData.instance.currentCompetition?.invitedParticipantsUid ?? {});
     }
+    rebuildNotifier.value++;
+    showResults(context);
   }
 
   @override
@@ -138,15 +124,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
   /// Leading buttons
   @override
   Widget? buildLeading(BuildContext context) {
-    return IconButton(
-      // Return with invited users
-      icon: Icon(Icons.arrow_back),
-      onPressed: () => close(context, {
-        'usersUid': listUsers,
-        'usersUid2': invitedUsers,
-        'usersUid3': receivedInvitations,
-      }),
-    );
+    return IconButton(icon: Icon(Icons.arrow_back), onPressed: () => close(context, {}));
   }
 
   @override
@@ -179,12 +157,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
                 return ListTile(
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundImage:
-                        user.profilePhotoUrl != null &&
-                            user.profilePhotoUrl!.isNotEmpty
-                        ? NetworkImage(user.profilePhotoUrl!)
-                        : AssetImage(AppImages.defaultProfilePhoto)
-                              as ImageProvider,
+                    backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
                   ),
                   onTap: () => onTapUser(context, user.uid),
                   title: Text("${user.firstName} ${user.lastName}"),
@@ -208,12 +181,8 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
         backgroundColor: AppColors.primary,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        hintStyle: TextStyle(color: Colors.white54),
-      ),
-      textTheme: TextTheme(
-        titleLarge: TextStyle(color: Colors.white, fontSize: 18),
-      ),
+      inputDecorationTheme: InputDecorationTheme(hintStyle: TextStyle(color: Colors.white54)),
+      textTheme: TextTheme(titleLarge: TextStyle(color: Colors.white, fontSize: 18)),
     );
   }
 

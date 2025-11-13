@@ -81,28 +81,21 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] ?? '';
         final UserMode userMode = args?['userMode'] ?? UserMode.friends;
-        final competitionId = args?['competitionId'] ?? '';
 
         return MaterialPageRoute(
-          builder: (_) => ProfilePage(userMode: userMode, competitionId: competitionId, uid: uid),
+          builder: (_) => ProfilePage(userMode: userMode, uid: uid),
         );
 
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => SettingsPage());
       case AppRoutes.usersList:
         final args = settings.arguments as Map<String, dynamic>?;
-        final usersUid = (args?['usersUid'] as Set?)?.cast<String>() ?? <String>{};
-        final usersUid2 = (args?['usersUid2'] as Set?)?.cast<String>() ?? <String>{};
-        final usersUid3 = (args?['usersUid3'] as Set?)?.cast<String>() ?? <String>{};
+        final users = (args?['users'] as Set?)?.cast<String>() ?? <String>{};
         final enterContext = args?['enterContext'] as EnterContextUsersList;
-        final competitionId = args?['competitionId'] as String;
         return MaterialPageRoute(
           builder: (_) => UsersList(
-            usersUid: usersUid,
-            usersUid2: usersUid2,
-            usersUid3: usersUid3,
+            users: users.toList(),
             enterContext: enterContext,
-            competitionId: competitionId,
           ),
         );
       case AppRoutes.notifications:

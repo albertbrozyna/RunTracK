@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 
-import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -86,9 +85,7 @@ class _BasicInfoSectionState extends State<BasicInfoSection> {
               padding: const EdgeInsets.only(left: 10),
               child: CircleAvatar(
                 radius: 20,
-                backgroundImage: (AppData.instance.currentUser?.profilePhotoUrl?.isNotEmpty ?? false)
-                    ? NetworkImage(AppData.instance.currentUser!.profilePhotoUrl!)
-                    : AssetImage(AppImages.defaultProfilePhoto),
+                backgroundImage: AssetImage(AppImages.defaultProfilePhoto),
               ),
             ),
           ),

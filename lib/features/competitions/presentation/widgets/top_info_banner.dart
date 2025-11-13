@@ -20,7 +20,7 @@ class TopInfoBanner extends StatefulWidget {
   const TopInfoBanner({
     super.key,
     required this.competition,
-    required this.enterC,
+    required this.enterContext,
   });
 
   @override

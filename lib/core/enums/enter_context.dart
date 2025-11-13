@@ -4,8 +4,3 @@ enum EnterContextUsersList{
   friendsModify,
   friendReadOnly
 }
-
-enum EnterContextSearcher{
-  friends,
-  participants,
-}
