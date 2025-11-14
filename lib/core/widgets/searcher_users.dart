@@ -11,9 +11,6 @@ import '../models/user.dart';
 import '../services/user_service.dart';
 
 class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
-  final Set<String> users; // Participants list or friends list
-  final Set<String> invitedUsers; // Invited to participate or to friends
-  final Set<String> receivedInvitations; // Participants list or friends list
   UserMode userMode;
   final List<User> suggestedUsers = [];
   final ValueNotifier<int> rebuildNotifier = ValueNotifier(
@@ -22,9 +19,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
 
   UserSearcher({
     required this.userMode,
-    required this.users,
-    required this.invitedUsers,
-    required this.receivedInvitations,
   });
 
   @override
@@ -34,13 +28,13 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
   TextStyle? get searchFieldStyle => TextStyle(color: Colors.white);
 
   Icon getIconForUser(String uid) {
-    if (users.contains(uid)) {
+    if (userMode == UserMode.friends &&  (AppData.instance.currentUser?.friends.contains(uid) ??  false) || userMode == UserMode.competitors && (AppData.instance.currentCompetition?.participantsUid.contains(uid) ?? false)) {
       return Icon(Icons.check, color: Colors.green); // Participate in or is on our friend list
     }
-    if (invitedUsers.contains(uid)) {
+    if (userMode == UserMode.friends &&  (AppData.instance.currentUser?.pendingInvitationsToFriends.contains(uid) ??  false) ||  userMode == UserMode.competitors && (AppData.instance.currentCompetition?.invitedParticipantsUid.contains(uid) ?? false)) {
       return Icon(Icons.mail_outline, color: AppColors.secondary); // We send a request
     }
-    if (receivedInvitations.contains(uid)) {
+    if (userMode == UserMode.friends &&  (AppData.instance.currentUser?.receivedInvitationsToFriends.contains(uid) ??  false)) {
       return Icon(Icons.mark_email_unread, color: AppColors.secondary);
     }
 
@@ -49,9 +43,9 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
 
   /// Add user uid to list
   void onPressedPersonAdd(String uid, BuildContext context) async {
-    if (users.contains(uid) || invitedUsers.contains(uid) || receivedInvitations.contains(uid)) {
-      // We can't do action from this look
-      showResults(context);
+    if(userMode == UserMode.friends && (AppData.instance.currentUser?.friends.contains(uid) ?? false)){
+      return;
+    }else if(userMode == UserMode.competitors && (AppData.instance.currentCompetition?.participantsUid.contains(uid) ?? false)){
       return;
     }
 
@@ -62,7 +56,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
         action: UserAction.inviteToFriends,
       );
       if (added) {
-        invitedUsers.add(uid);
         rebuildNotifier.value++;
         showResults(context);
       }
@@ -76,7 +69,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
         );
 
         if (added) {
-          invitedUsers.add(uid);
           rebuildNotifier.value++;
           showResults(context);
         }
@@ -92,18 +84,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
       arguments: {'userMode': userMode, 'uid': uid},
     );
 
-    users.clear();
-    invitedUsers.clear();
-    receivedInvitations.clear();
-
-    if (userMode == UserMode.friends) {
-      users.addAll(AppData.instance.currentUser?.friends ?? {});
-      invitedUsers.addAll(AppData.instance.currentUser?.pendingInvitationsToFriends ?? {});
-      receivedInvitations.addAll(AppData.instance.currentUser?.receivedInvitationsToFriends ?? {});
-    } else if (userMode == UserMode.competitors) {
-      users.addAll(AppData.instance.currentCompetition?.participantsUid ?? {});
-      invitedUsers.addAll(AppData.instance.currentCompetition?.invitedParticipantsUid ?? {});
-    }
     rebuildNotifier.value++;
     showResults(context);
   }

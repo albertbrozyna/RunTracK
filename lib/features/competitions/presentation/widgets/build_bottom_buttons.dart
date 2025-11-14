@@ -12,6 +12,7 @@ import '../../../../core/widgets/custom_button.dart';
 class BottomButtons extends StatefulWidget {
   final Competition competition;
   final CompetitionContext enterContext;
+  final bool saved;
   final VoidCallback handleSaveCompetition;
   final VoidCallback closeCompetition;
   final VoidCallback acceptInvitation;
@@ -29,6 +30,7 @@ class BottomButtons extends StatefulWidget {
     required this.declineInvitation,
     required this.joinCompetition,
     required this.resignFromCompetition,
+    required this.saved,
   });
 
   @override
@@ -37,7 +39,6 @@ class BottomButtons extends StatefulWidget {
 
 class _BottomButtonsState extends State<BottomButtons> {
   bool canClose = false; // Can we close competition
-  String buttonText = "";
   bool invited = false;
   bool open = false;
   bool alreadyParticipate = false;
@@ -46,12 +47,6 @@ class _BottomButtonsState extends State<BottomButtons> {
   @override
   void initState() {
     super.initState();
-
-    if (widget.enterContext == CompetitionContext.ownerCreate) {
-      buttonText = "Add competition";
-    } else {
-      buttonText = "Save changes";
-    }
 
     DateTime now = DateTime.now();
     if (widget.enterContext == CompetitionContext.ownerModify &&
@@ -79,6 +74,13 @@ class _BottomButtonsState extends State<BottomButtons> {
 
   @override
   Widget build(BuildContext context) {
+    String buttonText = "";
+    if (widget.enterContext == CompetitionContext.ownerCreate && !widget.saved) {
+      buttonText = "Add competition";
+    } else {
+      buttonText = "Save changes";
+    }
+
     return Column(
       children: [
         SizedBox(height: AppUiConstants.verticalSpacingButtons),

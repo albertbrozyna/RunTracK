@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -11,7 +12,6 @@ import '../../../../core/enums/visibility.dart' as enums;
 import '../../../../core/models/activity.dart';
 import '../../../../core/services/activity_service.dart';
 import '../../../../core/services/preferences_service.dart';
-import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/alert_dialog.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -62,7 +62,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   void initialize() {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
   }
 
   /// Get text for save button

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/user_mode.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../app/config/app_data.dart';
 import '../../app/config/app_images.dart';
+import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
 import '../../features/track/presentation/widgets/fab_location.dart';
 import '../enums/enter_context.dart';
@@ -48,7 +50,7 @@ class _UsersListState extends State<UsersList> {
   }
 
   void initialize() {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent) {
@@ -74,6 +76,23 @@ class _UsersListState extends State<UsersList> {
       noItemsMessage = "No participants found";
       _usersUid = widget.users; // Competitors
     }
+    _loadUsers();
+  }
+
+  void updateList() {
+    if (widget.enterContext == EnterContextUsersList.friendsModify) {
+      _usersUid = AppData.instance.currentUser?.friends.toList() ?? [];
+    } else if (widget.enterContext == EnterContextUsersList.participantsModify) {
+      _usersUid = AppData.instance.currentCompetition?.participantsUid.toList() ?? [];
+    }
+
+    setState(() {
+      _users.clear();
+      lastUid = null;
+      _hasMore = true;
+      _isLoading = false;
+    });
+
     _loadUsers();
   }
 
@@ -114,31 +133,25 @@ class _UsersListState extends State<UsersList> {
 
   /// On pressed button add users
   void onPressedAddUsers() async {
-    Set<String> users = AppData.instance.currentUser?.friends ?? {};
-    Set<String> invitedUsers = AppData.instance.currentUser?.pendingInvitationsToFriends ?? {};
-    Set<String> receivedUsers = AppData.instance.currentUser?.receivedInvitationsToFriends ?? {};
-
-    UserMode userMode =  UserMode.friends;
+    UserMode userMode = UserMode.friends;
 
     if (widget.enterContext == EnterContextUsersList.participantsModify) {
       userMode = UserMode.competitors;
-      users = AppData.instance.currentCompetition?.invitedParticipantsUid ?? {};
-      invitedUsers = AppData.instance.currentCompetition?.invitedParticipantsUid ?? {};
-      receivedUsers = {};
     }
-
-    final result = await showSearch<Map<String, Set<String>?>>(
+    await showSearch<Map<String, Set<String>?>>(
       context: context,
-      delegate: UserSearcher(
-        userMode: userMode,
-        users: users,
-        invitedUsers: invitedUsers,
-        receivedInvitations: receivedUsers,
-      ),
+      delegate: UserSearcher(userMode: userMode),
     );
+    updateList();
+  }
 
-    // TODO HANDLE REFRESH
-    if (result != null) {}
+  void showUserProfile(String uid) async {
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.profile,
+      arguments: {'userMode': UserMode.friends, 'uid': uid},
+    );
+    updateList();
   }
 
   @override
@@ -158,10 +171,7 @@ class _UsersListState extends State<UsersList> {
       appBar: AppBar(
         title: Text(
           pageTitle,
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, letterSpacing: 1),
         ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
       ),
       body: PageContainer(
         assetPath: AppImages.appBg4,
@@ -175,10 +185,15 @@ class _UsersListState extends State<UsersList> {
                     return Center(child: CircularProgressIndicator());
                   }
                   final user = _users[index];
-                  return UserProfileTile(
-                    key: ValueKey(user.uid),
-                    firstName: user.firstName,
-                    lastName: user.lastName,
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: InkWell(
+                      onTap: () => showUserProfile(user.uid),
+                      child: UserProfileTile(
+                        key: ValueKey(user.uid),
+                        user: user,
+                      ),
+                    ),
                   );
                 },
               ),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -11,7 +12,6 @@ import '../../../../core/enums/competition_role.dart';
 import '../../../../core/models/competition.dart';
 import '../../../../core/models/user.dart';
 import '../../../../core/services/competition_service.dart';
-import '../../../../core/services/user_service.dart';
 import '../../../../core/widgets/no_items_msg.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../../../track/presentation/widgets/fab_location.dart';
@@ -75,7 +75,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   }
 
   Future<void> initialize() async {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
 
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -263,7 +263,6 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isNavigating = true;
     });
 
-
     CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
 
     if (_tabController.index == 0) {
@@ -282,7 +281,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     } else if (_tabController.index == 4 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
       enterContext = CompetitionContext.invited;
     }
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': enterContext, 'competitionData': competition, 'initTab': _tabController.index},
@@ -292,20 +291,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-
-    if (result != null && result is Competition) {
-      setState(() {
-        if (_tabController.index == 0) {
-          _myCompetitions.insert(0, result);
-        } else if (_tabController.index == 1) {
-          _friendsCompetitions.insert(0, result);
-        } else if (_tabController.index == 2) {
-          _allCompetitions.insert(0, result);
-        }
-      });
-    } else if (result != null && result is bool) {
      _reloadCurrentTab();
-    }
   }
 
   /// On pressed add competition button
@@ -318,7 +304,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isNavigating = true;
     });
 
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': CompetitionContext.ownerCreate, 'competitionData': null, 'initTab': _tabController.index},
@@ -328,20 +314,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-
-    if (result != null && result is Competition) {
-      setState(() {
-        if (_tabController.index == 0) {
-          _myCompetitions.insert(0, result);
-        } else if (_tabController.index == 1) {
-          _friendsCompetitions.insert(0, result);
-        } else if (_tabController.index == 2) {
-          _allCompetitions.insert(0, result);
-        }
-      });
-    } else if (result != null && result is bool) {
-      _reloadCurrentTab();
-    }
+    _reloadCurrentTab();
   }
 
   void _reloadCurrentTab() {
@@ -479,8 +452,11 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 final competition = _friendsCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
+                                    child: InkWell(
+                                      onTap: () => onTapBlock(context, competition),
                                   child: CompetitionBlock(key: ValueKey(competition.competitionId), competition: competition, initIndex: 1),
-                                );
+                                    ),
+                                    );
                               },
                             ),
                     ),
@@ -499,6 +475,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 final competition = _allCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
+                                    child: InkWell(
+                                      onTap: () => onTapBlock(context, competition),
                                   child: CompetitionBlock(
                                     key: ValueKey(competition.competitionId),
                                     firstName: "",
@@ -506,6 +484,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                     competition: competition,
                                     initIndex: 2,
                                   ),
+                                    ),
                                 );
                               },
                             ),
@@ -526,12 +505,15 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 final competition = _invitedCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
-                                  child: CompetitionBlock(
+                                  child:  InkWell(
+                                    onTap: () => onTapBlock(context, competition),
+                                    child: CompetitionBlock(
                                     key: ValueKey(competition.competitionId),
                                     firstName: "",
                                     lastName: "",
                                     competition: competition,
                                     initIndex: 3,
+                                  ),
                                   ),
                                 );
                               },
@@ -553,13 +535,16 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                 final competition = _participatedCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
-                                  child: CompetitionBlock(
+                                  child:  InkWell(
+                                    onTap: () => onTapBlock(context, competition),
+                                child:CompetitionBlock(
                                     key: ValueKey(competition.competitionId),
                                     firstName: "",
                                     lastName: "",
                                     competition: competition,
                                     initIndex: 4,
                                   ),
+                                ),
                                 );
                               },
                             ),

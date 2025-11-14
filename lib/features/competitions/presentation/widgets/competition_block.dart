@@ -83,6 +83,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
       // If there is no name and last name fetch it from firestore
       return UserService.fetchUserForBlock(widget.competition.organizerUid)
           .then((user) {
+            if(!mounted) return;
             setState(() {
               firstName = user?.firstName ?? "User";
               lastName = user?.lastName ?? "Unknown";

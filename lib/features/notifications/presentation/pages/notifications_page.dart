@@ -2,13 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../app/config/app_images.dart';
-import '../../app/theme/ui_constants.dart';
-import '../models/notification.dart';
-import '../services/notification_service.dart';
-import '../widgets/no_items_msg.dart';
+import '../../../../app/config/app_images.dart';
+import '../../../../app/theme/ui_constants.dart';
+import '../../data/models/notification.dart';
+import '../../data/services/notification_service.dart';
+import '../../../../core/widgets/no_items_msg.dart';
 import '../widgets/notification_tile.dart';
-import '../widgets/page_container.dart';
+import '../../../../core/widgets/page_container.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -38,18 +38,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void initialize() {
-    _loadMyNotifications();
-
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && _hasMore) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent && _hasMore) {
         _loadMyNotifications();
       }
     });
-  }
 
-  void initializeAsync() {
     _loadMyNotifications();
   }
+
 
   Future<void> _loadMyNotifications() async {
     if (_isLoading || !_hasMore) {
@@ -119,7 +116,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Notifications")),
-      body: PageContainer(assetPath:AppImages.appBg4,child: Container(child: buildContent())),
+      body: PageContainer(assetPath:AppImages.appBg4,child: buildContent()),
     );
   }
 }

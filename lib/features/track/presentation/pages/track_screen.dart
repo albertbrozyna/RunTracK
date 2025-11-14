@@ -49,7 +49,7 @@ class TrackScreenState extends State<TrackScreen> {
   final MapController _mapController = MapController();
   bool _followUser = true;
   TextEditingController activityController = TextEditingController();
-  String? activityName = AppData.instance.currentUser?.activityNames?.first; // Assign default on the start
+  String? activityName = AppData.instance.currentUser?.activityNames.first; // Assign default on the start
 
   @override
   void dispose() {

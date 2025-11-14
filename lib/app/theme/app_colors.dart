@@ -7,7 +7,7 @@ class AppColors {
   static const Color third = Color(0xFF4BB8DF);
   static const Color gray = Color(0xFF9E9E9E);
   static const Color green =  Colors.green;
-  static const Color danger = Color(0xFFFF3B30);
+  static const Color danger = Color(0xFFC13D34);
   static const Color warning = Color(0xFFF2FA3A);
   static const Color background = Color(0xFFF2F2F7);
   static const Color textPrimary = Color(0xFFF2F2F7);

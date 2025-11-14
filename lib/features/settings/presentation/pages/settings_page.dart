@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
-import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../widgets/settings_section.dart';
@@ -89,12 +89,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     onPressed: () async {
                       Navigator.of(context).pop(); // close dialog
-                      if (await UserService.deleteUserFromFirestore()) {
+                      // TODO
+                      if (await AuthService.instance.deleteUserAccount() ==  "") {
                         if (mounted) {
                           AppUtils.showMessage(context, "User account deleted successfully", messageType: MessageType.info);
                         }
                       }
-                      UserService.signOutUser();
                     },
                     child: const Text("Delete my account",textAlign: TextAlign.center,),
                   ),

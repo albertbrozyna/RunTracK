@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/enums/user_relationship.dart' show UserRelationshipStatus;
-import '../../../../core/services/user_service.dart';
 import '../../../../core/widgets/alert_dialog.dart';
 
-
 class ProfileActionButton extends StatefulWidget {
-
   final UserRelationshipStatus userRelationshipStatus;
   final VoidCallback onPressedRemoveFriends;
   final VoidCallback onPressedRemoveInvitationToFriends;
@@ -36,7 +34,6 @@ class ProfileActionButton extends StatefulWidget {
 }
 
 class _ProfileActionButtonState extends State<ProfileActionButton> {
-
   void logoutButtonPressed(BuildContext context) {
     AppAlertDialog alert = AppAlertDialog(
       titleText: "Logout",
@@ -50,7 +47,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       },
       onPressedRight: () {
         Navigator.of(context).pop();
-        UserService.signOutUser();
+        AuthService.instance.signOutUser();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Logged out")));
         Navigator.of(context).pushNamedAndRemoveUntil('/start', (Route<dynamic> route) => false);
       },
@@ -67,7 +64,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
 
   @override
   Widget build(BuildContext context) {
-
     if (widget.userRelationshipStatus == UserRelationshipStatus.myProfile) {
       return _buildMyProfile(context);
     }
@@ -98,11 +94,13 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         childRow = _buildNotFriend(context);
     }
 
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.secondary,
-        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
       ),
       child: childRow,
     );
@@ -116,8 +114,14 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           onTap: () => logoutButtonPressed(context),
           child: Row(
             children: [
-              Icon(Icons.logout, color: Colors.white, size: 26),
-              Text("Logout", style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 5.0),
+                child: Icon(Icons.logout, color: Colors.white, size: 26),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 5.0),
+                child: Text("Logout", style: TextStyle(color: Colors.white)),
+              ),
             ],
           ),
         ),
@@ -125,15 +129,20 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           onTap: () => Navigator.pushNamed(context, '/settings'),
           child: Row(
             children: [
-              Text("Settings", style: TextStyle(color: Colors.white)),
-              Icon(Icons.settings, color: Colors.white, size: 26),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 5.0),
+                child: Text("Settings", style: TextStyle(color: Colors.white)),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 5.0),
+                child: Icon(Icons.settings, color: Colors.white, size: 26),
+              ),
             ],
           ),
         ),
       ],
     );
   }
-
 
   Widget _buildFriend(BuildContext context) {
     return Row(
@@ -142,7 +151,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         Row(
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+              padding: const EdgeInsets.only(left: 8.0, right: 5.0),
               child: Icon(Icons.check_box, color: Colors.green, size: 26),
             ),
             Text("Friends", style: TextStyle(color: Colors.white)),
@@ -154,8 +163,8 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             children: [
               Text("Remove friend", style: TextStyle(color: Colors.white)),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.settings, color: Colors.white, size: 26),
+                padding: const EdgeInsets.only(right: 8.0, left: 5),
+                child: Icon(Icons.person_remove_sharp, color: AppColors.danger, size: 26),
               ),
             ],
           ),
@@ -163,7 +172,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       ],
     );
   }
-
 
   Widget _buildPendingSent(BuildContext context) {
     return Row(
@@ -172,10 +180,12 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         Row(
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+              padding: const EdgeInsets.only(left: 8.0, right: 5.0),
               child: Icon(Icons.hourglass_top, color: Colors.white, size: 26),
             ),
-            Text("Pending", style: TextStyle(color: Colors.white)),
+
+              Text("Pending", style: TextStyle(color: Colors.white)),
+
           ],
         ),
         InkWell(
@@ -184,8 +194,8 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             children: [
               Text("Remove invitation", style: TextStyle(color: Colors.white)),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.remove, color: Colors.red, size: 26),
+                padding: const EdgeInsets.only(left: 5.0,right: 8.0),
+                child: Icon(Icons.cancel_schedule_send, color: Colors.red, size: 26),
               ),
             ],
           ),
@@ -193,7 +203,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       ],
     );
   }
-
 
   Widget _buildPendingReceived(BuildContext context) {
     return Row(
@@ -204,7 +213,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           child: Row(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: 8.0,right: 5.0),
                 child: Icon(Icons.close, color: Colors.red, size: 26),
               ),
               Text("Decline", style: TextStyle(color: Colors.red)),
@@ -217,7 +226,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             children: [
               Text("Accept friend", style: TextStyle(color: Colors.green)),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
+                padding: const EdgeInsets.only(left: 5.0,right: 8.0),
                 child: Icon(Icons.check, color: Colors.green, size: 26),
               ),
             ],
@@ -226,7 +235,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       ],
     );
   }
-
 
   Widget _buildNotFriend(BuildContext context) {
     return Row(
@@ -244,8 +252,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
     );
   }
 
-
-
   Widget _buildCompetitor(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -253,7 +259,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         Row(
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+              padding: const EdgeInsets.only(left: 8.0,right: 5.0),
               child: Icon(Icons.emoji_events, color: Colors.amber, size: 26),
             ),
             Text("Competitor", style: TextStyle(color: Colors.white)),
@@ -265,8 +271,8 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             children: [
               Text("Remove competitor", style: TextStyle(color: Colors.white)),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.do_not_disturb_on, color: Colors.red, size: 26),
+                padding: const EdgeInsets.only(left: 5.0,right: 8.0),
+                child: Icon(Icons.emoji_events_rounded, color: Colors.red, size: 26),
               ),
             ],
           ),
@@ -274,7 +280,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       ],
     );
   }
-
 
   Widget _buildCompetitionPendingSent(BuildContext context) {
     return Row(
@@ -283,10 +288,10 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         Row(
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Icon(Icons.hourglass_top, color: Colors.white, size: 26),
+              padding: const EdgeInsets.only(left: 8.0,right: 5.0),
+              child: Icon(Icons.hourglass_top_sharp, color: Colors.white, size: 26),
             ),
-            Text("Competition Pending", style: TextStyle(color: Colors.white)),
+            Text("Pending", style: TextStyle(color: Colors.white)),
           ],
         ),
         InkWell(
@@ -295,8 +300,8 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
             children: [
               Text("Remove invitation", style: TextStyle(color: Colors.white)),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Icon(Icons.remove, color: Colors.red, size: 26),
+                padding: const EdgeInsets.only(left: 5.0,right: 8.0),
+                child: Icon(Icons.cancel_schedule_send, color: Colors.red, size: 26),
               ),
             ],
           ),
@@ -304,7 +309,6 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       ],
     );
   }
-
 
   Widget _buildNotCompetitor(BuildContext context) {
     return Row(
@@ -315,11 +319,10 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           padding: const EdgeInsets.only(right: 8.0),
           child: IconButton(
             onPressed: widget.onPressedSendInvitationToCompetition,
-            icon: Icon(Icons.add_moderator, color: Colors.white, size: 26),
+            icon: Icon(Icons.playlist_add, color: Colors.white, size: 26),
           ),
         ),
       ],
     );
   }
-
 }

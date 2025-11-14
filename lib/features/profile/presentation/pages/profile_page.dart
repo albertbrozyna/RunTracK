@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
 import 'package:run_track/core/services/competition_service.dart';
+import 'package:run_track/core/widgets/app_loading_indicator.dart';
+import 'package:run_track/core/widgets/no_items_msg.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -11,12 +14,10 @@ import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/enter_context.dart';
 import '../../../../core/enums/user_mode.dart';
 import '../../../../core/enums/user_relationship.dart';
-import '../../../../core/models/competition.dart';
 import '../../../../core/models/user.dart' as model;
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/content_container.dart';
-import '../../../../core/widgets/no_items_msg.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../widgets/info_tile.dart';
@@ -26,11 +27,7 @@ class ProfilePage extends StatefulWidget {
   final String uid;
   final UserMode userMode;
 
-  const ProfilePage({
-    super.key,
-    required this.userMode,
-    required this.uid,
-  });
+  const ProfilePage({super.key, required this.userMode, required this.uid});
 
   @override
   State<StatefulWidget> createState() => _ProfilePageState();
@@ -41,8 +38,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final double cardWidth = 150;
   String myUid = FirebaseAuth.instance.currentUser?.uid ?? "";
   model.User? user;
-  Competition? competition;
   UserRelationshipStatus relationshipStatus = UserRelationshipStatus.notConnected;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -52,11 +49,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void initialize() {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
   }
 
   /// Initialize async data
   Future<void> initializeAsync() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     // Load user data
     user = await UserService.fetchUser(widget.uid);
 
@@ -73,7 +74,8 @@ class _ProfilePageState extends State<ProfilePage> {
       } else if (AppData.instance.currentUser?.uid == widget.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
       }
-    } else if (competition != null && widget.userMode == UserMode.competitors) {
+    } else if (AppData.instance.currentCompetition != null &&
+        widget.userMode == UserMode.competitors) {
       if (AppData.instance.currentCompetition?.invitedParticipantsUid.contains(widget.uid) ??
           false) {
         relationshipStatus = UserRelationshipStatus.competitionPendingSent;
@@ -84,8 +86,9 @@ class _ProfilePageState extends State<ProfilePage> {
         relationshipStatus = UserRelationshipStatus.competitionNotConnected;
       }
     }
-
-    setState(() {});
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   /// Invite to competition
@@ -98,12 +101,16 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (mounted && !success) {
         AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
+      } else {
+        setState(() {
+          relationshipStatus = UserRelationshipStatus.competitionPendingSent;
+        });
       }
     }
   }
 
   /// Remove competitor
-  void onPressedRemoveCompetitor()async {
+  void onPressedRemoveCompetitor() async {
     if (AppData.instance.currentCompetition != null && user != null) {
       bool success = await CompetitionService.manageParticipant(
         competitionId: AppData.instance.currentCompetition!.competitionId,
@@ -112,9 +119,12 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (mounted && !success) {
         AppUtils.showMessage(context, "Error kicking competitor", messageType: MessageType.error);
+      } else {
+        setState(() {
+          relationshipStatus = UserRelationshipStatus.competitionNotConnected;
+        });
       }
     }
-
   }
 
   /// Remove competitor
@@ -127,6 +137,10 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (mounted && !success) {
         AppUtils.showMessage(context, "Error removing invitation", messageType: MessageType.error);
+      } else {
+        setState(() {
+          relationshipStatus = UserRelationshipStatus.competitionNotConnected;
+        });
       }
     }
   }
@@ -140,6 +154,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (mounted && !success) {
       AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
+    } else {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.friend;
+      });
     }
   }
 
@@ -152,6 +170,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (!success && mounted) {
       AppUtils.showMessage(context, "Error declining invitation", messageType: MessageType.error);
+    } else {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
     }
   }
 
@@ -164,6 +186,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (mounted && !success) {
       AppUtils.showMessage(context, "Error sending invitation", messageType: MessageType.error);
+    } else {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.pendingSent;
+      });
     }
   }
 
@@ -174,8 +200,12 @@ class _ProfilePageState extends State<ProfilePage> {
       receiverUid: user!.uid,
       action: UserAction.removeInvitation,
     );
-    if (mounted && !success ) {
+    if (mounted && !success) {
       AppUtils.showMessage(context, "Error removing invitation", messageType: MessageType.error);
+    } else {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
     }
   }
 
@@ -188,6 +218,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (mounted && !success) {
       AppUtils.showMessage(context, "Error deleting friend", messageType: MessageType.error);
+    } else {
+      setState(() {
+        relationshipStatus = UserRelationshipStatus.notConnected;
+      });
     }
   }
 
@@ -197,15 +231,25 @@ class _ProfilePageState extends State<ProfilePage> {
     if (relationshipStatus == UserRelationshipStatus.myProfile) {
       enterContext = EnterContextUsersList.friendsModify;
     }
-    await Navigator.pushNamed(context, AppRoutes.usersList,
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.usersList,
       arguments: {'enterContext': enterContext, 'users': user?.friends ?? <String>{}},
     );
+
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return AppLoadingIndicator();
+    }
+
     if (user == null) {
-      return NoItemsMsg(textMessage: "No user data");
+      return Scaffold(
+        body: Center(child: NoItemsMsg(textMessage: "User not found")),
+      );
     }
 
     return Scaffold(
@@ -268,26 +312,33 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundColor: AppColors.secondary,
                 child: Column(
                   children: [
-                    ListInfoTile(icon: Icons.person, title: "${user?.firstName} ${user?.lastName}"),
-                    ListInfoTile(icon: Icons.email, title: "${user?.email}"),
                     ListInfoTile(
-                      icon: user!.gender! == 'male' ? Icons.male : Icons.female,
+                      prefixIcon: Icons.person,
+                      title: "${user?.firstName} ${user?.lastName}",
+                    ),
+                    ListInfoTile(prefixIcon: Icons.email, title: "${user?.email}"),
+                    ListInfoTile(
+                      prefixIcon: user!.gender! == 'male' ? Icons.male : Icons.female,
                       title: "${user?.gender}",
                     ),
                     ListInfoTile(
-                      icon: Icons.cake,
+                      prefixIcon: Icons.cake,
                       title: AppUtils.formatDateTime(user?.dateOfBirth, onlyDate: true),
                     ),
                     ListInfoTile(
-                      icon: Icons.card_membership,
+                      prefixIcon: Icons.card_membership,
                       title:
                           "Member since: ${AppUtils.formatDateTime(user?.createdAt, onlyDate: true)}",
                     ),
                     InkWell(
                       onTap: onTapFriends,
                       child: ListInfoTile(
-                        icon: Icons.people,
-                        title: "Friends: ${user!.friends.length.toString()}",
+                        prefixIcon: Icons.people,
+                        suffixIcon: Icons.arrow_forward_ios,
+                        suffixIconsSize: 20,
+                        title: relationshipStatus == UserRelationshipStatus.myProfile
+                            ? "Friends: ${AppData.instance.currentUser?.friends.length}"
+                            : "Friends: ${user!.friends.length.toString()}",
                         endDivider: false,
                       ),
                     ),
@@ -314,25 +365,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        InkWell(
-                          onTap: onTapFriends,
-                          child: StatCard(
-                            title: "Created\ncompetitions",
-                            value: user?.competitionsCount.toString() ?? 'Unknown',
-                            icon: Icon(Icons.run_circle_outlined),
-                            cardWidth: cardWidth,
-                            cardHeight: cardHeight,
-                          ),
+                        StatCard(
+                          title: "Created\ncompetitions",
+                          value: user?.competitionsCount.toString() ?? 'Unknown',
+                          icon: Icon(Icons.run_circle_outlined),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
                         ),
-                        InkWell(
-                          onTap: onTapFriends,
-                          child: StatCard(
-                            title: "Activities",
-                            value: user!.activitiesCount.toString(),
-                            icon: Icon(Icons.run_circle_outlined),
-                            cardWidth: cardWidth,
-                            cardHeight: cardHeight,
-                          ),
+
+                        StatCard(
+                          title: "Activities",
+                          value: user!.activitiesCount.toString(),
+                          icon: Icon(Icons.run_circle_outlined),
+                          cardWidth: cardWidth,
+                          cardHeight: cardHeight,
                         ),
 
                         StatCard(
@@ -363,6 +409,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
+              SizedBox(height: 30),
             ],
           ),
         ),

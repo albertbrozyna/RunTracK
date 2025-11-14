@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/presentation/widgets/basic_info_section.dart';
 import 'package:run_track/features/competitions/presentation/widgets/build_bottom_buttons.dart';
 import 'package:run_track/features/competitions/presentation/widgets/time_settings_section.dart';
@@ -81,7 +82,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
   void initialize() {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
     _setReadOnlyState();
     _setupCompetitionData();
     _setAppBarTitle();
@@ -101,10 +102,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void _setupCompetitionData() {
     if (widget.competitionData != null) {
-      AppData.instance.currentCompetition =  competition = widget.competitionData!;
+      AppData.instance.currentCompetition = competition = widget.competitionData!;
       _populateFormFromData(competition);
     } else {
-      _createNewCompetition();
+      AppData.instance.currentCompetition = _createNewCompetition();
     }
   }
 
@@ -154,7 +155,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     }
   }
 
-  void _createNewCompetition() {
+  Competition _createNewCompetition() {
     if (widget.enterContext == CompetitionContext.ownerCreate) {
       if (widget.initTab == 1) {
         _visibility = enums.ComVisibility.friends;
@@ -163,7 +164,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       }
     }
 
-    competition = Competition(
+    return competition = Competition(
       organizerUid: AppData.instance.currentUser?.uid ?? "",
       name: "",
       description: "",
@@ -371,33 +372,30 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   /// Save competition to database
   void handleSaveCompetition() async {
-    if (saveInProgress == false && saved == false) {
-      saveInProgress = true;
+    if (saveInProgress == false) {
+        saveInProgress = true;
     }
     if (!_formKey.currentState!.validate()) {
+      saveInProgress = false;
       return;
     }
 
-    final navigator = Navigator.of(context);
     final currentContext = context;
 
     competition = _getDataFromForm();
-    bool result = await CompetitionService.saveCompetition(competition);
+    Competition? newCompetition = await CompetitionService.saveCompetition(competition);
 
     if (!mounted) return;
 
-    if (result) {
-      if (widget.enterContext == CompetitionContext.ownerCreate) {
+    if (newCompetition != null) {
+      if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
+        competition = newCompetition; // Update competition data
+        AppData.instance.currentCompetition = newCompetition;
         AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
-
-        await Future.delayed(const Duration(milliseconds: 2200));
-
-        if (!mounted) return;
-
-        saved = true;
-        navigator.pop(competition);
-
-      } else if (widget.enterContext == CompetitionContext.ownerModify) {
+        setState(() {
+          saved = true;
+        });
+      } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
         competitionBeforeSave = competition;
         change = true;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
@@ -530,6 +528,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     enterContext: widget.enterContext,
                     competition: competition,
                     meetingPlaceController: _meetingPlaceController,
+                    saved: saved,
                   ),
 
                   BottomButtons(
@@ -541,6 +540,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     declineInvitation: declineInvitation,
                     joinCompetition: joinCompetition,
                     resignFromCompetition: resignFromCompetition,
+                    saved: saved,
                   ),
                 ],
               ),

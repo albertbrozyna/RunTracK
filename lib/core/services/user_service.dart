@@ -1,16 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
-import 'package:run_track/features/auth/models/auth_response.dart';
+import 'package:run_track/features/auth/data/models/auth_response.dart';
 
 import '../../app/config/app_data.dart';
-import '../../app/navigation/app_routes.dart';
-import '../models/notification.dart';
+import '../../features/notifications/data/models/notification.dart';
 import '../models/user.dart' as model;
 import '../utils/utils.dart';
-import 'notification_service.dart';
+import '../../features/notifications/data/services/notification_service.dart';
 
 enum UserAction {
   inviteToFriends,
@@ -21,31 +18,7 @@ enum UserAction {
 }
 
 class UserService {
-  /// Check if current user i logged in to app
-  static bool isUserLoggedIn() {
-    return FirebaseAuth.instance.currentUser != null &&
-        AppData.instance.currentUser != null &&
-        AppData.instance.currentUser!.uid == FirebaseAuth.instance.currentUser!.uid;
-  }
-
-  /// Sign out user
-  static Future<void> signOutUser() async {
-    await FirebaseAuth.instance.signOut();
-    AppData.instance.currentUser = null;
-  }
-
-  static void checkAppUseState(BuildContext context) {
-    if (!isUserLoggedIn()) {
-      signOutUser();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil(AppRoutes.start, (route) => false);
-        }
-      });
-    }
-  }
+  UserService._();
 
   /// Method used to calculate age of User
   static int calculateAge(DateTime? birthDate) {
@@ -63,48 +36,20 @@ class UserService {
     return age;
   }
 
-
-
-  /// Delete user from firestore
-  static Future<bool> deleteUserFromFirestore() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        if (kDebugMode) {
-          print("No user is currently logged in.");
-        }
-        return false;
-      }
-      final uid = user.uid;
-      await FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .doc(uid)
-          .delete();
-      await user.delete();
-
-      return true;
-    } catch (e) {
-      print("Error deleting user: $e");
-      return false;
-    }
-  }
-
-
   /// Fetch one user data
   static Future<model.User?> fetchUser(String uid) async {
-    if (uid.isEmpty) {
-      return null;
-    }
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection(FirestoreCollections.users)
-        .doc(uid)
-        .get();
+    try {
+      if (uid.isEmpty) return null;
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection(FirestoreCollections.users)
+          .doc(uid)
+          .get();
 
-    if (docSnapshot.exists) {
-      final userData = docSnapshot.data();
-      if (userData != null) {
-        return model.User.fromMap(userData);
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        return model.User.fromMap(docSnapshot.data()!);
       }
+    } catch (e) {
+      print("Error fetching user data: $e");
     }
     return null;
   }
@@ -136,11 +81,9 @@ class UserService {
     }
     return null;
   }
+
   /// Fetch users list from firestore
-  static Future<List<model.User>> fetchUsers({
-    required List<String> uids,
-    int limit = 20,
-  }) async {
+  static Future<List<model.User>> fetchUsers({required List<String> uids, int limit = 20}) async {
     if (uids.isEmpty) {
       return [];
     }
@@ -164,9 +107,7 @@ class UserService {
 
         final querySnapshot = await queryUsers.get();
         final users = querySnapshot.docs
-            .map(
-              (doc) => model.User.fromMap(doc.data() as Map<String, dynamic>),
-            )
+            .map((doc) => model.User.fromMap(doc.data() as Map<String, dynamic>))
             .toList();
 
         allUsers.addAll(users);
@@ -194,14 +135,14 @@ class UserService {
 
     if (exceptMe) {
       snap = await FirebaseFirestore.instance
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .where('uid', isNotEqualTo: myUid)
           .where('fullName', isGreaterThanOrEqualTo: query)
           .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
           .get();
     } else {
       snap = await FirebaseFirestore.instance
-          .collection('users')
+          .collection(FirestoreCollections.users)
           .where('uid', isNotEqualTo: myUid)
           .where('fullName', isGreaterThanOrEqualTo: query)
           .where('fullName', isLessThanOrEqualTo: '$query\uf8ff')
@@ -277,9 +218,7 @@ class UserService {
       print("User not logged in!");
     }
     try {
-      final docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await docRef.set(user.toMap());
       return user;
     } catch (e) {
@@ -294,9 +233,7 @@ class UserService {
       if (user.uid.isEmpty) {
         return null;
       }
-      final docRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await docRef.set(user.toMap());
       return user;
     } catch (e) {
@@ -309,10 +246,15 @@ class UserService {
   static Future<bool> manageUsers({
     required String senderUid, // Who makes action
     required String receiverUid,
-    required UserAction action}) async {
+    required UserAction action,
+  }) async {
     if (senderUid.isEmpty || receiverUid.isEmpty || senderUid == receiverUid) {
       return false;
     }
+
+    Set<String> finalFriendsList = {};
+    Set<String> finalPendingList = {};
+    Set<String> finalReceivedList = {};
 
     AppNotification? notification;
     try {
@@ -335,9 +277,7 @@ class UserService {
           throw Exception("User not found in database");
         }
 
-        final senderFriendsList = Set<String>.from(
-          senderSnap['friends'] ?? [],
-        );
+        final senderFriendsList = Set<String>.from(senderSnap['friends'] ?? []);
         final senderPendingInvitationsList = Set<String>.from(
           senderSnap['pendingInvitationsToFriends'] ?? [],
         );
@@ -345,9 +285,7 @@ class UserService {
           senderSnap['receivedInvitationsToFriends'] ?? [],
         );
 
-        final receiverFriendsList = Set<String>.from(
-          receiverSnap['friends'] ?? [],
-        );
+        final receiverFriendsList = Set<String>.from(receiverSnap['friends'] ?? []);
         final receiverPendingInvitationsList = Set<String>.from(
           receiverSnap['pendingInvitationsToFriends'] ?? [],
         );
@@ -369,9 +307,11 @@ class UserService {
             }
 
             // Check if receiver do not send us request to friends before
-            if (receiverPendingInvitationsList.contains(senderUid)) {
+            if (receiverPendingInvitationsList.contains(senderUid) ||
+                senderReceivedInvitationList.contains(receiverUid)) {
               senderFriendsList.add(receiverUid);
               receiverFriendsList.add(senderUid);
+
               receiverPendingInvitationsList.remove(senderUid);
               receiverReceivedInvitationsList.remove(senderUid);
               senderReceivedInvitationList.remove(receiverUid);
@@ -379,8 +319,7 @@ class UserService {
               notification = AppNotification(
                 notificationId: "",
                 uid: receiverUid,
-                title:
-                    "$receiverFirstName $receiverLastName accepted your friend request",
+                title: "$receiverFirstName $receiverLastName accepted your friend request",
                 createdAt: DateTime.now(),
                 seen: false,
                 type: NotificationType.inviteFriends,
@@ -401,14 +340,27 @@ class UserService {
             );
             break;
           case UserAction.removeInvitation:
+            // Remove for friends list
+            senderFriendsList.remove(receiverUid);
+            receiverFriendsList.remove(senderUid);
+
+            // Remove invitation
             receiverReceivedInvitationsList.remove(senderUid);
             senderPendingInvitationsList.remove(receiverUid);
+
+            senderReceivedInvitationList.remove(receiverUid);
+            receiverPendingInvitationsList.remove(senderUid);
+
             break;
           case UserAction.acceptInvitationToFriends:
             senderFriendsList.add(receiverUid);
             receiverFriendsList.add(senderUid);
             senderReceivedInvitationList.remove(receiverUid);
             receiverPendingInvitationsList.remove(senderUid);
+
+            receiverReceivedInvitationsList.remove(senderUid);
+            senderPendingInvitationsList.remove(receiverUid);
+
             notification = AppNotification(
               notificationId: "",
               uid: receiverUid,
@@ -419,8 +371,8 @@ class UserService {
             );
             break;
           case UserAction.declineInvitationToFriends:
-            receiverReceivedInvitationsList.remove(senderUid);
-            senderPendingInvitationsList.remove(receiverUid);
+            senderReceivedInvitationList.remove(receiverUid);
+            receiverPendingInvitationsList.remove(senderUid);
             break;
           case UserAction.deleteFriend:
             senderFriendsList.remove(receiverUid);
@@ -440,11 +392,14 @@ class UserService {
           'receivedInvitationsToFriends': receiverReceivedInvitationsList,
         });
 
-        AppData.instance.currentUser?.friends = senderFriendsList;
-        AppData.instance.currentUser?.pendingInvitationsToFriends = senderPendingInvitationsList;
-        AppData.instance.currentUser?.receivedInvitationsToFriends = senderReceivedInvitationList;
+        finalFriendsList = senderFriendsList;
+        finalPendingList = senderPendingInvitationsList;
+        finalReceivedList = senderReceivedInvitationList;
       });
 
+      AppData.instance.currentUser?.friends = finalFriendsList;
+      AppData.instance.currentUser?.pendingInvitationsToFriends = finalPendingList;
+      AppData.instance.currentUser?.receivedInvitationsToFriends = finalReceivedList;
 
       if (notification != null) {
         await NotificationService.saveNotification(notification!);
@@ -458,21 +413,14 @@ class UserService {
   }
 
   /// Create a user in firebase auth
-  static Future<AuthResponse> createUserInFirebaseAuth(
-    String email,
-    String password,
-  ) async {
+  static Future<AuthResponse> createUserInFirebaseAuth(String email, String password) async {
     try {
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: email.trim().toLowerCase(),
-            password: password.trim(),
-          );
-
-      return AuthResponse(
-        message: "User created",
-        userCredential: userCredential,
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
       );
+
+      return AuthResponse(message: "User created", userCredential: userCredential);
     } on FirebaseAuthException catch (e) {
       return AuthResponse(message: "Auth error ${e.message}");
     } catch (e) {
@@ -519,22 +467,13 @@ class UserService {
         u1.hoursOfActivity == u2.hoursOfActivity &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
         AppUtils.setsEqual(u1.friends, u2.friends) &&
-        AppUtils.setsEqual(
-          u1.pendingInvitationsToFriends,
-          u2.pendingInvitationsToFriends,
-        ) &&
-        AppUtils.setsEqual(
-          u1.receivedInvitationsToFriends,
-          u2.receivedInvitationsToFriends,
-        ) &&
+        AppUtils.setsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&
+        AppUtils.setsEqual(u1.receivedInvitationsToFriends, u2.receivedInvitationsToFriends) &&
         AppUtils.setsEqual(
           u1.receivedInvitationsToCompetitions,
           u2.receivedInvitationsToCompetitions,
         ) &&
-        AppUtils.setsEqual(
-          u1.participatedCompetitions,
-          u2.participatedCompetitions,
-        );
+        AppUtils.setsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
   }
 
   static Future<bool> checkIfUserAccountExists(String uid) async {

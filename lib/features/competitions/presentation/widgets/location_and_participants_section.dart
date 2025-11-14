@@ -3,8 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/config/app_data.dart';
 
 import '../../../../app/navigation/app_routes.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../../../core/enums/enter_context.dart';
@@ -16,7 +18,8 @@ class LocationAndParticipantsSection extends StatefulWidget{
   final CompetitionContext enterContext;
   final Competition competition;
   final TextEditingController meetingPlaceController;
-  const LocationAndParticipantsSection({super.key,required this.competition,required this.meetingPlaceController,required this.enterContext});
+  final bool saved;
+  const LocationAndParticipantsSection({super.key,required this.competition,required this.meetingPlaceController,required this.enterContext,required this.saved});
 
   @override
   State<LocationAndParticipantsSection>  createState() => _LocationAndParticipantsSectionState();
@@ -61,19 +64,14 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
       enterContext = EnterContextUsersList.participantsReadOnly;
     }
 
-    final result = await Navigator.pushNamed(context,
+    await Navigator.pushNamed(context,
         AppRoutes.usersList, arguments: {
-          "usersUid": widget.competition.participantsUid,
-          "usersUid2": widget.competition.invitedParticipantsUid,
-          "usersUid3": <String>{},
+          "users":AppData.instance.currentCompetition?.participantsUid ?? {},
           "enterContext": enterContext,
         });
-    if (result != null && result is Map<String, dynamic>) {
-      // Set invited participants
-      setState(() {
-        widget.competition.invitedParticipantsUid = result['usersUid2'] ?? {};
-      });
-    }
+    setState(() {
+
+    });
   }
 
   @override
@@ -96,11 +94,14 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
         ),
         SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
-        // Invited competitors
-        CustomButton(
-          text: "Participants (${widget.competition.participantsUid.length})",
-          onPressed: () => onPressedListParticipants(context),
-        ),
+
+          CustomButton(
+            text: "Participants (${widget.competition.participantsUid.length})",
+            onPressed: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate ? null : () => onPressedListParticipants(context),
+            backgroundColor: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate ? AppColors.gray : AppColors.primary
+          ),
+
+
       ],
     );
   }

@@ -6,7 +6,7 @@ import '../../core/enums/enter_context.dart';
 import '../../core/enums/user_mode.dart';
 import '../../core/models/activity.dart';
 import '../../core/models/competition.dart';
-import '../../core/pages/notifications_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../core/pages/users_list.dart';
 import '../../features/activities/pages/user_activities.dart';
 import '../../features/auth/presentation/pages/login_page.dart';

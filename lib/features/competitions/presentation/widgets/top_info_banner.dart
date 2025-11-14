@@ -34,7 +34,7 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
         widget.competition.startDate!.isBefore(DateTime.now()) &&
         widget.competition.endDate!.isAfter(DateTime.now())) {
 
-      AppData.instance.currentCompetition = widget.competition;
+      AppData.instance.currentUserCompetition = widget.competition;
       AppData.instance.currentUser?.currentCompetition = widget.competition.competitionId;
       UserService.updateUser(AppData.instance.currentUser!);
       setState(() {});
@@ -44,7 +44,7 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
   /// Clear the current competition
   void _clearCurrentCompetition() {
     // Setting the global state
-    AppData.instance.currentCompetition = null;
+    AppData.instance.currentUserCompetition = null;
     AppData.instance.currentUser?.currentCompetition = "";
     UserService.updateUser(AppData.instance.currentUser!);
     setState(() {});
@@ -62,7 +62,9 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
 
     final bool isFinished = widget.competition.results?.containsKey(FirebaseAuth.instance.currentUser?.uid) ?? false;
 
-    final bool isCurrent = AppData.instance.currentCompetition?.competitionId == widget.competition.competitionId;
+    bool isCurrent = (AppData.instance.currentUser?.currentCompetition ?? false) == widget.competition.competitionId && widget.competition.competitionId.isNotEmpty;
+
+
 
     final bool ownerCreate = widget.enterContext != CompetitionContext.ownerCreate;
 
@@ -102,6 +104,7 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
     }
 
     return Card(
+      color: Colors.transparent,
       margin: EdgeInsets.symmetric(
         vertical: AppUiConstants.verticalSpacingButtons,
         horizontal: 12.0,
@@ -134,7 +137,6 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
             ),
           ),
 
-          // 2. Button section
           if (competitionState != CompetitionState.finished)
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -145,7 +147,6 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
     );
   }
 
-  /// Helper for building action buttons
   Widget _buildActionButtons(CompetitionState state, bool isCurrent) {
     if (isCurrent) {
       return CustomButton(

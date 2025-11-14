@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -39,10 +40,10 @@ class ActivityChooseState extends State<ActivityChoose> {
   }
 
   void initialize() {
-    UserService.checkAppUseState(context);
+    AuthService.instance.checkAppUseState(context);
 
     String current = widget.currentActivity;
-    int index = AppData.instance.currentUser!.activityNames!.indexOf(current);
+    int index = AppData.instance.currentUser!.activityNames.indexOf(current);
 
     _selectedActivityNotifier = ValueNotifier<int>(index != -1 ? index : 0);
   }
@@ -63,13 +64,13 @@ class ActivityChooseState extends State<ActivityChoose> {
       AppUtils.showMessage(context, "Activity name cannot be empty", messageType: MessageType.info);
       return;
     }
-    if (AppData.instance.currentUser?.activityNames?.contains(_newActivityController.text.trim()) ?? false) {
+    if (AppData.instance.currentUser?.activityNames.contains(_newActivityController.text.trim()) ?? false) {
       AppUtils.showMessage(context, "Activity is already on the list", messageType: MessageType.info);
       return;
     }
 
     setState(() {
-      AppData.instance.currentUser?.activityNames?.add(_newActivityController.text.trim());
+      AppData.instance.currentUser?.activityNames.add(_newActivityController.text.trim());
       _newActivityController.text = "";
     });
 
@@ -81,7 +82,7 @@ class ActivityChooseState extends State<ActivityChoose> {
   /// Delete activity from list
   void deleteActivity(int index) {
     setState(() {
-      AppData.instance.currentUser?.activityNames?.removeAt(index);
+      AppData.instance.currentUser?.activityNames.removeAt(index);
     });
     UserService.updateUser(AppData.instance.currentUser!);
   }
@@ -99,8 +100,8 @@ class ActivityChooseState extends State<ActivityChoose> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, String? result) async {
         if (!didPop) {
-          if (AppData.instance.currentUser?.activityNames?.isNotEmpty ?? false) {
-            Navigator.pop(context, AppData.instance.currentUser!.activityNames![_selectedActivityNotifier.value]);
+          if (AppData.instance.currentUser?.activityNames.isNotEmpty ?? false) {
+            Navigator.pop(context, AppData.instance.currentUser!.activityNames[_selectedActivityNotifier.value]);
           } else {
             Navigator.pop(context, "Unknown");
           }
@@ -138,12 +139,12 @@ class ActivityChooseState extends State<ActivityChoose> {
                     valueListenable: _selectedActivityNotifier,
                     builder: (context, selectedActivity, child) {
                       return ListView.builder(
-                        itemCount: AppData.instance.currentUser?.activityNames?.length,
+                        itemCount: AppData.instance.currentUser?.activityNames.length,
                         itemBuilder: (context, index) {
                           bool isSelected = index == selectedActivity;
                           return ListTile(
                             title: Text(
-                              AppData.instance.currentUser!.activityNames![index].toString(),
+                              AppData.instance.currentUser!.activityNames[index].toString(),
                               style: TextStyle(
                                 color: isSelected ? Colors.green : Colors.white,
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,

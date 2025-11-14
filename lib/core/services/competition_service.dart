@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
-import 'package:run_track/core/services/notification_service.dart';
+import 'package:run_track/features/notifications/data/services/notification_service.dart';
 
 import '../../app/config/app_data.dart';
 import '../enums/participant_management_action.dart';
 import '../enums/visibility.dart';
 import '../models/competition.dart';
-import '../models/notification.dart';
+import '../../features/notifications/data/models/notification.dart';
 
 class CompetitionFetchResult {
   final List<Competition> competitions;
@@ -35,7 +35,7 @@ class CompetitionService {
     }
   }
 
-  static Future<bool> saveCompetition(Competition competition) async {
+  static Future<Competition?> saveCompetition(Competition competition) async {
     try {
       if (competition.competitionId.isNotEmpty) {
         // Competition exists, edit it
@@ -45,7 +45,7 @@ class CompetitionService {
         final docSnapshot = await docRef.get();
         if (docSnapshot.exists) {
           await docRef.set(competition.toMap());
-          return true;
+          return competition;
         }
       }
       // Save new competition
@@ -53,9 +53,9 @@ class CompetitionService {
       competition.competitionId = docRef.id;
       await docRef.set(competition.toMap());
     } catch (e) {
-      return false;
+      return null;
     }
-    return true;
+    return competition;
   }
 
   /// Fetch last page of user activities

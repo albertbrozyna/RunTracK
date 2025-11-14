@@ -5,7 +5,7 @@ import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/custom_button.dart';
-import '../../../../core/widgets/page_container.dart';
+import 'field_form.dart';
 
 
 class AdditionalInfo extends StatefulWidget {
@@ -42,9 +42,9 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
       child: Center(
         child: Form(
           key: _formKey,
-          child: PageContainer(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+          child: FieldFormContainer(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     // Date of birth

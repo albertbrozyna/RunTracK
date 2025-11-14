@@ -12,8 +12,7 @@ class AppData{
   Competition? currentCompetition;
   Competition? currentUserCompetition;
 
-  bool googleLogin = false;
-  
+
   final ValueNotifier<bool> isLoading = ValueNotifier(false);
   // Saved locally
   String? lastActivityString;

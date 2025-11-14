@@ -1,46 +1,49 @@
 import 'package:flutter/material.dart';
 
 class ListInfoTile extends StatelessWidget {
-  final IconData icon;
+  final IconData prefixIcon;
+  final IconData? suffixIcon;
+  final double suffixIconsSize;
   final String title;
   final bool endDivider;
 
-  const ListInfoTile({super.key, required this.icon, required this.title,this.endDivider = true});
+  const ListInfoTile({
+    super.key,
+    required this.prefixIcon,
+    required this.title,
+    this.endDivider = true,
+    this.suffixIcon,
+    this.suffixIconsSize = 26
+  });
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController valueController = TextEditingController(text: title);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          child: Row(
+            children: [
+              Icon(prefixIcon, color: Colors.white, size: 26),
+              const SizedBox(width: 16),
 
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: TextField(
-              controller: valueController,
-              readOnly: true,
-              enabled: false,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(prefixIcon: Padding(
-                padding: const EdgeInsets.only(left: 16.0),
-                child: Icon(icon, color: Colors.white,size: 26,),
-              ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide.none
-                )
-
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
               ),
 
-              style: TextStyle(
-                color: Colors.white
-              ),
-            ),
+              if (suffixIcon != null)
+                Icon(suffixIcon, color: Colors.white, size: suffixIconsSize)
+              else
+                Icon(prefixIcon, color: Colors.transparent, size: 26),
+            ],
           ),
-          if(endDivider)
-            Divider(color: Colors.white60, thickness: 1),
-        ],
-      ),
+        ),
+        if (endDivider) Divider(color: Colors.white60, thickness: 1, height: 1),
+      ],
     );
   }
 }
