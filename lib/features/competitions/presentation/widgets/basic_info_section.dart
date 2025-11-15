@@ -6,7 +6,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 
 import '../../../../core/enums/visibility.dart' as enums;
-import '../../../../core/models/competition.dart';
+import '../../data/models/competition.dart';
 import '../../../../core/widgets/section.dart';
 
 class BasicInfoSection extends StatefulWidget {

@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/ui_constants.dart';
-import '../../../../core/models/competition.dart';
+import '../../data/models/competition.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/stat_card.dart';
@@ -136,7 +136,7 @@ class _CompetitionBlockState extends State<CompetitionBlock> {
                       ),
                       if (widget.competition.createdAt != null)
                         Text(
-                          "Created At: ${DateFormat('dd-MM-yyyy hh:mm').format(widget.competition.createdAt!)}",
+                          "Created At: ${DateFormat('dd-MM-yyyy HH:mm').format(widget.competition.createdAt!)}",
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
                         ),
                     ],

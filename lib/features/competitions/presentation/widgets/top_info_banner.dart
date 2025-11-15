@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/core/models/competition.dart';
+import 'package:run_track/features/competitions/data/models/competition.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';

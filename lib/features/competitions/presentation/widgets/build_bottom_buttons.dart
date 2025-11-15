@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/competition_role.dart';
-import 'package:run_track/core/models/competition.dart';
+import 'package:run_track/features/competitions/data/models/competition.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -47,7 +47,11 @@ class _BottomButtonsState extends State<BottomButtons> {
   @override
   void initState() {
     super.initState();
+  }
 
+
+  @override
+  Widget build(BuildContext context) {
     DateTime now = DateTime.now();
     if (widget.enterContext == CompetitionContext.ownerModify &&
         (widget.competition.startDate?.isBefore(now) ?? false) &&
@@ -58,22 +62,18 @@ class _BottomButtonsState extends State<BottomButtons> {
     weAreOwner = widget.competition.organizerUid == (FirebaseAuth.instance.currentUser?.uid ?? false);
     weParticipate = widget.competition.participantsUid.contains(FirebaseAuth.instance.currentUser!.uid);
 
-    if(!weAreOwner && !weParticipate){
-      if(widget.competition.visibility == ComVisibility.everyone){
-        open = true;
-      } else if((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ?? false) &&
-          widget.competition.visibility == ComVisibility.friends) { // If we are friends and
-        open = true;
-      }
+    bool open = false;
+    if(widget.competition.visibility == ComVisibility.everyone){
+      open = true;
+    } else if((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ?? false) &&
+        widget.competition.visibility == ComVisibility.friends) { // If we are friends and
+      open = true;
     }
 
     if (widget.competition.invitedParticipantsUid.contains(FirebaseAuth.instance.currentUser!.uid)) {
       invited = true;
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     String buttonText = "";
     if (widget.enterContext == CompetitionContext.ownerCreate && !widget.saved) {
       buttonText = "Add competition";
@@ -100,13 +100,13 @@ class _BottomButtonsState extends State<BottomButtons> {
 
         if (open && !invited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
-          CustomButton(text: "Join competition", onPressed: widget.acceptInvitation),
+          CustomButton(text: "Join competition", onPressed: widget.joinCompetition),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
         ],
 
-        if (open && !invited && !weAreOwner && weParticipate) ...[
+        if (!weAreOwner && weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
-          CustomButton(text: "Resign from competition", onPressed: widget.declineInvitation),
+          CustomButton(text: "Resign from competition", onPressed: widget.resignFromCompetition),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
         ],
       ],

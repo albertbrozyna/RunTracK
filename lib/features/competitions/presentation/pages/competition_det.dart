@@ -15,8 +15,8 @@ import '../../../../core/constants/preference_names.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../../../core/enums/participant_management_action.dart';
 import '../../../../core/enums/visibility.dart' as enums;
-import '../../../../core/models/competition.dart';
-import '../../../../core/services/competition_service.dart';
+import '../../data/models/competition.dart';
+import '../../data/services/competition_service.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
@@ -24,6 +24,7 @@ import '../../../../core/widgets/alert_dialog.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../widgets/competition_goal_section.dart';
 import '../widgets/location_and_participants_section.dart';
+
 
 class CompetitionDetailsPage extends StatefulWidget {
   final CompetitionContext enterContext;
@@ -53,7 +54,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final TextEditingController _goalController = TextEditingController();
 
   late Competition? competitionBeforeSave = widget.competitionData;
-  late Competition competition;
   String appBarTitle = "Competition details";
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool readOnly = false;
@@ -62,6 +62,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   bool saveInProgress = false;
   bool saved = false;
   bool leavingPage = false;
+  final Set<int> tabToRefresh = {};  // Tab we need to refresh on competition page
   @override
   void dispose() {
     _nameController.dispose();
@@ -102,8 +103,8 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void _setupCompetitionData() {
     if (widget.competitionData != null) {
-      AppData.instance.currentCompetition = competition = widget.competitionData!;
-      _populateFormFromData(competition);
+      AppData.instance.currentCompetition =  widget.competitionData!;
+      _populateFormFromData(AppData.instance.currentCompetition!);
     } else {
       AppData.instance.currentCompetition = _createNewCompetition();
     }
@@ -115,7 +116,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if(data.organizerUid == FirebaseAuth.instance.currentUser?.uid){
       _organizerController.text = AppData.instance.currentUser?.fullName ?? "User Unknown";
     }else{
-     UserService.fetchUserForBlock(competition.organizerUid)
+     UserService.fetchUserForBlock(AppData.instance.currentCompetition?.organizerUid ?? "")
           .then((user) {
         setState(() {
           String fullName = user?.firstName ?? "User";
@@ -164,7 +165,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       }
     }
 
-    return competition = Competition(
+    return  Competition(
       organizerUid: AppData.instance.currentUser?.uid ?? "",
       name: "",
       description: "",
@@ -186,7 +187,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         widget.enterContext == CompetitionContext.participant ||
         widget.enterContext == CompetitionContext.viewerAbleToJoin ||
         widget.enterContext == CompetitionContext.viewerNotAbleToJoin) {
-      final user = await UserService.fetchUser(competition.organizerUid);
+      final user = await UserService.fetchUser(AppData.instance.currentCompetition!.organizerUid);
       if (user != null) {
         setState(() {
           _organizerController.text = user.firstName;
@@ -222,7 +223,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   /// Close competition
   void closeCompetition() async {
-    bool res = await CompetitionService.closeCompetitionBeforeEndTime(competition.competitionId);
+    bool res = await CompetitionService.closeCompetitionBeforeEndTime(AppData.instance.currentCompetition!.competitionId);
     if (res) {
       if (mounted) {
         AppUtils.showMessage(context, "Competition closed successfully");
@@ -235,7 +236,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
   Competition _getDataFromForm() {
-    final baseCompetition = competition;
+    final baseCompetition = AppData.instance.currentCompetition!;
 
     return Competition(
       competitionId: baseCompetition.competitionId,
@@ -304,7 +305,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     if (res) {
       AppUtils.showMessage(screenContext, "Competition deleted successfully");
-      Navigator.of(screenContext).pop(true);
+      Navigator.of(screenContext).pop();
     } else {
       AppUtils.showMessage(screenContext, "Error deleting competition");
     }
@@ -312,7 +313,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void acceptInvitation() async {
     if (await CompetitionService.manageParticipant(
-          competitionId: competition.competitionId,
+          competitionId: AppData.instance.currentCompetition!.competitionId,
           targetUserId: FirebaseAuth.instance.currentUser?.uid ?? "",
           action: ParticipantManagementAction.acceptInvitation,
         ) ==
@@ -322,12 +323,18 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {});
+    setState(() {
+      tabToRefresh.add(3); // Refresh invites
+      tabToRefresh.add(4);  // Refresh participated tab
+      if(widget.initTab != 3){
+        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
+      }
+    });
   }
 
   void declineInvitation() async {
     if (await CompetitionService.manageParticipant(
-          competitionId:  competition.competitionId,
+          competitionId:  AppData.instance.currentCompetition!.competitionId,
       targetUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
           action:  ParticipantManagementAction.declineInvitation,
         ) ==
@@ -337,12 +344,18 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {});
+    setState(() {
+      tabToRefresh.add(3); // Refresh invites
+      tabToRefresh.add(4);  // Refresh participated tab
+      if(widget.initTab != 3){
+        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
+      }
+    });
   }
 
   void joinCompetition() async {
     if (await CompetitionService.manageParticipant(
-          competitionId: competition.competitionId,
+          competitionId: AppData.instance.currentCompetition!.competitionId,
           targetUserId:  FirebaseAuth.instance.currentUser?.uid ?? "",
           action:  ParticipantManagementAction.joinCompetition,
         ) ==
@@ -352,12 +365,18 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {});
+    setState(() {
+      tabToRefresh.add(3); // Refresh invites
+      tabToRefresh.add(4);  // Refresh participated tab
+      if(widget.initTab != 3){
+        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
+      }
+    });
   }
 
   void resignFromCompetition() async {
     if (await CompetitionService.manageParticipant(
-          competitionId: competition.competitionId,
+          competitionId: AppData.instance.currentCompetition!.competitionId,
           targetUserId:  FirebaseAuth.instance.currentUser?.uid ?? "",
           action:  ParticipantManagementAction.resignFromCompetition,
         ) ==
@@ -367,7 +386,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {});
+    setState(() {
+      tabToRefresh.add(4);  // Refresh participated tab
+      tabToRefresh.add(widget.initTab);
+    });
   }
 
   /// Save competition to database
@@ -382,21 +404,22 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     final currentContext = context;
 
-    competition = _getDataFromForm();
-    Competition? newCompetition = await CompetitionService.saveCompetition(competition);
+    AppData.instance.currentCompetition = _getDataFromForm();
+    Competition? newCompetition = await CompetitionService.saveCompetition(AppData.instance.currentCompetition!);
 
     if (!mounted) return;
 
     if (newCompetition != null) {
       if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
-        competition = newCompetition; // Update competition data
         AppData.instance.currentCompetition = newCompetition;
+        tabToRefresh.add(widget.initTab);
+
         AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
         setState(() {
           saved = true;
         });
       } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
-        competitionBeforeSave = competition;
+        competitionBeforeSave = AppData.instance.currentCompetition!;
         change = true;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
       }
@@ -430,9 +453,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     // If there is no changes, just pop
     if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
       if(change){ // Something was changes, rebuild competitions page
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(tabToRefresh);
       }else{
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(tabToRefresh);
       }
       return;
     }
@@ -460,9 +483,9 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
             Navigator.of(dialogContext).pop();
             if(mounted){
               if(change){
-                Navigator.of(context).pop(true); // There is change, return true to reload all competitions
+                Navigator.of(context).pop(tabToRefresh); // There is change, return true to reload all competitions
               }else{
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(tabToRefresh);
               }
             }
           },
@@ -498,12 +521,12 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TopInfoBanner(competition: competition, enterContext: widget.enterContext),
+                  TopInfoBanner(competition: AppData.instance.currentCompetition!, enterContext: widget.enterContext),
 
                   BasicInfoSection(
                     readOnly: readOnly,
                     visibility: _visibility,
-                    competition: competition,
+                    competition: AppData.instance.currentCompetition!,
                     organizerController: _organizerController,
                     nameController: _nameController,
                     descriptionController: _descriptionController,
@@ -526,14 +549,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
                   LocationAndParticipantsSection(
                     enterContext: widget.enterContext,
-                    competition: competition,
+                    competition: AppData.instance.currentCompetition!,
                     meetingPlaceController: _meetingPlaceController,
                     saved: saved,
                   ),
 
                   BottomButtons(
                     enterContext: widget.enterContext,
-                    competition: competition,
+                    competition: AppData.instance.currentCompetition!,
                     handleSaveCompetition: handleSaveCompetition,
                     closeCompetition: closeCompetition,
                     acceptInvitation: acceptInvitation,

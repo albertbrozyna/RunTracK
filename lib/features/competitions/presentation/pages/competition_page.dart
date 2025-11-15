@@ -9,9 +9,10 @@ import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
-import '../../../../core/models/competition.dart';
+import '../../data/models/competition.dart';
 import '../../../../core/models/user.dart';
-import '../../../../core/services/competition_service.dart';
+import '../../data/models/competition_fetch_result.dart';
+import '../../data/services/competition_service.dart';
 import '../../../../core/widgets/no_items_msg.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../../../track/presentation/widgets/fab_location.dart';
@@ -226,33 +227,45 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   }
 
 
-
-  /// Load competitions which user is participating
+  String lastCompetitionIdParticipated = "";
   Future<void> _loadMyParticipatedCompetitions() async {
-    if (_isLoadingParticipating == true || _hasMoreParticipating == false) {
+    if (_isLoadingParticipating || !_hasMoreParticipating) {
       return;
     }
+
     setState(() {
       _isLoadingParticipating = true;
     });
 
-    final competitionFetchResult = await CompetitionService.fetchMyParticipatedCompetitions(
-      AppData.instance.currentUser?.participatedCompetitions ?? {},
-      _limit,
-      _lastPageParticipating,
-    );
-    if (!mounted) return;
+    try {
+      final competitions = await CompetitionService.fetchMyParticipatedCompetitions(myParticipatedCompetitions: AppData.instance.currentUser?.participatedCompetitions ?? {});
 
-    setState(() {
-      _participatedCompetitions.addAll(competitionFetchResult.competitions);
-      _lastPageParticipating = competitionFetchResult.lastDocument;
-      _isLoadingParticipating = false;
-      if (competitionFetchResult.competitions.length < _limit) {
-        _hasMoreParticipating = false;
+      if (!mounted) return;
+
+      setState(() {
+        _participatedCompetitions.addAll(competitions);
+        lastCompetitionIdParticipated = competitions.last.competitionId;
+        _isLoadingParticipating = false;
+        if (competitions.isEmpty) {
+          _hasMoreParticipating = false;
+        }
+      });
+
+    } catch (e) {
+      print("Błąd podczas ładowania 'participated': $e");
+      if (mounted) {
+        setState(() {
+          _hasMoreParticipating = false;
+        });
       }
-    });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingParticipating = false;
+        });
+      }
+    }
   }
-
   /// On competition block tap
   void onTapBlock(BuildContext context,Competition competition) async{
     if (_isNavigating) {
@@ -277,11 +290,11 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     } else if (_tabController.index == 2 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
       enterContext = CompetitionContext.viewerNotAbleToJoin;
     } else if (_tabController.index == 3 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.participant;
-    } else if (_tabController.index == 4 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
       enterContext = CompetitionContext.invited;
+    } else if (_tabController.index == 4 && (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
+      enterContext = CompetitionContext.participant;
     }
-    await Navigator.pushNamed(
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': enterContext, 'competitionData': competition, 'initTab': _tabController.index},
@@ -291,7 +304,9 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-     _reloadCurrentTab();
+    if(result != null  && result is Set<int>){
+      _reloadCurrentTab(result);
+    }
   }
 
   /// On pressed add competition button
@@ -304,7 +319,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isNavigating = true;
     });
 
-    await Navigator.pushNamed(
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {'enterContext': CompetitionContext.ownerCreate, 'competitionData': null, 'initTab': _tabController.index},
@@ -314,13 +329,14 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-    _reloadCurrentTab();
+    if(result != null  && result is Set<int>){
+      _reloadCurrentTab(result);
+    }
   }
 
-  void _reloadCurrentTab() {
-    int index = _tabController.index;
+  void _reloadCurrentTab(Set<int> tabsToRefresh) {
 
-    if (index == 0) {
+    if (tabsToRefresh.contains(0)) {
       setState(() {
         _myCompetitions.clear();
         _hasMoreMy = true;
@@ -328,7 +344,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       });
       _loadMyCompetitions();
 
-    } else if (index == 1) {
+    }
+    if (tabsToRefresh.contains(1)) {
       setState(() {
         _friendsCompetitions.clear();
         _hasMoreFriends = true;
@@ -336,7 +353,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       });
       _loadFriendsCompetitions();
 
-    } else if (index == 2) {
+    }
+  if (tabsToRefresh.contains(2)) {
       setState(() {
         _allCompetitions.clear();
         _hasMoreAll = true;
@@ -344,7 +362,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       });
       _loadAllCompetitions();
 
-    } else if (index == 3) {
+    }
+  if (tabsToRefresh.contains(3)) {
       setState(() {
         _invitedCompetitions.clear();
         _hasMoreInvites = true;
@@ -352,7 +371,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       });
       _loadMyInvitedCompetitions();
 
-    } else if (index == 4) {
+    }
+  if (tabsToRefresh.contains(4)) {
       setState(() {
         _participatedCompetitions.clear();
         _hasMoreParticipating = true;

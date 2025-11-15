@@ -3,18 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/features/notifications/data/services/notification_service.dart';
 
-import '../../app/config/app_data.dart';
-import '../enums/participant_management_action.dart';
-import '../enums/visibility.dart';
+import '../../../../app/config/app_data.dart';
+import '../../../../core/enums/participant_management_action.dart';
+import '../../../../core/enums/visibility.dart';
 import '../models/competition.dart';
-import '../../features/notifications/data/models/notification.dart';
+import '../../../notifications/data/models/notification.dart';
+import '../models/competition_fetch_result.dart';
 
-class CompetitionFetchResult {
-  final List<Competition> competitions;
-  final DocumentSnapshot? lastDocument;
 
-  CompetitionFetchResult({required this.competitions, this.lastDocument});
-}
 
 class CompetitionService {
   CompetitionService._();
@@ -189,34 +185,42 @@ class CompetitionService {
     }
   }
 
-  /// Fetch my competition which I participate
-  static Future<CompetitionFetchResult> fetchMyParticipatedCompetitions(
-    Set<String> competitionsIds,
-    int limit,
-    DocumentSnapshot? lastDocument,
-  ) async {
-    if (competitionsIds.isEmpty) {
-      return CompetitionFetchResult(competitions: [], lastDocument: null);
+
+
+  static Future<List<Competition>> fetchMyParticipatedCompetitions({
+    required Set<String>myParticipatedCompetitions,
+  }) async {
+    if (myParticipatedCompetitions.isEmpty) {
+      return [];
     }
+
+    Set<String> competitionsToGet = myParticipatedCompetitions;
+    if(myParticipatedCompetitions.length > 30){
+      competitionsToGet = myParticipatedCompetitions.take(30).toSet();
+    }
+
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("competitionId", whereIn: competitionsIds)
-          .limit(limit);
+          .where("competitionId",whereIn: myParticipatedCompetitions)
+          .orderBy("createdAt")
+          .limit(5);
 
-      if (lastDocument != null) {
-        queryCompetitions = queryCompetitions.startAfterDocument(lastDocument);
-      }
       final querySnapshot = await queryCompetitions.get();
       DocumentSnapshot? newLastDocument;
+
       if (querySnapshot.docs.isNotEmpty) {
         newLastDocument = querySnapshot.docs.last;
       }
-      final competitions = querySnapshot.docs.map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>)).toList();
-      return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
+
+      final competitions = querySnapshot.docs
+          .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+
+      return competitions;
     } catch (e) {
       print("Error fetching latest competitions: $e");
-      return CompetitionFetchResult(competitions: [], lastDocument: null);
+      return [];
     }
   }
 
@@ -297,6 +301,8 @@ class CompetitionService {
           case ParticipantManagementAction.kick:
             participantsList.remove(targetUserId);
             userParticipatedList.remove(competitionId);
+            invitedList.remove(targetUserId);
+            userReceivedInvitesList.remove(competitionId);
             break;
           case ParticipantManagementAction.cancelInvitation:
           case ParticipantManagementAction.declineInvitation:
@@ -308,6 +314,8 @@ class CompetitionService {
           case ParticipantManagementAction.acceptInvitation:
             participantsList.add(targetUserId);
             userParticipatedList.add(competitionId);
+            invitedList.remove(targetUserId);
+            userReceivedInvitesList.remove(competitionId);
             break;
         }
 

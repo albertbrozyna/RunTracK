@@ -10,7 +10,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../../../core/enums/enter_context.dart';
-import '../../../../core/models/competition.dart';
+import '../../data/models/competition.dart';
 import '../../../../core/widgets/custom_button.dart' show CustomButton;
 import '../../../../core/widgets/section.dart';
 

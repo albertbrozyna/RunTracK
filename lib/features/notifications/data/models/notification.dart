@@ -21,7 +21,7 @@ class AppNotification {
   Map<String, dynamic> toMap() {
     return {
       'notificationId': notificationId,
-      'userUid': uid,
+      'uid': uid,
       'title': title,
       'type': type.name,
       'createdAt': createdAt.toIso8601String(),
@@ -33,7 +33,7 @@ class AppNotification {
   factory AppNotification.fromMap(Map<String, dynamic> map) {
     return AppNotification(
       notificationId: map['notificationId'] ?? '',
-      uid: map['userUid'] ?? '',
+      uid: map['uid'] ?? '',
       title: map['title'] ?? '',
       type: NotificationType.values.firstWhere((e) => e.name == map['type'], orElse: () => NotificationType.inviteCompetition),
       createdAt: map['createdAt'] is DateTime ? map['createdAt'] : DateTime.parse(map['createdAt']),

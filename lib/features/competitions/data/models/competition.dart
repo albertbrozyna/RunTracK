@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../enums/visibility.dart' as enums;
-import '../utils/utils.dart';
+import '../../../../core/enums/visibility.dart' as enums;
+import '../../../../core/utils/utils.dart';
 
 
 class CompetitionResult {

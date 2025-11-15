@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/user_mode.dart';
 
 import '../../../app/config/app_data.dart';
-import '../../../core/services/competition_service.dart';
+import '../../competitions/data/services/competition_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/utils/permission_utils.dart';
 import '../../../core/utils/utils.dart' show AppUtils;

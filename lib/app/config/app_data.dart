@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../core/models/competition.dart';
+import '../../features/competitions/data/models/competition.dart';
 import '../../core/models/user.dart';
 
 class AppData{
