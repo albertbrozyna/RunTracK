@@ -60,6 +60,7 @@ class CompetitionService {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
           .where("visibility", isEqualTo: ComVisibility.everyone.toString())
+          .where("organizerUid", isNotEqualTo: FirebaseAuth.instance.currentUser?.uid)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -75,7 +76,6 @@ class CompetitionService {
 
       final competitions = querySnapshot.docs
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
-          .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
       return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
@@ -88,16 +88,16 @@ class CompetitionService {
   static Future<CompetitionFetchResult> fetchLastFriendsCompetitionsPage(
     int limit,
     DocumentSnapshot? lastDocument,
-    Set<String> friendsUids,
+    Set<String> friends,
   ) async {
-    if (friendsUids.isEmpty) {
+    if (friends.isEmpty) {
       return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
 
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("organizerUid", whereIn: friendsUids)
+          .where("organizerUid", whereIn: friends)
           .where("visibility", whereIn: [ComVisibility.everyone.toString(), ComVisibility.friends.toString()])
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -202,16 +202,11 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("competitionId",whereIn: myParticipatedCompetitions)
+          .where("competitionId",whereIn: competitionsToGet)
           .orderBy("createdAt")
           .limit(5);
 
       final querySnapshot = await queryCompetitions.get();
-      DocumentSnapshot? newLastDocument;
-
-      if (querySnapshot.docs.isNotEmpty) {
-        newLastDocument = querySnapshot.docs.last;
-      }
 
       final competitions = querySnapshot.docs
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))

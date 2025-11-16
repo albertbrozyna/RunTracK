@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/core/utils/utils.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
-
 
 class MeetingPlaceMap extends StatefulWidget {
   final LatLng? latLng;
@@ -32,6 +33,34 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
     });
   }
 
+  Future<void> _moveToCurrentLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission != LocationPermission.whileInUse &&
+            permission != LocationPermission.always) {
+          if (mounted) {
+            AppUtils.showMessage(
+              context,
+              'Location permission are required',
+              messageType: MessageType.info,
+            );
+          }
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(accuracy: LocationAccuracy.best),
+      );
+
+      _mapController.move(LatLng(position.latitude, position.longitude), 15.0);
+    } catch (e) {
+      print("Error fetching location: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -49,26 +78,46 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
-              child: Icon(!edit ? Icons.edit_location_alt_outlined : Icons.check, color: !edit ? AppColors.white : AppColors.green),
+              child: Icon(
+                edit ? Icons.check : Icons.edit_location_alt_outlined,
+                color: edit ? AppColors.green : AppColors.white,
+              ),
             ),
           ],
           centerTitle: true,
           backgroundColor: AppColors.primary,
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            setState(() {
-              edit = !edit;
-            });
-          },
-          backgroundColor: edit ? Colors.green : AppColors.primary,
-          label: Text(edit ? "Save" : "Select point"),
-          icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
+
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              mini: true,
+              onPressed: _moveToCurrentLocation,
+              heroTag: 'fab_gps',
+              child: const Icon(Icons.my_location),
+            ),
+            const SizedBox(height: 16),
+
+            FloatingActionButton.extended(
+              onPressed: () {
+                setState(() {
+                  edit = !edit;
+                });
+              },
+              backgroundColor: edit ? Colors.green : AppColors.primary,
+              label: Text(edit ? "Save" : "Select point"),
+              icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
+              heroTag: 'fab_edit',
+            ),
+          ],
         ),
         body: FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: latLng ?? LatLng(AppConstants.defaultLat, AppConstants.defaultLon),  // Move to meeting point
+            initialCenter: latLng ?? LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
+            // Move to meeting point
             initialZoom: 15.0,
             onTap: (tapPosition, point) => {
               if (edit)
@@ -78,7 +127,10 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
             },
           ),
           children: [
-            TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.runtrack'),
+            TileLayer(
+              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.runtrack',
+            ),
             if (latLng != null)
               MarkerLayer(
                 markers: [

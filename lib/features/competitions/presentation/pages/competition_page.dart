@@ -11,7 +11,6 @@ import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../data/models/competition.dart';
 import '../../../../core/models/user.dart';
-import '../../data/models/competition_fetch_result.dart';
 import '../../data/services/competition_service.dart';
 import '../../../../core/widgets/no_items_msg.dart';
 import '../../../../core/widgets/page_container.dart';
@@ -38,6 +37,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   final List<Competition> _invitedCompetitions = [];
   final List<Competition> _participatedCompetitions = [];
 
+  List<String>participatedToFetch = AppData.instance.currentUser?.participatedCompetitions.toList() ?? [];
+
   final ScrollController _scrollControllerMy = ScrollController();
   final ScrollController _scrollControllerFriends = ScrollController();
   final ScrollController _scrollControllerAll = ScrollController();
@@ -62,7 +63,6 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   DocumentSnapshot? _lastPageFriendsCompetitions;
   DocumentSnapshot? _lastPageAllCompetitions;
   DocumentSnapshot? _lastPageInvites;
-  DocumentSnapshot? _lastPageParticipating;
 
   bool _isNavigating = false;
 
@@ -237,22 +237,70 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isLoadingParticipating = true;
     });
 
+    final List<String> fullIdList = AppData.instance.currentUser?.participatedCompetitions.toList() ?? [];
+
+    if (fullIdList.isEmpty) {
+      setState(() {
+        _isLoadingParticipating = false;
+        _hasMoreParticipating = false;
+      });
+      return;
+    }
+
+    int startIndex = 0;
+    if (lastCompetitionIdParticipated.isNotEmpty) {
+      int lastIndex = fullIdList.indexOf(lastCompetitionIdParticipated);
+      if (lastIndex == -1) {
+        print("Warning: lastCompetitionIdParticipated not found in full list.");
+        setState(() {
+          _isLoadingParticipating = false;
+          _hasMoreParticipating = false;
+        });
+        return;
+      }
+      startIndex = lastIndex + 1;
+    }
+
+    if (startIndex >= fullIdList.length) {
+      setState(() {
+        _isLoadingParticipating = false;
+        _hasMoreParticipating = false;
+      });
+      return;
+    }
+
+    int endIndex = startIndex + _limit;
+    bool hasMore = true;
+    if (endIndex >= fullIdList.length) {
+      endIndex = fullIdList.length;
+      hasMore = false;
+    }
+
+    final List<String> sliceToFetch = fullIdList.sublist(startIndex, endIndex);
+
+    if (sliceToFetch.isEmpty) {
+      setState(() {
+        _isLoadingParticipating = false;
+        _hasMoreParticipating = false;
+      });
+      return;
+    }
+
     try {
-      final competitions = await CompetitionService.fetchMyParticipatedCompetitions(myParticipatedCompetitions: AppData.instance.currentUser?.participatedCompetitions ?? {});
+      final competitions = await CompetitionService.fetchMyParticipatedCompetitions(myParticipatedCompetitions: sliceToFetch.toSet());
 
       if (!mounted) return;
 
       setState(() {
         _participatedCompetitions.addAll(competitions);
-        lastCompetitionIdParticipated = competitions.last.competitionId;
-        _isLoadingParticipating = false;
-        if (competitions.isEmpty) {
-          _hasMoreParticipating = false;
-        }
+
+        lastCompetitionIdParticipated = sliceToFetch.last;
+
+        _hasMoreParticipating = hasMore;
       });
 
     } catch (e) {
-      print("Błąd podczas ładowania 'participated': $e");
+      print("Error loading participated competitions: $e");
       if (mounted) {
         setState(() {
           _hasMoreParticipating = false;
@@ -376,7 +424,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       setState(() {
         _participatedCompetitions.clear();
         _hasMoreParticipating = true;
-        _lastPageParticipating = null;
+        participatedToFetch = AppData.instance.currentUser?.participatedCompetitions.toList() ?? [];
+        lastCompetitionIdParticipated = "";
       });
       _loadMyParticipatedCompetitions();
     }
