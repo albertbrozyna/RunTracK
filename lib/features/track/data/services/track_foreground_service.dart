@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/config/app_data.dart';
 import '../../../../core/enums/tracking_state.dart' show TrackingState;
 import '../models/storage.dart';
 
@@ -34,7 +35,6 @@ void onStart(ServiceInstance serviceInstance) async {
   double pace = 0.0;
   LatLng? currentPosition;
   const double maxHumanSpeed = 12.0; // 43 km/h
-  int saveCounter = 0;
   String currentCompetition = ""; // Current competition
 
   Timer? timeTimer;
@@ -54,7 +54,6 @@ void onStart(ServiceInstance serviceInstance) async {
     currentPosition = null;
     latestPosition = null;
     trackingState = TrackingState.stopped;
-    saveCounter = 0;
     currentCompetition = "";
     Storage.clearStorage();
   }
@@ -67,48 +66,47 @@ void onStart(ServiceInstance serviceInstance) async {
     print("Serwis: Zatrzymano timer i strumień lokalizacji.");
   }
 
-  try {
-    final stats = await Storage.loadStats();
-    final savedLocations = await Storage.loadLocations();
-
-    if (stats.isNotEmpty) {
-      print("znaleziono stare pliki");
-      totalDistance = (stats['totalDistance'] ?? 0.0).toDouble();
-      elevationGain = (stats['elevationGain'] ?? 0.0).toDouble();
-      elevationLoss = (stats['elevationLoss'] ?? 0.0).toDouble();
-      calories = (stats['calories'] ?? 0.0).toDouble();
-      avgSpeed = (stats['avgSpeed'] ?? 0.0).toDouble();
-      pace = (stats['pace'] ?? 0.0).toDouble();
-      steps = (stats['steps'] ?? 0).toInt();
-      currentSpeedValue = (stats['currentSpeedValue'] ?? 0.0).toDouble();
-      elapsedTime = Duration(seconds: (stats['elapsedTime'] ?? 0).toInt());
-      currentCompetition = stats['currentCompetition'];
-
-      // Read saved state
-      final savedState = stats['trackingState'] as String?;
-      if (savedState == 'running') {
-        trackingState = TrackingState.running;
-      } else if (savedState == 'paused') {
-        trackingState = TrackingState.paused;
-      } else {
-        trackingState = TrackingState.stopped;
-        print("zatrzymany");
-      }
-    }
-
-    if (savedLocations.isNotEmpty) {
-      trackedPath = savedLocations;
-      currentPosition = savedLocations.last;
-      print("lokalizacje tez");
-    }
-  } catch (e) {}
+  // try {
+  //   final stats = await Storage.loadStats();
+  //   final savedLocations = await Storage.loadLocations();
+  //
+  //   if (stats.isNotEmpty) {
+  //     print("znaleziono stare pliki");
+  //     totalDistance = (stats['totalDistance'] ?? 0.0).toDouble();
+  //     elevationGain = (stats['elevationGain'] ?? 0.0).toDouble();
+  //     elevationLoss = (stats['elevationLoss'] ?? 0.0).toDouble();
+  //     calories = (stats['calories'] ?? 0.0).toDouble();
+  //     avgSpeed = (stats['avgSpeed'] ?? 0.0).toDouble();
+  //     pace = (stats['pace'] ?? 0.0).toDouble();
+  //     steps = (stats['steps'] ?? 0).toInt();
+  //     currentSpeedValue = (stats['currentSpeedValue'] ?? 0.0).toDouble();
+  //     elapsedTime = Duration(seconds: (stats['elapsedTime'] ?? 0).toInt());
+  //     currentCompetition = stats['currentCompetition'];
+  //
+  //     // Read saved state
+  //     final savedState = stats['trackingState'] as String?;
+  //     if (savedState == 'running') {
+  //       trackingState = TrackingState.running;
+  //     } else if (savedState == 'paused') {
+  //       trackingState = TrackingState.paused;
+  //     } else {
+  //       trackingState = TrackingState.stopped;
+  //       print("zatrzymany");
+  //     }
+  //   }
+  //
+  //   if (savedLocations.isNotEmpty) {
+  //     trackedPath = savedLocations;
+  //     currentPosition = savedLocations.last;
+  //     print("lokalizacje tez");
+  //   }
+  // } catch (e) {}
 
 
   void startLocationTimerAndStream() {
     if (positionSubscription != null || timeTimer != null) return;
 
     print("MYLOG Serwis: Uruchomiono timer i strumień lokalizacji.");
-
     // Elapsed time timer
     timeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (trackingState == TrackingState.running) {
@@ -207,23 +205,23 @@ void onStart(ServiceInstance serviceInstance) async {
         serviceInstance.invoke(ServiceEvent.update.name, update.toJson());
       }
 
-      saveCounter++;
-      if (saveCounter % 10 == 0) {
-        Storage.saveLocations(trackedPath);
-        Storage.saveStats({
-          'totalDistance': totalDistance,
-          'elapsedTime': elapsedTime.inSeconds,
-          'elevationGain': elevationGain,
-          'elevationLoss': elevationLoss,
-          'calories': calories,
-          'avgSpeed': avgSpeed,
-          'pace': pace,
-          'steps': steps,
-          'currentSpeedValue': currentSpeedValue,
-          'trackingState': trackingState.name,
-          'currentCompetition': currentCompetition,
-        });
-      }
+      // saveCounter++;
+      // if (saveCounter % 10 == 0) {
+      //   Storage.saveLocations(trackedPath);
+      //   Storage.saveStats({
+      //     'totalDistance': totalDistance,
+      //     'elapsedTime': elapsedTime.inSeconds,
+      //     'elevationGain': elevationGain,
+      //     'elevationLoss': elevationLoss,
+      //     'calories': calories,
+      //     'avgSpeed': avgSpeed,
+      //     'pace': pace,
+      //     'steps': steps,
+      //     'currentSpeedValue': currentSpeedValue,
+      //     'trackingState': trackingState.name,
+      //     'currentCompetition': currentCompetition,
+      //   });
+      // }
     });
   }
 
@@ -243,6 +241,7 @@ void onStart(ServiceInstance serviceInstance) async {
       trackingState: trackingState,
       trackedPath: trackedPath,
       elapsedTime: elapsedTime,
+      currentCompetition: currentCompetition
     );
     serviceInstance.invoke(ServiceEvent.sync.name, update.toJson());
   }
@@ -250,8 +249,9 @@ void onStart(ServiceInstance serviceInstance) async {
   // Handle events from UI
   if (serviceInstance is AndroidServiceInstance) {
     // Start service
-      serviceInstance.on(ServiceEvent.startService.name).listen((_) {
-        clearStats();
+    serviceInstance.on(ServiceEvent.startService.name).listen((Map<String, dynamic>? data) {
+      clearStats();
+      currentCompetition = data?['currentUserCompetition'] ?? "";
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
       print("MYLOG start");
@@ -259,15 +259,19 @@ void onStart(ServiceInstance serviceInstance) async {
       });
 
     // Stop service
-     serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
-      sendSync("E");  // End sync
-      stopLocationTimerAndStream();
-      clearStats();
+      serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
+        sendSync("E");  // End sync
+        stopLocationTimerAndStream();
+        clearStats();
 
-      print("MYLOG stop here");
-      serviceInstance.invoke(ServiceEvent.stopped.name);
-      serviceInstance.setAsBackgroundService();
-    });
+        print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
+
+        serviceInstance.invoke(ServiceEvent.stopped.name);
+
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        serviceInstance.stopSelf();
+      });
 
     // Get current state
      serviceInstance.on(ServiceEvent.getState.name).listen((_) {
@@ -292,16 +296,16 @@ void onStart(ServiceInstance serviceInstance) async {
     });
   }
 
-  // Start run if state is different from stopped
-  if (trackingState != TrackingState.stopped) {
-    print("MYLOG auto start");
-    startLocationTimerAndStream();
-    if (serviceInstance is AndroidServiceInstance) {
-      serviceInstance.setAsForegroundService();
-    }
-  }
+  // // Start run if state is different from stopped
+  // if (trackingState != TrackingState.stopped) {
+  //   print("MYLOG auto start");
+  //   startLocationTimerAndStream();
+  //   if (serviceInstance is AndroidServiceInstance) {
+  //     serviceInstance.setAsForegroundService();
+  //   }
+  // }
 
-  print("MYLOG test nowy kod");
+  print("MYLOG test nowy kodV4");
 }
 
 class ForegroundTrackService {
@@ -320,6 +324,7 @@ class ForegroundTrackService {
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
         isForegroundMode: true,
+        autoStart: false,
         initialNotificationTitle: "Tracking location",
         initialNotificationContent: "RunTracK tracks your activity!",
         foregroundServiceNotificationId: 911,
@@ -343,11 +348,8 @@ class ForegroundTrackService {
       service.invoke(ServiceEvent.stopService.name);
 
       try {
-        await completer.future.timeout(const Duration(seconds: 3));
-        print("MYLOG Stary serwis poprawnie zatrzymany.");
+        await completer.future.timeout(const Duration(seconds:4));
       } catch (e) {
-        print("MYLOG Zatrzymanie starego serwisu przekroczyło limit czasu. Wymuszam...");
-        await service.stopService(); // To jest twarde zatrzymanie z platformy
       }
     }
 
@@ -368,12 +370,16 @@ class ForegroundTrackService {
       print("MYLOG Nowy serwis nie zgłosił gotowości na czas.");
     }
 
-    service.invoke(ServiceEvent.startService.name);
+    service.invoke(ServiceEvent.startService.name,{
+      'currentUserCompetition': AppData.instance.currentUser?.currentCompetition
+    });
     print("MYLOG after start in ui side");
   }
 
   Future<void> stopTracking() async {
-    service.invoke(ServiceEvent.stopService.name);
+    if (await service.isRunning()) {
+      service.invoke(ServiceEvent.stopService.name);
+    }
   }
 
   Future<void> pauseTracking() async {

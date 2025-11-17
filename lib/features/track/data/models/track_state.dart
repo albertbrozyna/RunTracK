@@ -73,8 +73,17 @@ class TrackState extends ChangeNotifier {
 
     ForegroundTrackService.instance.stopTracking();
     trackingState = TrackingState.stopped;
+    try {
+      await _stopCompleter!.future.timeout(const Duration(seconds: 5));
+    } catch (e) {
+      print("Sync timeout - forcing stop");
+    } finally {
+      trackingState = TrackingState.stopped;
+    }
+  }
+
+  void refreshUi(){
     notifyListeners();
-    await _stopCompleter!.future;
   }
 
   void resumeRun() async {
@@ -149,7 +158,7 @@ class TrackState extends ChangeNotifier {
           currentPosition = update.trackedPath?.last;
         }
         _lastUpdateFromTask = DateTime.now();
-        if(update.type == 'e') {
+        if(update.type == 'E') {
           endSync = true;
           // Finish completer
           if (_stopCompleter != null && !_stopCompleter!.isCompleted) {
@@ -174,7 +183,7 @@ class TrackState extends ChangeNotifier {
       if (trackingState == TrackingState.running) {
         elapsedTime += const Duration(seconds: 1); // Add seconds here to make timer smooth
       }
-      print("timerMain ${elapsedTime.inSeconds}");
+      //print("timerMain ${elapsedTime.inSeconds}");
       notifyListeners();
       final now = DateTime.now();
       if (now.difference(_lastUpdateFromTask) > Duration(seconds: 6) ) {

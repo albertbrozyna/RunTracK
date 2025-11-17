@@ -65,10 +65,9 @@ class TrackScreenState extends State<TrackScreen> {
   Future<void> initialize() async {
     if (AppData.instance.currentCompetition != null) {
       // Set activity type from competition
-      activityController.text = AppData.instance.currentCompetition!.name;
+      activityController.text = AppData.instance.currentUserCompetition!.name;
     } else {
       final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
-      activityName = lastActivity;
       activityController.text = lastActivity;
     }
 

@@ -47,7 +47,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/RunTracK-app-icon.png"
+  image_path: "assets/images/RunTracK-app-icon.png"
 
 flutter:
   uses-material-design: true

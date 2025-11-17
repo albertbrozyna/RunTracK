@@ -15,7 +15,7 @@ class _CurrentCompetitionBannerState extends State<CurrentCompetitionBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if ((AppData.instance.currentUser?.currentCompetition.isNotEmpty ?? false) && AppData.instance.currentCompetition != null) {
+    if ((AppData.instance.currentUser?.currentCompetition.isNotEmpty ?? false) && AppData.instance.currentUserCompetition != null) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
@@ -35,13 +35,13 @@ class _CurrentCompetitionBannerState extends State<CurrentCompetitionBanner> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    AppData.instance.currentCompetition!.name,
+                    AppData.instance.currentUserCompetition!.name,
                     style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                   Text(
-                    "Distance to go: ${AppData.instance.currentCompetition!.distanceToGo}",
+                    "Distance to go: ${AppData.instance.currentUserCompetition!.distanceToGo}",
                     style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

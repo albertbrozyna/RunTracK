@@ -25,13 +25,11 @@ class _ActionButtonsState extends State<ActionButtons> {
   final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
   Timer? _finishTimer;
 
-
   void handleStopTracking() async {
     await TrackState.trackStateInstance.stopRun();
 
-    // Wait for last sync
-
     if (mounted) {
+      print("Pushing page");
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -55,6 +53,7 @@ class _ActionButtonsState extends State<ActionButtons> {
         ),
       );
     }
+    TrackState.trackStateInstance.refreshUi();
   }
 
   @override
