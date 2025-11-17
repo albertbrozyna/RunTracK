@@ -4,14 +4,6 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/enums/visibility.dart' as enums;
 import '../../../../core/utils/utils.dart';
 
-
-class CompetitionResult {
-  final int distance;
-  final int time;
-
-  const CompetitionResult({required this.distance, required this.time});
-}
-
 class Competition {
   String competitionId; // Competition id
   String organizerUid; // Event organizer user

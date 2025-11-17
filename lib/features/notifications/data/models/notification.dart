@@ -3,6 +3,7 @@ enum NotificationType { inviteCompetition, inviteFriends }
 class AppNotification {
   String notificationId;
   String uid; // User uid
+  String objectId; // By object id i mean activity or user that sens us action
   String title; // Title of notification
   NotificationType type;
   DateTime createdAt;
@@ -15,6 +16,7 @@ class AppNotification {
     required this.type,
     required this.createdAt,
     required this.seen,
+    required this.objectId
   });
 
   /// Convert Notification to Firestore map
@@ -26,6 +28,7 @@ class AppNotification {
       'type': type.name,
       'createdAt': createdAt.toIso8601String(),
       'seen': seen,
+      'objectId': objectId,
     };
   }
 
@@ -34,6 +37,7 @@ class AppNotification {
     return AppNotification(
       notificationId: map['notificationId'] ?? '',
       uid: map['uid'] ?? '',
+      objectId: map['objectId'] ?? '',
       title: map['title'] ?? '',
       type: NotificationType.values.firstWhere((e) => e.name == map['type'], orElse: () => NotificationType.inviteCompetition),
       createdAt: map['createdAt'] is DateTime ? map['createdAt'] : DateTime.parse(map['createdAt']),

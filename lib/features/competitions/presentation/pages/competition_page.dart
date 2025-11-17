@@ -183,6 +183,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     if (_isLoadingAll == true || _hasMoreAll == false) {
       return;
     }
+
     setState(() {
       _isLoadingAll = true;
     });
@@ -193,12 +194,19 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _allCompetitions.addAll(competitionFetchResult.competitions);
       _lastPageAllCompetitions = competitionFetchResult.lastDocument;
+
       _isLoadingAll = false;
-      if (competitionFetchResult.competitions.length < _limit) {
+
+      if (competitionFetchResult.lastDocument == null) {
         _hasMoreAll = false;
       }
     });
+
+    if (competitionFetchResult.competitions.isEmpty && _hasMoreAll == true && mounted) {
+      Future.microtask(() => _loadAllCompetitions());
+    }
   }
+
 
   /// Load competitions which user is invited
   Future<void> _loadMyInvitedCompetitions() async {
@@ -251,7 +259,6 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     if (lastCompetitionIdParticipated.isNotEmpty) {
       int lastIndex = fullIdList.indexOf(lastCompetitionIdParticipated);
       if (lastIndex == -1) {
-        print("Warning: lastCompetitionIdParticipated not found in full list.");
         setState(() {
           _isLoadingParticipating = false;
           _hasMoreParticipating = false;

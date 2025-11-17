@@ -152,26 +152,36 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
     });
   }
 
+
+  /// Load last competitions from all users
   Future<void> _loadAllActivities() async {
-    if (_isLoadingAll || !_hasMoreAll) {
+    if (_isLoadingAll == true || _hasMoreAll == false) {
       return;
     }
+
     setState(() {
       _isLoadingAll = true;
     });
 
-    final activities = await ActivityService.fetchLatestActivitiesPage(_limit, _lastPageAllActivities);
+    final activitiesFetchResult = await ActivityService.fetchLatestActivitiesPage(_limit, _lastPageAllActivities);
     if(!mounted) return;
 
     setState(() {
-      _allActivities.addAll(activities.activities);
-      _lastPageAllActivities = activities.lastDocument;
+      _allActivities.addAll(activitiesFetchResult.activities);
+      _lastPageAllActivities = activitiesFetchResult.lastDocument;
+
       _isLoadingAll = false;
-      if (activities.activities.length < _limit) {
+
+      if (activitiesFetchResult.lastDocument == null) {
         _hasMoreAll = false;
       }
     });
+
+    if (activitiesFetchResult.activities.isEmpty && _hasMoreAll == true && mounted) {
+      Future.microtask(() => _loadAllActivities());
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {

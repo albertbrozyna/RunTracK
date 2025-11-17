@@ -17,7 +17,7 @@ class NotificationService {
   NotificationService._();
 
   /// Save notification to database
-  static Future<bool> saveNotification(AppNotification notification) async {
+  static Future<bool> saveNotification({required AppNotification notification}) async {
     if (notification.uid.isEmpty) {
       return false;
     }
@@ -32,6 +32,7 @@ class NotificationService {
         createdAt: notification.createdAt,
         seen: notification.seen,
         type: notification.type,
+        objectId: notification.objectId,
       );
 
       await docRef.set(newNotification.toMap());

@@ -323,6 +323,7 @@ class UserService {
                 createdAt: DateTime.now(),
                 seen: false,
                 type: NotificationType.inviteFriends,
+                objectId: receiverUid,
               );
 
               break;
@@ -337,6 +338,7 @@ class UserService {
               createdAt: DateTime.now(),
               seen: false,
               type: NotificationType.inviteFriends,
+              objectId: senderUid,
             );
             break;
           case UserAction.removeInvitation:
@@ -368,6 +370,7 @@ class UserService {
               createdAt: DateTime.now(),
               seen: false,
               type: NotificationType.inviteFriends,
+              objectId: receiverUid,
             );
             break;
           case UserAction.declineInvitationToFriends:
@@ -402,7 +405,7 @@ class UserService {
       AppData.instance.currentUser?.receivedInvitationsToFriends = finalReceivedList;
 
       if (notification != null) {
-        await NotificationService.saveNotification(notification!);
+        await NotificationService.saveNotification(notification:notification!);
       }
 
       return true;
@@ -487,4 +490,32 @@ class UserService {
       return true;
     }
   }
+
+  /// Update user fields in transaction
+  static Future<bool> updateFieldsInTransaction(String uid, Map<String, dynamic> fieldsToUpdate) async {
+    if (uid.isEmpty || fieldsToUpdate.isEmpty) {
+      return false;
+    }
+
+    final docRef = FirebaseFirestore.instance
+        .collection(FirestoreCollections.users)
+        .doc(uid);
+
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final docSnap = await transaction.get(docRef);
+
+        if (!docSnap.exists) {
+          throw Exception("User don't exists.");
+        }
+        transaction.update(docRef, fieldsToUpdate);
+      });
+
+      return true;
+
+    } catch (e) {
+      return false;
+    }
+  }
+
 }

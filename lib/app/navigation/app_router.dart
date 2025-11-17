@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
+import '../../core/enums/mode.dart';
 import '../../core/enums/user_mode.dart';
 import '../../core/models/activity.dart';
 import '../../features/competitions/data/models/competition.dart';
@@ -103,7 +104,8 @@ class AppRouter {
       case AppRoutes.meetingPlaceMap:
         final args = settings.arguments as Map<String, dynamic>?;
         final latLng = args?['latLng'] as LatLng?;
-        return MaterialPageRoute(builder: (_) => MeetingPlaceMap(latLng: latLng));
+        final mode = args?['mode'] as Mode;
+        return MaterialPageRoute(builder: (_) => MeetingPlaceMap(mode: mode, latLng: latLng));
 
       default:
         return MaterialPageRoute(

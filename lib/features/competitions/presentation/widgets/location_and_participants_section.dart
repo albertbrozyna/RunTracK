@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
@@ -10,23 +8,30 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/competition_role.dart';
 import '../../../../core/enums/enter_context.dart';
+import '../../../../core/enums/mode.dart';
 import '../../data/models/competition.dart';
 import '../../../../core/widgets/custom_button.dart' show CustomButton;
 import '../../../../core/widgets/section.dart';
 
-class LocationAndParticipantsSection extends StatefulWidget{
+class LocationAndParticipantsSection extends StatefulWidget {
   final CompetitionContext enterContext;
   final Competition competition;
   final TextEditingController meetingPlaceController;
   final bool saved;
-  const LocationAndParticipantsSection({super.key,required this.competition,required this.meetingPlaceController,required this.enterContext,required this.saved});
+
+  const LocationAndParticipantsSection({
+    super.key,
+    required this.competition,
+    required this.meetingPlaceController,
+    required this.enterContext,
+    required this.saved,
+  });
 
   @override
-  State<LocationAndParticipantsSection>  createState() => _LocationAndParticipantsSectionState();
+  State<LocationAndParticipantsSection> createState() => _LocationAndParticipantsSectionState();
 }
 
 class _LocationAndParticipantsSectionState extends State<LocationAndParticipantsSection> {
-
   /// Add place where runners can meet
   Future<void> onTapAddMeetingPlace() async {
     LatLng? latLng;
@@ -35,7 +40,17 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
     if (location?.latitude != null && location?.longitude != null) {
       latLng = LatLng(location!.latitude, location.longitude);
     }
-    final result = await Navigator.pushNamed(context, AppRoutes.meetingPlaceMap,arguments : {"latLng":latLng});
+
+    Mode mode = Mode.view;
+    if (AppData.instance.currentUser?.uid == widget.competition.organizerUid){
+      mode = Mode.edit;
+    }
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.meetingPlaceMap,
+      arguments: {'mode':mode,
+      "latLng": latLng},
+    );
 
     if (result != null && result is LatLng) {
       widget.competition.location = result;
@@ -46,10 +61,12 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
 
       if (placeNames.isNotEmpty) {
         final place = placeNames.first;
-        widget.competition.locationName = "${place.locality ?? ''}, ${place.thoroughfare ?? ''}".trim();
+        widget.competition.locationName = "${place.locality ?? ''}, ${place.thoroughfare ?? ''}"
+            .trim();
 
         setState(() {
-          widget.meetingPlaceController.text = "${widget.competition.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+          widget.meetingPlaceController.text =
+              "${widget.competition.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
         });
       } else {
         widget.meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
@@ -60,23 +77,25 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
   /// On pressed list participants
   void onPressedListParticipants(BuildContext context) async {
     EnterContextUsersList enterContext = EnterContextUsersList.participantsModify;
-    if (widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
+    if (widget.enterContext != CompetitionContext.ownerModify &&
+        widget.enterContext != CompetitionContext.ownerCreate) {
       enterContext = EnterContextUsersList.participantsReadOnly;
     }
 
-    await Navigator.pushNamed(context,
-        AppRoutes.usersList, arguments: {
-          "users":AppData.instance.currentCompetition?.participantsUid ?? {},
-          "enterContext": enterContext,
-        });
-    setState(() {
-
-    });
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.usersList,
+      arguments: {
+        "users": AppData.instance.currentCompetition?.participantsUid ?? {},
+        "enterContext": enterContext,
+      },
+    );
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return       Section(
+    return Section(
       title: "Location and participants",
       children: [
         TextFormField(
@@ -94,14 +113,15 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
         ),
         SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
-
-          CustomButton(
-            text: "Participants (${widget.competition.participantsUid.length})",
-            onPressed: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate ? null : () => onPressedListParticipants(context),
-            backgroundColor: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate ? AppColors.gray : AppColors.primary
-          ),
-
-
+        CustomButton(
+          text: "Participants (${widget.competition.participantsUid.length})",
+          onPressed: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate
+              ? null
+              : () => onPressedListParticipants(context),
+          backgroundColor: !widget.saved && widget.enterContext == CompetitionContext.ownerCreate
+              ? AppColors.gray
+              : AppColors.primary,
+        ),
       ],
     );
   }

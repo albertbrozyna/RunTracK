@@ -9,6 +9,7 @@ import '../../../../core/enums/visibility.dart';
 import '../models/competition.dart';
 import '../../../notifications/data/models/notification.dart';
 import '../models/competition_fetch_result.dart';
+import '../models/competition_result.dart';
 
 
 
@@ -60,7 +61,6 @@ class CompetitionService {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
           .where("visibility", isEqualTo: ComVisibility.everyone.toString())
-          .where("organizerUid", isNotEqualTo: FirebaseAuth.instance.currentUser?.uid)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -76,6 +76,7 @@ class CompetitionService {
 
       final competitions = querySnapshot.docs
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
+          .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
       return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
@@ -115,7 +116,6 @@ class CompetitionService {
 
       final competitions = querySnapshot.docs
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
-          .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
       return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {
@@ -162,11 +162,19 @@ class CompetitionService {
     if (competitionsIds.isEmpty) {
       return CompetitionFetchResult(competitions: [], lastDocument: null);
     }
+
+    // Limit for 30 to make it work
+    if(competitionsIds.length > 30){
+      competitionsIds = competitionsIds.take(30).toSet();
+    }
+
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
           .where("competitionId", whereIn: competitionsIds)
+          .orderBy("createdAt",descending: true)
           .limit(limit);
+      
 
       if (lastDocument != null) {
         queryCompetitions = queryCompetitions.startAfterDocument(lastDocument);
@@ -185,8 +193,6 @@ class CompetitionService {
     }
   }
 
-
-
   static Future<List<Competition>> fetchMyParticipatedCompetitions({
     required Set<String>myParticipatedCompetitions,
   }) async {
@@ -204,7 +210,7 @@ class CompetitionService {
           .collection(FirestoreCollections.competitions)
           .where("competitionId",whereIn: competitionsToGet)
           .orderBy("createdAt")
-          .limit(5);
+          .limit(10);
 
       final querySnapshot = await queryCompetitions.get();
 
@@ -290,6 +296,7 @@ class CompetitionService {
               createdAt: DateTime.now(),
               seen: false,
               type: NotificationType.inviteCompetition,
+              objectId: competitionId,
             );
             break;
           case ParticipantManagementAction.resignFromCompetition:
@@ -329,7 +336,7 @@ class CompetitionService {
       });
 
       if (notification != null) {
-        await NotificationService.saveNotification(notification!);
+        await NotificationService.saveNotification(notification: notification!);
       }
 
       return true;
@@ -357,4 +364,89 @@ class CompetitionService {
       print("Error closing competition: $e");
     }
   }
+
+  /// Save results of competition
+  Future<void> saveResult(CompetitionResult result) async {
+    try {
+      await FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults)
+          .doc(result.competitionId)
+          .set(result.toJson());
+    } catch (e) {
+      print("Error saving results: $e");
+      rethrow;
+    }
+  }
+
+  Future<CompetitionResult?> getResult(String competitionId) async {
+    try {
+      final docSnap = await FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults)
+          .doc(competitionId).get();
+
+      if (docSnap.exists) {
+        return CompetitionResult.fromJson(docSnap.data()!);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error loading results: $e");
+      return null;
+    }
+  }
+
+  Future<void> addOrUpdateRecord(String competitionId, Record newRecord) async {
+    final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults).doc(competitionId);
+
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final docSnap = await transaction.get(docRef);
+
+        List<Record> currentRanking = [];
+
+        if (!docSnap.exists) {
+          currentRanking = [newRecord.copyWith(finalPlace: 1)];
+        } else {
+          final data = docSnap.data();
+          if (data != null) {
+            final rankingList = (data['ranking'] as List<dynamic>?) ?? [];
+            currentRanking = rankingList
+                .map((recordData) =>
+                Record.fromJson(recordData as Map<String, dynamic>))
+                .toList();
+          }
+
+          final existingIndex = currentRanking
+              .indexWhere((r) => r.userUid == newRecord.userUid);
+
+          if (existingIndex != -1) {
+            currentRanking[existingIndex] = newRecord;
+          } else {
+            currentRanking.add(newRecord);
+          }
+        }
+
+        // Sort by finished and time
+        currentRanking.sort((a, b) {
+          if (a.finished && !b.finished) return -1;
+          if (!a.finished && b.finished) return 1;
+          return a.time.compareTo(b.time);
+        });
+
+        List<Record> finalRanking = [];
+        for (int i = 0; i < currentRanking.length; i++) {
+          finalRanking.add(currentRanking[i].copyWith(finalPlace: i + 1));
+        }
+
+        final resultToSave = CompetitionResult(
+          competitionId: competitionId,
+          ranking: finalRanking,
+        );
+
+        transaction.set(docRef, resultToSave.toJson());
+      });
+    } catch (e) {
+      print("Error: $e");
+      rethrow;
+    }
+  }
+
 }

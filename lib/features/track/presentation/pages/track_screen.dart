@@ -156,7 +156,8 @@ class TrackScreenState extends State<TrackScreen> {
                                 point: TrackState.trackStateInstance.currentPosition!,
                                 width: 40,
                                 height: 40,
-                                child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                                child: Icon(Icons.person_pin_circle, color: Colors.red, size: 50),
+                                rotate: true
                               ),
                             ],
                           ),

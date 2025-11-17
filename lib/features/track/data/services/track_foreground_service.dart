@@ -329,20 +329,44 @@ class ForegroundTrackService {
   }
 
   Future<void> startTracking() async {
-    if (!await service.isRunning()) { // if doesnt work
-      await service.startService();
-      print("MYLOG New service started");
+    if (await service.isRunning()) {
+      print("MYLOG Poprzedni serwis działa. Zatrzymuję go...");
 
       final completer = Completer<void>();
-
       late StreamSubscription sub;
-      sub = service.on(ServiceEvent.ready.name).listen((_) {
+      sub = service.on(ServiceEvent.stopped.name).listen((_) {
+        print("MYLOG Otrzymano sygnał 'stopped' od starego serwisu.");
         completer.complete();
         sub.cancel();
       });
-      await completer.future;
+
+      service.invoke(ServiceEvent.stopService.name);
+
+      try {
+        await completer.future.timeout(const Duration(seconds: 3));
+        print("MYLOG Stary serwis poprawnie zatrzymany.");
+      } catch (e) {
+        print("MYLOG Zatrzymanie starego serwisu przekroczyło limit czasu. Wymuszam...");
+        await service.stopService(); // To jest twarde zatrzymanie z platformy
+      }
     }
 
+    await service.startService();
+    print("MYLOG Nowy serwis uruchomiony.");
+
+    final readyCompleter = Completer<void>();
+    late StreamSubscription readySub;
+    readySub = service.on(ServiceEvent.ready.name).listen((_) {
+      print("MYLOG Nowy serwis jest gotowy.");
+      readyCompleter.complete();
+      readySub.cancel();
+    });
+
+    try {
+      await readyCompleter.future.timeout(const Duration(seconds: 3));
+    } catch (e) {
+      print("MYLOG Nowy serwis nie zgłosił gotowości na czas.");
+    }
 
     service.invoke(ServiceEvent.startService.name);
     print("MYLOG after start in ui side");

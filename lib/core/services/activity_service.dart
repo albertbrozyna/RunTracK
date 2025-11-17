@@ -35,14 +35,13 @@ class ActivityService {
     return "$hours:$minutes:$secs";
   }
 
-  /// Convert Activity object to Firestore map
 
   /// Fetch last {limit} activities from all users
   static Future<List<Activity>> fetchLatestActivities(int limit) async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('activities')
-          .where("visibility", isEqualTo: "Visibility.everyone")
+          .collection(FirestoreCollections.activities)
+          .where("visibility", isEqualTo: ComVisibility.everyone.name)
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
@@ -53,7 +52,6 @@ class ActivityService {
 
       return activities;
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching latest activities: $e");
       return [];
     }
@@ -120,7 +118,6 @@ class ActivityService {
       Query queryActivities = FirebaseFirestore.instance
           .collection(FirestoreCollections.activities)
           .where("visibility", isEqualTo: ComVisibility.everyone.name)
-          .where("uid", isNotEqualTo: FirebaseAuth.instance.currentUser?.uid)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -146,7 +143,6 @@ class ActivityService {
     }
   }
 
-  // TODO TO CHECK
   /// Fetch pages of friends activities
   static Future<ActivitiesFetchResult> fetchLastFriendsActivitiesPage(
     int limit,

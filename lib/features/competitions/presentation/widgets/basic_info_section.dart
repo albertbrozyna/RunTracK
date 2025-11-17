@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -97,7 +96,10 @@ class _BasicInfoSectionState extends State<BasicInfoSection> {
           controller: widget.nameController,
           style: AppUiConstants.textStyleTextFields,
           readOnly: widget.readOnly,
-          decoration: InputDecoration(label: Text("Name of competition"), hintText: "Name of competition"),
+          decoration: InputDecoration(
+            label: Text("Name of competition"),
+            hintText: "Name of competition",
+          ),
           validator: validateName,
         ),
         SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -116,56 +118,63 @@ class _BasicInfoSectionState extends State<BasicInfoSection> {
           validator: validateDescription,
         ),
         SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-        DropdownMenu(
-          initialSelection: widget.visibility,
-          enabled: !widget.readOnly,
-          maxLines: 1,
-          textAlign: TextAlign.left,
-          label: Text("Visibility"),
-          width: double.infinity,
-          onSelected: (enums.ComVisibility? visibility) {
-            // Selecting visibility
-            setState(() {
-              if (visibility != null) {
-                _visibility = visibility;
-                widget.setVisibility(
-                  visibility
-                );
-              }
-            });
-          },
-          trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
-          selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-          menuStyle: MenuStyle(
-            backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
-            alignment: Alignment.center,
+
+          IgnorePointer(
+            ignoring: widget.readOnly,
+          child: DropdownMenu(
+            initialSelection: widget.visibility,
+            maxLines: 1,
+            textAlign: TextAlign.left,
+            label: Text("Visibility"),
+            width: double.infinity,
+            inputDecorationTheme: InputDecorationTheme(
+              disabledBorder: AppUiConstants.borderTextFields,
+              labelStyle: TextStyle(color: Colors.white),
+            ),
+            textStyle: TextStyle(color: Colors.white),
+
+            onSelected: (enums.ComVisibility? visibility) {
+              // Selecting visibility
+              setState(() {
+                if (visibility != null) {
+                  _visibility = visibility;
+                  widget.setVisibility(visibility);
+                }
+              });
+            },
+            trailingIcon: widget.readOnly ? null : Icon(color: Colors.white, Icons.arrow_drop_down),
+            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+            menuStyle: MenuStyle(
+              backgroundColor: WidgetStatePropertyAll(AppColors.primary.withValues(alpha: 0.6)),
+              alignment: Alignment.center,
+            ),
+            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
+              DropdownMenuEntry(
+                value: enums.ComVisibility.me,
+                label: "Only Me",
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                ),
+              ),
+              DropdownMenuEntry(
+                value: enums.ComVisibility.friends,
+                label: "Friends",
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                ),
+              ),
+              DropdownMenuEntry(
+                value: enums.ComVisibility.everyone,
+                label: "Everyone",
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                ),
+              ),
+            ],
           ),
-          dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
-            DropdownMenuEntry(
-              value: enums.ComVisibility.me,
-              label: "Only Me",
-              style: ButtonStyle(
-                foregroundColor: WidgetStatePropertyAll(Colors.white),
-                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-              ),
-            ),
-            DropdownMenuEntry(
-              value: enums.ComVisibility.friends,
-              label: "Friends",
-              style: ButtonStyle(
-                foregroundColor: WidgetStatePropertyAll(Colors.white),
-                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-              ),
-            ),
-            DropdownMenuEntry(
-              value: enums.ComVisibility.everyone,
-              label: "Everyone",
-              style: ButtonStyle(
-                foregroundColor: WidgetStatePropertyAll(Colors.white),
-                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-              ),
-            ),
-          ],
         ),
       ],
     );

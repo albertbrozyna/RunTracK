@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -414,6 +415,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         AppData.instance.currentCompetition = newCompetition;
         tabToRefresh.add(widget.initTab);
 
+        // Update user counter for created competitions
+        UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? "", {
+          'competitionsCount' : FieldValue.increment(1),
+        });
+        
         AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
         setState(() {
           saved = true;

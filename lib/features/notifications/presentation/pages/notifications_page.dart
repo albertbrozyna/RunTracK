@@ -1,9 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/features/competitions/data/services/competition_service.dart';
 
 import '../../../../app/config/app_images.dart';
+import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/ui_constants.dart';
+import '../../../../core/enums/competition_role.dart';
+import '../../../../core/enums/user_mode.dart';
+import '../../../competitions/data/models/competition.dart';
 import '../../data/models/notification.dart';
 import '../../data/services/notification_service.dart';
 import '../../../../core/widgets/no_items_msg.dart';
@@ -20,6 +25,7 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   bool _isLoading = false;
   bool _hasMore = true;
+  bool _isNavigating = false;
   final int _limit = 20;
   final ScrollController _scrollController = ScrollController();
   DocumentSnapshot? _lastPageNotifications;
@@ -39,14 +45,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   void initialize() {
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent && _hasMore) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent &&
+          _hasMore) {
         _loadMyNotifications();
       }
     });
 
     _loadMyNotifications();
   }
-
 
   Future<void> _loadMyNotifications() async {
     if (_isLoading || !_hasMore) {
@@ -75,7 +81,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
           _isLoading = false;
         });
       }
-
     } catch (e) {
       print("Error loading notifications: $e");
       if (mounted) {
@@ -85,6 +90,41 @@ class _NotificationsPageState extends State<NotificationsPage> {
         });
       }
     }
+  }
+
+  void onTapNotification(AppNotification notification) async {
+    if (_isNavigating || notification.objectId.isEmpty) {
+      return; // No id we don't naviagete
+    }
+    setState(() {
+      _isNavigating;
+    });
+
+    if (notification.type == NotificationType.inviteCompetition) {
+      Competition? competitionData = await CompetitionService.fetchCompetition(notification.objectId);
+      if(!mounted){
+        _isNavigating = false;
+        return;
+      }
+      if(competitionData != null){
+        Navigator.pushNamed(
+          context,
+          AppRoutes.competitionDetails,
+          arguments: {
+            'initTab': 4,
+            'enterContext': CompetitionContext.invited,
+            'competitionData': competitionData,
+          },
+        );
+      }
+    } else if (notification.type == NotificationType.inviteFriends) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.profile,
+        arguments: {'uid': notification.objectId, 'userMode': UserMode.friends},
+      );
+    }
+    _isNavigating = false;
   }
 
   Widget buildContent() {
@@ -106,7 +146,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
         final notification = _notifications[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: AppUiConstants.pageBlockSpacingBetweenElements),
-          child: NotificationTile(key: ValueKey(notification.notificationId), notification: notification),
+          child: InkWell(
+            onTap: () => onTapNotification(notification),
+            child: NotificationTile(
+              key: ValueKey(notification.notificationId),
+              notification: notification,
+            ),
+          ),
         );
       },
     );
@@ -116,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Notifications")),
-      body: PageContainer(assetPath:AppImages.appBg4,child: buildContent()),
+      body: PageContainer(assetPath: AppImages.appBg4, child: buildContent()),
     );
   }
 }

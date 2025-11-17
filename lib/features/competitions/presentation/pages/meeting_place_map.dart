@@ -6,11 +6,13 @@ import 'package:run_track/core/utils/utils.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/enums/mode.dart';
 
 class MeetingPlaceMap extends StatefulWidget {
   final LatLng? latLng;
+  final Mode mode;
 
-  const MeetingPlaceMap({super.key, this.latLng});
+  const MeetingPlaceMap({super.key, required this.mode, this.latLng});
 
   @override
   State<MeetingPlaceMap> createState() => _MeetingPlaceMapState();
@@ -20,6 +22,7 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
   final MapController _mapController = MapController();
   LatLng? latLng;
   bool edit = false;
+  LatLng? _currentPosition;
 
   @override
   void initState() {
@@ -49,13 +52,20 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
           }
           return;
         }
+
       }
 
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(accuracy: LocationAccuracy.best),
       );
+      final myLocation = LatLng(position.latitude, position.longitude);
 
-      _mapController.move(LatLng(position.latitude, position.longitude), 15.0);
+      _mapController.move(myLocation, 15.0);
+
+      setState(() {
+        _currentPosition = myLocation;
+      });
+
     } catch (e) {
       print("Error fetching location: $e");
     }
@@ -93,24 +103,22 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             FloatingActionButton(
-              mini: true,
               onPressed: _moveToCurrentLocation,
-              heroTag: 'fab_gps',
               child: const Icon(Icons.my_location),
             ),
             const SizedBox(height: 16),
-
-            FloatingActionButton.extended(
-              onPressed: () {
-                setState(() {
-                  edit = !edit;
-                });
-              },
-              backgroundColor: edit ? Colors.green : AppColors.primary,
-              label: Text(edit ? "Save" : "Select point"),
-              icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
-              heroTag: 'fab_edit',
-            ),
+            if (widget.mode == Mode.edit)
+              FloatingActionButton.extended(
+                onPressed: () {
+                  setState(() {
+                    edit = !edit;
+                  });
+                },
+                backgroundColor: edit ? Colors.green : AppColors.primary,
+                label: Text(edit ? "Save" : "Select point"),
+                icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
+                heroTag: 'fab_edit',
+              ),
           ],
         ),
         body: FlutterMap(
@@ -134,11 +142,20 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
             if (latLng != null)
               MarkerLayer(
                 markers: [
+                  if (_currentPosition != null)
+                    Marker(
+                      point: _currentPosition!,
+                      width: 40,
+                      height: 40,
+                      child: Icon(Icons.person_pin_circle, color: Colors.red, size: 50),
+                      rotate: true
+                    ),
                   Marker(
                     point: latLng!,
                     width: 40,
                     height: 40,
                     child: Icon(Icons.location_on, color: Colors.red, size: 40),
+                    rotate: true
                   ),
                 ],
               ),

@@ -196,6 +196,7 @@ class TrackState extends ChangeNotifier {
       Position position = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.best));
 
       latestPosition = position;
+      currentPosition =LatLng(position.latitude, position.longitude);
       positionAccuracy = position.accuracy;
 
       if (followUser && mapController != null) {
