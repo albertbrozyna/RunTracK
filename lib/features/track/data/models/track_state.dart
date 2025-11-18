@@ -35,6 +35,7 @@ class TrackState extends ChangeNotifier {
   double? pace;
   bool followUser = true;
   LatLng? currentPosition;
+  String currentUserCompetition = "";
 
   // gps icon to indicate gps signal
   Icon gpsIcon = Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
@@ -144,7 +145,7 @@ class TrackState extends ChangeNotifier {
       if (event != null) {
         print("nowy sync jest");
         final update = LocationUpdate.fromJson(event);
-
+        currentUserCompetition = update.currentUserCompetition ?? '';
         trackingState = update.trackingState ?? TrackingState.stopped;
         totalDistance = update.totalDistance;
         elevationGain = update.elevationGain;

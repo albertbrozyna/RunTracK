@@ -241,7 +241,7 @@ void onStart(ServiceInstance serviceInstance) async {
       trackingState: trackingState,
       trackedPath: trackedPath,
       elapsedTime: elapsedTime,
-      currentCompetition: currentCompetition
+      currentUserCompetition: currentCompetition
     );
     serviceInstance.invoke(ServiceEvent.sync.name, update.toJson());
   }

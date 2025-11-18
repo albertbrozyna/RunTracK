@@ -185,10 +185,14 @@ class _UsersListState extends State<UsersList> {
                     return Center(child: CircularProgressIndicator());
                   }
                   final user = _users[index];
+                  bool myProfile = false;
+                  if (user.uid == AppData.instance.currentUser?.uid) {
+                    myProfile = true;
+                  }
                   return Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: InkWell(
-                      onTap: () => showUserProfile(user.uid),
+                      onTap: myProfile ? null : () => showUserProfile(user.uid),
                       child: UserProfileTile(
                         key: ValueKey(user.uid),
                         user: user,

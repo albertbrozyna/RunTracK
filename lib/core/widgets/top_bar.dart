@@ -13,7 +13,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(title),
       leading: IconButton(onPressed: (){
-        generate30Competitions();
+        generate100CompetitionRecords("t0YW98Ax8TRwrWntSLa0");
       }, icon: Icon(Icons.abc)),
       actions: [
         IconButton(

@@ -18,13 +18,14 @@ class Competition {
   Set<String> participantsUid;
   Set<String> invitedParticipantsUid;
   enums.ComVisibility visibility; // Visibility of competition
-  Map<String, String>? results; // result: uid of the user -> activity id
   String? activityType; // Allowed activity types of competition
   String? locationName; // Location name
   LatLng? location; // Location
   double distanceToGo; // Km
   List<String> photos; // Photos from competitions
   bool closedBeforeEndTime;
+  List<String >usersThatFinished = [];
+
 
   Competition({
     this.competitionId = '',
@@ -42,15 +43,16 @@ class Competition {
     Set<String>? invitedParticipantsUid,
     this.description,
     this.activityType,
-    this.results,
     this.locationName,
     this.location,
+    List<String>?usersThatFinished,
     bool? closedBeforeEndTime,
     List<String>? photos,
   }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
        photos = photos ?? [],
        participantsUid = participantsUid ?? {},
-       invitedParticipantsUid = invitedParticipantsUid ?? {};
+       invitedParticipantsUid = invitedParticipantsUid ?? {},
+      usersThatFinished = usersThatFinished ?? [];
 
   factory Competition.fromMap(Map<String, dynamic> map) {
     return Competition(
@@ -69,13 +71,13 @@ class Competition {
       participantsUid: map['participantsUid'] != null ? Set<String>.from(List.from(map['participantsUid'])) : {},
       invitedParticipantsUid: map['invitedParticipantsUid'] != null ? Set<String>.from(List.from(map['invitedParticipantsUid'])) : {},
       activityType: map['activityType'],
-      results: map['results'] != null ? Map<String, String>.from(map['results']) : null,
       locationName: map['locationName'],
       location: (map['latitude'] != null && map['longitude'] != null)
           ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
           : null,
       photos: map['photos'] != null ? List<String>.from(map['photos']) : [],
       closedBeforeEndTime: map['closedBeforeEndTime'] ?? false,
+      usersThatFinished: map['usersThatFinished'] != null ? List<String>.from(map['usersThatFinished']) : [],
     );
   }
 
@@ -96,12 +98,12 @@ class Competition {
       'participantsUid': participantsUid.toList(),
       'invitedParticipantsUid': invitedParticipantsUid.toList(),
       'activityType': activityType,
-      'results': results,
       'locationName': locationName,
       'latitude': location?.latitude,
       'longitude': location?.longitude,
       'photos': photos,
       'closedBeforeEndTime': closedBeforeEndTime,
+      'usersThatFinished': usersThatFinished,
     };
   }
 
@@ -141,7 +143,6 @@ class Competition {
       participantsUid: participantsUid ?? this.participantsUid,
       invitedParticipantsUid: invitedParticipantsUid ?? this.invitedParticipantsUid,
       visibility: visibility ?? this.visibility,
-      results: results ?? this.results,
       activityType: activityType ?? this.activityType,
       locationName: locationName ?? this.locationName,
       location: location ?? this.location,
@@ -169,7 +170,6 @@ class Competition {
         AppUtils.setsEqual(other.participantsUid, participantsUid) &&
         AppUtils.setsEqual(other.invitedParticipantsUid, invitedParticipantsUid) &&
         other.visibility == visibility &&
-        AppUtils.mapsEqual(other.results, results) &&
         other.activityType == activityType &&
         other.locationName == locationName &&
         other.location == location &&

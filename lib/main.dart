@@ -1,16 +1,14 @@
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:run_track/app/theme/app_colors.dart';
+import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 
 import 'app/config/firebase_options.dart';
 import 'app/navigation/app_router.dart';
 import 'app/theme/app_theme.dart';
 
-import 'features/auth/presentation/pages/start_page.dart';
-import 'features/home/presentation/home_page.dart';
 import 'features/track/data/services/track_foreground_service.dart';
 import 'l10n/app_localizations.dart';
 
@@ -25,6 +23,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+ 
   await ForegroundTrackService.instance.init();
 
   runApp(const MyApp());
@@ -50,7 +49,7 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('pl'), // Polish (example)
       ],
-      home: FirebaseAuth.instance.currentUser != null ? HomePage() : StartPage(),
+      home: AppInitializer(),
       debugShowCheckedModeBanner: false,
     );
   }

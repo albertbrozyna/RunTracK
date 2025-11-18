@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/enums/competition_role.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 
@@ -44,11 +45,11 @@ class _BottomButtonsState extends State<BottomButtons> {
   bool alreadyParticipate = false;
   bool weAreOwner = false;
   bool weParticipate = false;
+
   @override
   void initState() {
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -59,18 +60,25 @@ class _BottomButtonsState extends State<BottomButtons> {
       canClose = true; // We can close competition
     }
 
-    weAreOwner = widget.competition.organizerUid == (FirebaseAuth.instance.currentUser?.uid ?? false);
-    weParticipate = widget.competition.participantsUid.contains(FirebaseAuth.instance.currentUser!.uid);
+    weAreOwner =
+        widget.competition.organizerUid == (FirebaseAuth.instance.currentUser?.uid ?? false);
+    weParticipate = widget.competition.participantsUid.contains(
+      FirebaseAuth.instance.currentUser!.uid,
+    );
 
     bool open = false;
-    if(widget.competition.visibility == ComVisibility.everyone){
+    if (widget.competition.visibility == ComVisibility.everyone) {
       open = true;
-    } else if((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ?? false) &&
-        widget.competition.visibility == ComVisibility.friends) { // If we are friends and
+    } else if ((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ??
+            false) &&
+        widget.competition.visibility == ComVisibility.friends) {
+      // If we are friends and
       open = true;
     }
 
-    if (widget.competition.invitedParticipantsUid.contains(FirebaseAuth.instance.currentUser!.uid)) {
+    if (widget.competition.invitedParticipantsUid.contains(
+      FirebaseAuth.instance.currentUser!.uid,
+    )) {
       invited = true;
     }
 
@@ -84,30 +92,45 @@ class _BottomButtonsState extends State<BottomButtons> {
     return Column(
       children: [
         SizedBox(height: AppUiConstants.verticalSpacingButtons),
-        if (widget.enterContext == CompetitionContext.ownerCreate || widget.enterContext == CompetitionContext.ownerModify)
+        if (widget.enterContext == CompetitionContext.ownerCreate ||
+            widget.enterContext == CompetitionContext.ownerModify &&
+                (widget.competition.startDate?.isAfter(DateTime.now()) ??
+                    false)) // We can't edit when the competition is started
           CustomButton(text: buttonText, onPressed: widget.handleSaveCompetition),
         if (canClose) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
-          CustomButton(text: "Close competition", backgroundColor: AppColors.gray, onPressed: widget.closeCompetition),
+          CustomButton(
+            text: "Close competition",
+            backgroundColor: AppColors.gray,
+            onPressed: widget.closeCompetition,
+          ),
         ],
         if (invited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Accept invitation", onPressed: widget.acceptInvitation),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Decline invitation", onPressed: widget.declineInvitation),
-          SizedBox(height: AppUiConstants.verticalSpacingButtons),
         ],
 
         if (open && !invited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Join competition", onPressed: widget.joinCompetition),
-          SizedBox(height: AppUiConstants.verticalSpacingButtons),
         ],
 
         if (!weAreOwner && weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Resign from competition", onPressed: widget.resignFromCompetition),
+        ],
+        if (widget.competition.startDate?.isBefore(DateTime.now()) ?? false) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
+          CustomButton(
+            text: "Show results",
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.competitionResults,arguments: {
+                "competitionId":widget.competition.competitionId
+              });
+            },
+          ),
         ],
       ],
     );

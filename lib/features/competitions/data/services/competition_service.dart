@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/features/competitions/data/models/result_record.dart';
 import 'package:run_track/features/notifications/data/services/notification_service.dart';
 
 import '../../../../app/config/app_data.dart';
@@ -366,7 +367,7 @@ class CompetitionService {
   }
 
   /// Save results of competition
-  Future<void> saveResult(CompetitionResult result) async {
+  static Future<void> saveResult(CompetitionResult result) async {
     try {
       await FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults)
           .doc(result.competitionId)
@@ -377,7 +378,7 @@ class CompetitionService {
     }
   }
 
-  Future<CompetitionResult?> getResult(String competitionId) async {
+  static Future<CompetitionResult?> fetchResult(String competitionId) async {
     try {
       final docSnap = await FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults)
           .doc(competitionId).get();
@@ -393,14 +394,14 @@ class CompetitionService {
     }
   }
 
-  Future<void> addOrUpdateRecord(String competitionId, Record newRecord) async {
+  static Future<void> addOrUpdateRecord(String competitionId, ResultRecord newRecord) async {
     final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults).doc(competitionId);
 
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final docSnap = await transaction.get(docRef);
 
-        List<Record> currentRanking = [];
+        List<ResultRecord> currentRanking = [];
 
         if (!docSnap.exists) {
           currentRanking = [newRecord.copyWith(finalPlace: 1)];
@@ -410,7 +411,7 @@ class CompetitionService {
             final rankingList = (data['ranking'] as List<dynamic>?) ?? [];
             currentRanking = rankingList
                 .map((recordData) =>
-                Record.fromJson(recordData as Map<String, dynamic>))
+                ResultRecord.fromJson(recordData as Map<String, dynamic>))
                 .toList();
           }
 
@@ -431,7 +432,7 @@ class CompetitionService {
           return a.time.compareTo(b.time);
         });
 
-        List<Record> finalRanking = [];
+        List<ResultRecord> finalRanking = [];
         for (int i = 0; i < currentRanking.length; i++) {
           finalRanking.add(currentRanking[i].copyWith(finalPlace: i + 1));
         }

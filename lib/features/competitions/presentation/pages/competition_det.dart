@@ -38,7 +38,7 @@ class CompetitionDetailsPage extends StatefulWidget {
   State<CompetitionDetailsPage> createState() => _CompetitionDetailsPageState();
 }
 
-enum CompetitionState { canStart, inProgress, finished }
+enum CompetitionState { canStart, inProgress, finished,currentlyAssigned,notAssigned }
 
 class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final _formKey = GlobalKey<FormState>();
@@ -419,7 +419,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? "", {
           'competitionsCount' : FieldValue.increment(1),
         });
-        
+
         AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
         setState(() {
           saved = true;

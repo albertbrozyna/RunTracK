@@ -17,7 +17,7 @@ class LocationUpdate {
   final List<LatLng>? trackedPath;
   final double positionAccuracy;
   final TrackingState? trackingState;
-  final String? currentCompetition;
+  final String? currentUserCompetition;
 
   LocationUpdate({
     required this.type,
@@ -34,7 +34,7 @@ class LocationUpdate {
     required this.positionAccuracy,
     this.trackingState,
     this.trackedPath,
-    this.currentCompetition,
+    this.currentUserCompetition,
   });
 
   Map<String, dynamic> toJson() {
@@ -53,6 +53,7 @@ class LocationUpdate {
       'trackedPath': trackedPath?.map((e) => {'lat': e.latitude, 'lng': e.longitude}).toList(),
       'positionAccuracy': positionAccuracy,
       'trackingState': trackingState?.name,
+      'currentUserCompetition': currentUserCompetition,
     };
   }
 
@@ -77,6 +78,7 @@ class LocationUpdate {
       steps: json['steps'] ?? 0,
       calories: (json['calories'] ?? 0).toDouble(),
       trackedPath: path,
+      currentUserCompetition: json['currentUserCompetition'] ?? '',
       positionAccuracy: (json['positionAccuracy'] ?? 0).toDouble(),
       trackingState: json['trackingState'] != null
           ? TrackingState.values.firstWhere((e) => e.name == json['trackingState']) : null,

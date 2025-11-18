@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:run_track/app/theme/ui_constants.dart';
 
 import 'app_colors.dart';
@@ -20,6 +21,13 @@ class AppTheme {
         headlineLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       appBarTheme: AppBarTheme(
+        systemOverlayStyle:  SystemUiOverlayStyle(
+
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
         backgroundColor: AppColors.primary,
         centerTitle: true,
         titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),

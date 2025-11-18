@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
+import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/features/track/presentation/widgets/action_buttons.dart';
 import 'package:run_track/features/track/presentation/widgets/current_competition_banner.dart';
 
@@ -15,6 +16,7 @@ import '../../../../core/enums/tracking_state.dart';
 import '../../../../core/services/activity_service.dart';
 import '../../../../core/services/preferences_service.dart';
 
+import '../../../competitions/data/services/competition_service.dart';
 import '../../data/models/track_state.dart';
 import '../widgets/activity_stats.dart';
 import '../widgets/fab_location.dart';
@@ -133,7 +135,7 @@ class TrackScreenState extends State<TrackScreen> {
                     child: FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: TrackState.trackStateInstance.currentPosition ?? LatLng(0, 0),
+                        initialCenter: TrackState.trackStateInstance.currentPosition ?? LatLng(AppConstants.defaultLat,AppConstants.defaultLon),
                         initialZoom: 15.0,
                         interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
@@ -223,7 +225,7 @@ class TrackScreenState extends State<TrackScreen> {
         onPressed: () {
           setState(() {
             _followUser = !_followUser;
-            TrackState.trackStateInstance.followUser = !_followUser;
+            TrackState.trackStateInstance.followUser = _followUser;
             if (_followUser && TrackState.trackStateInstance.currentPosition != null) {
               _mapController.move(TrackState.trackStateInstance.currentPosition!, _mapController.camera.zoom);
             }

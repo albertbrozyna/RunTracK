@@ -24,6 +24,7 @@ class Activity {
   double? elevationGain; // m
   int? steps;
   double? pace;
+  String competitionId = "";
 
   Activity({
     this.activityId = "",
@@ -42,7 +43,8 @@ class Activity {
     this.avgSpeed,
     this.elevationGain,
     this.steps,
-    this.pace
+    this.pace,
+    this.competitionId = ""
   });
 
   factory Activity.fromMap(Map<String, dynamic> map) {
@@ -70,6 +72,7 @@ class Activity {
       elevationGain: map['elevationGain']?.toDouble(),
       steps: map['steps']?.toInt(),
       pace: map['pace']?.toDouble(),
+      competitionId: map['competitionId'] ?? '',
     );
   }
 
@@ -92,6 +95,7 @@ class Activity {
       'elevationGain': elevationGain,
       'steps': steps,
       'pace': pace,
+      'competitionId': competitionId,
     };
   }
 
@@ -107,6 +111,7 @@ class Activity {
         calories == a.calories &&
         avgSpeed == a.avgSpeed &&
         elevationGain == a.elevationGain &&
+        competitionId == a.competitionId &&
         steps == a.steps &&
         pace == a.pace &&
         AppUtils.pathEquals(trackedPath, a.trackedPath) &&

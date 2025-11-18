@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../competitions/data/services/competition_service.dart';
 
 class CurrentCompetitionBanner extends StatefulWidget {
   const CurrentCompetitionBanner({super.key});
@@ -13,24 +12,6 @@ class CurrentCompetitionBanner extends StatefulWidget {
 
 class _CurrentCompetitionBannerState extends State<CurrentCompetitionBanner> {
 
-
-  @override
-  void initState() {
-    super.initState();
-    fetchCurrentCompetition();
-  }
-
-  void fetchCurrentCompetition() async{
-    if((AppData.instance.currentUser?.currentCompetition.isNotEmpty ?? false) && AppData.instance.currentUserCompetition == null){
-      AppData.instance.currentUserCompetition = await CompetitionService.fetchCompetition(AppData.instance.currentUser!.currentCompetition);
-      if(AppData.instance.currentUserCompetition != null){
-        setState(() {
-
-        });
-      }
-    }
-
-  }
 
   @override
   Widget build(BuildContext context) {
