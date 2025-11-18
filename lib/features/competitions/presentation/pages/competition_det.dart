@@ -97,7 +97,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
   void _setReadOnlyState() {
-    if (widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) {
+    if ((widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) || (widget.competitionData?.startDate?.isBefore(DateTime.now()) ?? false)) {
       readOnly = true;
     }
   }
@@ -447,14 +447,15 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     await Future.delayed(const Duration(milliseconds: 50));
     if (!mounted) return;
 
-    if (widget.enterContext != CompetitionContext.ownerModify) {
+
+    var compData = _getDataFromForm();
+
+    if ((widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate)|| (compData.startDate?.isBefore(DateTime.now()) ?? false)) {
       // If it is not owner and he is not modifying competition, leave
       Navigator.of(context).pop();
       leavingPage = false;
       return;
     }
-
-    var compData = _getDataFromForm();
 
     // If there is no changes, just pop
     if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
