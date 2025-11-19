@@ -16,6 +16,9 @@ class AppRoutes {
   static const String competitionDetails = '/competitionDetails';
   static const String meetingPlaceMap = '/meetingPlaceMap';
   static const String competitionResults = '/competitionResults';
+  static const String trackedPathMap = '/trackedPathMap';
+  static const String appInitializer = '/appInitializer';
+
 
 
 

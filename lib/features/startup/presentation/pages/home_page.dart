@@ -9,6 +9,8 @@ import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_page.dart';
 import 'package:run_track/features/profile/presentation/pages/profile_page.dart';
 import 'package:run_track/features/track/presentation/pages/track_screen.dart';
+import 'package:run_track/features/track/data/models/track_state.dart';
+import 'package:run_track/core/enums/tracking_state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,7 +29,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  /// Ask user for location
   Future<void> _askLocation() async {
     try {
       await PermissionUtils.determinePosition();
@@ -58,7 +59,6 @@ class _HomePageState extends State<HomePage> {
     _askLocation();
   }
 
-  /// Get current page name
   String currentPageName(int index) {
     switch (index) {
       case 0:
@@ -75,10 +75,23 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: TopBar(title: currentPageName(_selectedIndex)),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavBar(currentIndex: _selectedIndex, onTap: _onItemTapped),
+    return AnimatedBuilder(
+      animation: TrackState.trackStateInstance,
+      builder: (context, child) {
+        final trackState = TrackState.trackStateInstance;
+        final bool isTrackingActive =
+            trackState.trackingState == TrackingState.running ||
+            trackState.trackingState == TrackingState.paused;
+        final bool hasCompetition = trackState.currentUserCompetition.isNotEmpty;
+        final bool shouldHideBars = isTrackingActive && hasCompetition;
+
+        return Scaffold(
+          appBar: shouldHideBars ? null : TopBar(title: currentPageName(_selectedIndex)),
+          body: IndexedStack(index: _selectedIndex, children: _pages),
+          bottomNavigationBar: shouldHideBars ? null
+              : BottomNavBar(currentIndex: _selectedIndex, onTap: _onItemTapped),
+        );
+      },
     );
   }
 }

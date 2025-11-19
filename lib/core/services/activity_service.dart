@@ -214,7 +214,7 @@ class ActivityService {
   }
 
   /// Save activity to database or update if activity id is not empty
-  static Future<bool> saveActivity(Activity activity) async {
+  static Future<Activity?> saveActivity(Activity activity) async {
     try {
       if (activity.activityId.isNotEmpty) {
         // Activity exists, edit it
@@ -222,17 +222,17 @@ class ActivityService {
             .collection(FirestoreCollections.activities)
             .doc(activity.activityId); // Fetch existing document
         await docRef.set(activity.toMap());
-        return true;
+        return activity;
       }
 
       // New activity, save it
       final docRef = FirebaseFirestore.instance.collection(FirestoreCollections.activities).doc(); // Generate id
       activity.activityId = docRef.id;
       await docRef.set(activity.toMap());
-      return true;
+      return activity;
     } catch (e) {
       print(e);
-      return false;
+      return null;
     }
   }
 

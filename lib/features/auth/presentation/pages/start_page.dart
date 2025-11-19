@@ -31,7 +31,7 @@ class StartPageState extends State<StartPage> {
       // User exist in database so we log in
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
+          Navigator.pushReplacementNamed(context, AppRoutes.appInitializer);
         });
         setState(() {
 
@@ -76,7 +76,7 @@ class StartPageState extends State<StartPage> {
           if (message == "User created") {
             AppUtils.showMessage(context, "Registered successfully!");
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(route) => false);
+              Navigator.pushReplacementNamed(context, AppRoutes.appInitializer);
             });
             setState(() {
 

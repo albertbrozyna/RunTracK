@@ -103,6 +103,7 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             FloatingActionButton(
+              heroTag: "hero1",
               onPressed: _moveToCurrentLocation,
               child: const Icon(Icons.my_location),
             ),
@@ -117,7 +118,7 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
                 backgroundColor: edit ? Colors.green : AppColors.primary,
                 label: Text(edit ? "Save" : "Select point"),
                 icon: Icon(edit ? Icons.check : Icons.edit_location_alt_outlined),
-                heroTag: 'fab_edit',
+                heroTag: 'hero2',
               ),
           ],
         ),

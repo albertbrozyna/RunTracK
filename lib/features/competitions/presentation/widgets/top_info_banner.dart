@@ -1,7 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
+import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -14,9 +13,10 @@ import '../pages/competition_det.dart';
 
 class TopInfoBanner extends StatefulWidget {
   final Competition competition;
+  final CompetitionResult competitionResult;
   final CompetitionContext enterContext;
 
-  const TopInfoBanner({super.key, required this.competition, required this.enterContext});
+  const TopInfoBanner({super.key, required this.competition, required this.competitionResult,required this.enterContext});
 
   @override
   State<TopInfoBanner> createState() => _TopInfoBannerState();
@@ -57,8 +57,8 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
 
     final bool isActive = start != null && end != null && start.isBefore(now) && end.isAfter(now);
 
-    final bool isFinished = widget.competition.usersThatFinished.contains(
-      AppData.instance.currentUser?.uid,
+    final bool isFinished = widget.competitionResult.ranking.any(
+            (record) => record.userUid == AppData.instance.currentUser?.uid
     );
 
     final String currentCompId = AppData.instance.currentUser?.currentCompetition ?? "";

@@ -1,8 +1,13 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/config/app_data.dart';
+import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
+import 'package:run_track/features/competitions/data/models/competition.dart';
+import 'package:run_track/features/competitions/data/models/result_record.dart';
+import 'package:run_track/features/competitions/data/services/competition_service.dart';
+import 'package:run_track/features/track/presentation/widgets/competition_finish_banner.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -18,21 +23,25 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../data/models/track_state.dart';
-import 'activity_choose.dart';
-import 'map.dart';
-
-
 
 class ActivitySummary extends StatefulWidget {
   final Activity activityData;
+  final Competition? currentUserCompetition;
   final String firstName;
   final String lastName;
   final bool readonly;
   final bool editMode;
 
-  const ActivitySummary({super.key, required this.activityData, this.firstName = '', this.lastName = '', bool? readonly, bool? editMode})
-    : readonly = readonly ?? true,
-      editMode = editMode ?? false;
+  const ActivitySummary({
+    super.key,
+    required this.activityData,
+    this.firstName = '',
+    this.lastName = '',
+    bool? readonly,
+    bool? editMode,
+    this.currentUserCompetition,
+  }) : readonly = readonly ?? true,
+       editMode = editMode ?? false;
 
   @override
   State<ActivitySummary> createState() => _ActivitySummaryState();
@@ -40,6 +49,7 @@ class ActivitySummary extends StatefulWidget {
 
 class _ActivitySummaryState extends State<ActivitySummary> {
   bool activitySaved = false; // This var tells us if activity is saved
+  final TextEditingController fullNameController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
@@ -53,16 +63,20 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   void initState() {
     super.initState();
     initialize();
-    setState(() {
-      activityController.text = widget.activityData.activityType ?? "Unknown";
-      titleController.text = widget.activityData.title ?? "${widget.activityData.activityType}, ${(widget.activityData.totalDistance! / 1000).toString()}";
-      descriptionController.text = widget.activityData.description ?? "";
-      _visibility = widget.activityData.visibility;
-    });
   }
 
   void initialize() {
     AuthService.instance.checkAppUseState(context);
+
+    setState(() {
+      fullNameController.text = "${widget.firstName} ${widget.lastName}";
+      titleController.text =
+          widget.activityData.title ??
+          "${widget.activityData.activityType}, ${(widget.activityData.totalDistance! / 1000).toString()}";
+      descriptionController.text = widget.activityData.description ?? "";
+      activityController.text = widget.activityData.activityType ?? "Unknown";
+      _visibility = widget.activityData.visibility;
+    });
   }
 
   /// Get text for save button
@@ -154,9 +168,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
 
     // Save activity to database
-    bool saved = await ActivityService.saveActivity(userActivity);
-    if (saved) {
-      passedActivity = userActivity;
+    Activity? savedActivity = await ActivityService.saveActivity(userActivity);
+    if (savedActivity != null) {
+      passedActivity = savedActivity;
       if (mounted) {
         AppUtils.showMessage(context, 'Changes saved successfully!');
       }
@@ -191,17 +205,40 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       elevationGain: widget.activityData.elevationGain,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
+      competitionId: widget.currentUserCompetition?.competitionId ?? '',
     );
 
     // Save activity to database
-    bool saved = await ActivityService.saveActivity(userActivity);
-    if (saved) {
-      TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
+    Activity? savedActivity = await ActivityService.saveActivity(userActivity);
 
-      // Delete a file from local store if it is saved
+    if (savedActivity != null) {
+      // Save competition result
+      final userResult = ResultRecord(
+        recordId: "",
+        userUid: AppData.instance.currentUser!.uid,
+        firstName: AppData.instance.currentUser!.firstName,
+        lastName: AppData.instance.currentUser!.lastName,
+        distance: widget.activityData.totalDistance ?? 0.0,
+        finished: widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
+        time: Duration(seconds: widget.activityData.elapsedTime!),
+        activityId: savedActivity.activityId,
+      );
+
+      if (widget.currentUserCompetition != null) {
+        CompetitionService.addOrUpdateRecord(
+          widget.currentUserCompetition!.competitionId,
+          userResult,
+        );
+      }
+      // Clear all fields from track state
+      TrackState.trackStateInstance.clearAllFields(notify: true);
       saveLastVisibility();
       if (mounted) {
-        AppUtils.showMessage(context, 'Activity saved successfully!', messageType: MessageType.success);
+        AppUtils.showMessage(
+          context,
+          'Activity saved successfully!',
+          messageType: MessageType.success,
+        );
       }
 
       /// Save last visibility to local prefs
@@ -286,7 +323,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         Navigator.of(context).pop();
       },
       onPressedRight: () {
-        TrackState.trackStateInstance.clearAllFields(notify: true); // Clear all fields from track state
+        TrackState.trackStateInstance.clearAllFields(
+          notify: true,
+        ); // Clear all fields from track state
         Navigator.of(context).pop(); // Two times to close dialog and screen
         Navigator.of(context).pop();
       },
@@ -302,18 +341,22 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   void onTapMap(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => TrackMap(activity: widget.activityData)));
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.trackedPathMap, arguments: {'activity': widget.activityData});
   }
 
   /// Method invoked when user wants to select change activity
   void onTapActivity() async {
-    final selectedActivity = await Navigator.push(
+    final selectedActivity = await Navigator.pushNamed(
       context,
-      MaterialPageRoute(builder: (context) => ActivityChoose(currentActivity: activityController.text.trim())),
+      AppRoutes.activityChoose,
+      arguments: {'currentActivity': activityController.text.trim()},
     );
-    // If the user selected something, update the TextField
-    if (selectedActivity != null && selectedActivity.isNotEmpty) {
-      activityController.text = selectedActivity;
+    if (selectedActivity != null && selectedActivity is String && selectedActivity.isNotEmpty) {
+      setState(() {
+        activityController.text = selectedActivity;
+      });
     }
   }
 
@@ -340,9 +383,25 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           child: SingleChildScrollView(
             child: Column(
               children: [
+                if (widget.currentUserCompetition != null)
+                  CompetitionFinishBanner(
+                    competition: widget.currentUserCompetition!,
+                    activity: widget.activityData,
+                  ),
+
+                // First name and last name
+                TextFormField(
+                  readOnly: true,
+                  controller: titleController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Title",
+                    labelStyle: TextStyle(fontSize: 18),
+                  ),
+                ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Title
-                TextField(
+                TextFormField(
                   readOnly: widget.readonly,
                   enabled: !widget.readonly,
                   controller: titleController,
@@ -355,15 +414,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Description
                 Visibility(
-                  visible: !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
+                  visible:
+                      !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
                   child: TextField(
                     readOnly: widget.readonly,
                     enabled: !widget.readonly,
                     maxLines: 3,
                     controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: "Description",
-                    ),
+                    decoration: InputDecoration(labelText: "Description"),
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -381,8 +439,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         decoration: InputDecoration(
                           labelText: "Activity type",
                           suffixIcon: IconButton(
-                              onPressed: widget.readonly ? null : () => onTapActivity(),
-                              icon: Icon(Icons.list, color: Colors.white),
+                            onPressed: widget.readonly ? null : () => onTapActivity(),
+                            icon: Icon(Icons.list, color: Colors.white),
                           ),
                         ),
                       ),
@@ -391,7 +449,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     // Visibility
                     Expanded(
                       child: Theme(
-                        data: Theme.of(context).copyWith(iconTheme: IconThemeData(color: Colors.white)),
+                        data: Theme.of(
+                          context,
+                        ).copyWith(iconTheme: IconThemeData(color: Colors.white)),
                         child: DropdownMenu(
                           enabled: !widget.readonly,
                           initialSelection: _visibility,
@@ -411,12 +471,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
                           selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
                           dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
-                            DropdownMenuEntry(
-                              value: enums.ComVisibility.me,
-                              label: "Only Me",
-                            ),
+                            DropdownMenuEntry(value: enums.ComVisibility.me, label: "Only Me"),
                             DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
-                            DropdownMenuEntry(value: enums.ComVisibility.everyone, label: "Everyone"),
+                            DropdownMenuEntry(
+                              value: enums.ComVisibility.everyone,
+                              label: "Everyone",
+                            ),
                           ],
                         ),
                       ),
@@ -434,17 +494,24 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         if (widget.activityData.elapsedTime != null)
                           StatCard(
                             title: "Time",
-                            value: ActivityService.formatElapsedTimeFromSeconds(widget.activityData.elapsedTime!),
+                            value: ActivityService.formatElapsedTimeFromSeconds(
+                              widget.activityData.elapsedTime!,
+                            ),
                             icon: Icon(Icons.timer),
                           ),
                         if (widget.activityData.totalDistance != null)
                           StatCard(
                             title: "Distance",
-                            value: '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
+                            value:
+                                '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
                             icon: Icon(Icons.social_distance),
                           ),
                         if (widget.activityData.totalDistance != null)
-                          StatCard(title: "Pace", value: widget.activityData.pace.toString(), icon: Icon(Icons.man)),
+                          StatCard(
+                            title: "Pace",
+                            value: widget.activityData.pace.toString(),
+                            icon: Icon(Icons.man),
+                          ),
                         if (widget.activityData.calories != null)
                           StatCard(
                             title: "Calories",
@@ -458,7 +525,11 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             icon: Icon(Icons.speed),
                           ),
                         if (widget.activityData.steps != null)
-                          StatCard(title: "Steps", value: widget.activityData.steps.toString(), icon: Icon(Icons.directions_walk)),
+                          StatCard(
+                            title: "Steps",
+                            value: widget.activityData.steps.toString(),
+                            icon: Icon(Icons.directions_walk),
+                          ),
                         if (widget.activityData.elevationGain != null)
                           StatCard(
                             title: "Elevation",
@@ -486,7 +557,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             onMapReady: () async {
                               // Delay to load a tiles properly
                               Future.delayed(const Duration(milliseconds: 100), () {
-                                AppUtils.fitMapToPath(widget.activityData.trackedPath ?? [], _mapController);
+                                AppUtils.fitMapToPath(
+                                  widget.activityData.trackedPath ?? [],
+                                  _mapController,
+                                );
                               });
                             },
                             interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
@@ -498,7 +572,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                               userAgentPackageName: 'com.example.runtrack',
                             ),
                             PolylineLayer(
-                              polylines: [Polyline(points: widget.activityData.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
+                              polylines: [
+                                Polyline(
+                                  points: widget.activityData.trackedPath ?? [],
+                                  color: Colors.blue,
+                                  strokeWidth: 4.0,
+                                ),
+                              ],
                             ),
                             MarkerLayer(
                               markers: [
@@ -508,7 +588,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                   height: 40,
                                   child: Icon(Icons.flag, color: Colors.green),
                                 ),
-                                if (widget.activityData.trackedPath != null && widget.activityData.trackedPath!.length > 1)
+                                if (widget.activityData.trackedPath != null &&
+                                    widget.activityData.trackedPath!.length > 1)
                                   Marker(
                                     point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
                                     width: 40,
@@ -528,7 +609,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: CustomButton(text: getSaveButtonText(), onPressed: getSaveButtonCallback()),
+                    child: CustomButton(
+                      text: getSaveButtonText(),
+                      onPressed: getSaveButtonCallback(),
+                    ),
                   ),
               ],
             ),

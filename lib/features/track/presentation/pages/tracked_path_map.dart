@@ -1,35 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/core/constants/app_constants.dart';
 
 import '../../../../core/models/activity.dart' show Activity;
 import '../../../../core/utils/utils.dart';
 
-
-class TrackMap extends StatefulWidget {
+class TrackedPathMap extends StatefulWidget {
   final Activity? activity;
 
-  const TrackMap({super.key, this.activity});
+  const TrackedPathMap({super.key, this.activity});
 
   @override
-  State<TrackMap> createState() => _TrackMapState();
+  State<TrackedPathMap> createState() => _TrackedPathMapState();
 }
 
-class _TrackMapState extends State<TrackMap> {
+class _TrackedPathMapState extends State<TrackedPathMap> {
   final MapController _mapController = MapController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Activity map",
-        ),
-      ),
+      appBar: AppBar(title: Text("Activity map")),
       body: FlutterMap(
         mapController: _mapController,
         options: MapOptions(
-          initialCenter: widget.activity?.trackedPath?.first ?? LatLng(0, 0),
+          initialCenter:
+              widget.activity?.trackedPath?.first ??
+              LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
           initialZoom: 15.0,
           onMapReady: () async {
             // Delay to load a tiles properly
@@ -39,10 +37,19 @@ class _TrackMapState extends State<TrackMap> {
           },
         ),
         children: [
-          TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.example.runtrack'),
+          TileLayer(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.runtrack',
+          ),
           if (widget.activity?.trackedPath?.isNotEmpty ?? false)
             PolylineLayer(
-              polylines: [Polyline(points: widget.activity?.trackedPath ?? [], color: Colors.blue, strokeWidth: 4.0)],
+              polylines: [
+                Polyline(
+                  points: widget.activity?.trackedPath ?? [],
+                  color: Colors.blue,
+                  strokeWidth: 4.0,
+                ),
+              ],
             ),
           if (widget.activity?.trackedPath?.isNotEmpty ?? false)
             MarkerLayer(
@@ -53,7 +60,8 @@ class _TrackMapState extends State<TrackMap> {
                   height: 40,
                   child: Icon(Icons.flag, color: Colors.green),
                 ),
-                if (widget.activity!.trackedPath != null && widget.activity!.trackedPath!.length > 1)
+                if (widget.activity!.trackedPath != null &&
+                    widget.activity!.trackedPath!.length > 1)
                   Marker(
                     point: widget.activity!.trackedPath!.last,
                     width: 40,

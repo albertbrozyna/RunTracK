@@ -22,11 +22,13 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    _bootstrapApp();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bootstrapApp();
+    });
   }
 
   Future<void> _bootstrapApp() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
 
     if (firebaseUser == null) {
       _navigateToStartPage();
@@ -34,13 +36,29 @@ class _AppInitializerState extends State<AppInitializer> {
     }
 
     try {
+      try {
+        await firebaseUser.reload();
+        firebaseUser = FirebaseAuth.instance.currentUser;
+      } catch (e) {
+        print("Auth reload error: $e");
+        AuthService.instance.signOutUser();
+        _navigateToStartPage();
+        return;
+      }
+
+      if (firebaseUser == null) {
+        _navigateToStartPage();
+        return;
+      }
+
       if (AppData.instance.currentUser == null) {
         AppData.instance.currentUser = await UserService.fetchUser(firebaseUser.uid);
 
         if (!mounted) return;
 
         if (AppData.instance.currentUser == null) {
-          AppUtils.showMessage(context, "User not found");
+          AppUtils.showMessage(context, "User profile not found");
+          AuthService.instance.signOutUser();
           _navigateToStartPage();
           return;
         }
@@ -49,20 +67,38 @@ class _AppInitializerState extends State<AppInitializer> {
           AppData.instance.currentCompetition = await CompetitionService.fetchCompetition(
             AppData.instance.currentUser!.currentCompetition,
           );
+
           if (!mounted) return;
 
           if (AppData.instance.currentCompetition == null) {
-            AppUtils.showMessage(context, "Competition not found");
+            print("Competition not found - cleaning up user profile");
+
             AppData.instance.currentUser?.currentCompetition = "";
-            return;
+
+            await UserService.updateUser(AppData.instance.currentUser!);
+
+            if (mounted) {
+              AppUtils.showMessage(context, "Previous competition no longer exists");
+            }
           }
         }
       }
 
       _navigateToHome();
+
     } catch (e) {
-      AuthService.instance.signOutUser();
-      _navigateToStartPage();
+      print("Bootstrap error: $e");
+
+      if (mounted) {
+
+        if (e.toString().contains("permission-denied")) {
+          AuthService.instance.signOutUser();
+          _navigateToStartPage();
+        } else {
+          AuthService.instance.signOutUser();
+          _navigateToStartPage();
+        }
+      }
     }
   }
 
@@ -85,7 +121,7 @@ class _AppInitializerState extends State<AppInitializer> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.only(top: 14),
+                padding: const EdgeInsets.only(top: 14),
                 child: Text(
                   "RunTracK",
                   textAlign: TextAlign.center,
@@ -100,18 +136,18 @@ class _AppInitializerState extends State<AppInitializer> {
 
               Image.asset(AppImages.runtrackAppIcon, width: 300),
 
-              // Text under the logo
               const Text(
                 'Track your runs, improve your fitness!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white, // change if needed
+                  color: Colors.white,
                   shadows: [Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2))],
                 ),
               ),
-              AppLoadingIndicator(),
+              const SizedBox(height: 20),
+              const AppLoadingIndicator(),
             ],
           ),
         ),

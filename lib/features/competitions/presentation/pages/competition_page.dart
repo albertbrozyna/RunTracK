@@ -76,8 +76,6 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   }
 
   Future<void> initialize() async {
-    AuthService.instance.checkAppUseState(context);
-
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {});

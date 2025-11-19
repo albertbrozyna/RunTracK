@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
+import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
+import 'package:run_track/features/track/presentation/pages/tracked_path_map.dart';
 
 import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
@@ -38,12 +40,20 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const HomePage());
       case AppRoutes.competitionResults:
         final args = settings.arguments as Map<String, dynamic>?;
-        final CompetitionResult? competitionResult = args?['competitionResult'] as CompetitionResult?;
-        final String competitionId = args?['competitionId'] as String ?? '';
+        final CompetitionResult? competitionResult =
+            args?['competitionResult'] as CompetitionResult?;
+        final String competitionId = args?['competitionId'] as String;
         return MaterialPageRoute(
           builder: (_) =>
               CompetitionResultsPage(result: competitionResult, competitionId: competitionId),
         );
+      case AppRoutes.trackedPathMap:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final activity = args?['activity'] as Activity?;
+
+        return MaterialPageRoute(builder: (_) => TrackedPathMap(activity: activity));
+      case AppRoutes.appInitializer:
+        return MaterialPageRoute(builder: (_) => AppInitializer());
       case AppRoutes.activitySummary:
         final args = settings.arguments as Map<String, dynamic>?;
         final Activity? activity = args?['activity'] as Activity?;

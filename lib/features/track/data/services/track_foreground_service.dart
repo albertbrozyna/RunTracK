@@ -9,12 +9,21 @@ import '../models/storage.dart';
 
 import '../models/location_update.dart';
 
-enum ServiceEvent { startService, stopService, update, pause, resume, getState, sync, ready, stopped }
+enum ServiceEvent {
+  startService,
+  stopService,
+  update,
+  pause,
+  resume,
+  getState,
+  sync,
+  ready,
+  stopped,
+}
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance serviceInstance) async {
   DartPluginRegistrant.ensureInitialized();
-
 
   print("MYLOG new serwice v1");
   TrackingState trackingState = TrackingState.stopped;
@@ -35,12 +44,15 @@ void onStart(ServiceInstance serviceInstance) async {
   double pace = 0.0;
   LatLng? currentPosition;
   const double maxHumanSpeed = 12.0; // 43 km/h
+  // Competition
   String currentCompetition = ""; // Current competition
+  double distanceToGo = 10.0;
+  Duration maxTimeToComplete = Duration.zero;
 
   Timer? timeTimer;
   StreamSubscription<Position>? positionSubscription;
 
-  void clearStats(){
+  void clearStats() {
     totalDistance = 0.0;
     elevationGain = 0.0;
     elevationLoss = 0.0;
@@ -55,6 +67,8 @@ void onStart(ServiceInstance serviceInstance) async {
     latestPosition = null;
     trackingState = TrackingState.stopped;
     currentCompetition = "";
+    distanceToGo = 0.0;
+    maxTimeToComplete = Duration.zero;
     Storage.clearStorage();
   }
 
@@ -102,7 +116,6 @@ void onStart(ServiceInstance serviceInstance) async {
   //   }
   // } catch (e) {}
 
-
   void startLocationTimerAndStream() {
     if (positionSubscription != null || timeTimer != null) return;
 
@@ -116,7 +129,9 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // location stream
     final locationSettings = LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 15);
-    positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
+    positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((
+      Position position,
+    ) {
       if (position.latitude == 0.0 && position.longitude == 0.0) return;
       if (latestPosition == null) {
         latestPosition = position;
@@ -161,9 +176,18 @@ void onStart(ServiceInstance serviceInstance) async {
           }
 
           if (trackingState == TrackingState.running &&
-              (trackedPath.isEmpty || distanceCalculator.as(LengthUnit.Meter, trackedPath.last, currentPosition!) > 2)) {
+              (trackedPath.isEmpty ||
+                  distanceCalculator.as(LengthUnit.Meter, trackedPath.last, currentPosition!) >
+                      2)) {
             trackedPath.add(currentPosition!);
             print("MYLOG added");
+          }
+
+          // Finish competition
+          if (currentCompetition.isNotEmpty) {
+            if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
+              serviceInstance.invoke(ServiceEvent.stopService.name);
+            }
           }
         }
         print('MYLOG location');
@@ -225,7 +249,7 @@ void onStart(ServiceInstance serviceInstance) async {
     });
   }
 
-  void sendSync(String type){
+  void sendSync(String type) {
     final update = LocationUpdate(
       lat: 0.0,
       lng: 0.0,
@@ -241,7 +265,7 @@ void onStart(ServiceInstance serviceInstance) async {
       trackingState: trackingState,
       trackedPath: trackedPath,
       elapsedTime: elapsedTime,
-      currentUserCompetition: currentCompetition
+      currentUserCompetition: currentCompetition,
     );
     serviceInstance.invoke(ServiceEvent.sync.name, update.toJson());
   }
@@ -252,31 +276,38 @@ void onStart(ServiceInstance serviceInstance) async {
     serviceInstance.on(ServiceEvent.startService.name).listen((Map<String, dynamic>? data) {
       clearStats();
       currentCompetition = data?['currentUserCompetition'] ?? "";
+      distanceToGo = data?['distanceToGo'] ?? 0.0;
+      int maxTimeToCompleteActivityMinutes = data?['maxTimeToCompleteActivityMinutes'];
+      int maxTimeToCompleteActivityHours = data?['maxTimeToCompleteActivityHours'];
+      maxTimeToComplete = Duration(
+        hours: maxTimeToCompleteActivityHours,
+        minutes: maxTimeToCompleteActivityMinutes,
+      );
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
       print("MYLOG start");
-        serviceInstance.setAsForegroundService();
-      });
+      serviceInstance.setAsForegroundService();
+    });
 
     // Stop service
-      serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
-        sendSync("E");  // End sync
-        stopLocationTimerAndStream();
-        clearStats();
+    serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
+      sendSync("E"); // End sync
+      stopLocationTimerAndStream();
+      clearStats();
 
-        print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
+      print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
 
-        serviceInstance.invoke(ServiceEvent.stopped.name);
+      serviceInstance.invoke(ServiceEvent.stopped.name);
 
-        await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
 
-        serviceInstance.stopSelf();
-      });
+      serviceInstance.stopSelf();
+    });
 
     // Get current state
-     serviceInstance.on(ServiceEvent.getState.name).listen((_) {
-       sendSync("S");
-     });
+    serviceInstance.on(ServiceEvent.getState.name).listen((_) {
+      sendSync("S");
+    });
 
     // pause service
     serviceInstance.on(ServiceEvent.pause.name).listen((_) {
@@ -286,12 +317,13 @@ void onStart(ServiceInstance serviceInstance) async {
     });
 
     // resume service
-     serviceInstance.on(ServiceEvent.resume.name).listen((_) {
-       print("MYLOG res");
-       trackingState = TrackingState.running;
+    serviceInstance.on(ServiceEvent.resume.name).listen((_) {
+      print("MYLOG res");
+      trackingState = TrackingState.running;
     });
 
-    Future.delayed(const Duration(seconds: 1), () {  // Service is ready signal here
+    Future.delayed(const Duration(seconds: 1), () {
+      // Service is ready signal here
       serviceInstance.invoke(ServiceEvent.ready.name);
     });
   }
@@ -348,9 +380,8 @@ class ForegroundTrackService {
       service.invoke(ServiceEvent.stopService.name);
 
       try {
-        await completer.future.timeout(const Duration(seconds:4));
-      } catch (e) {
-      }
+        await completer.future.timeout(const Duration(seconds: 4));
+      } catch (e) {}
     }
 
     await service.startService();
@@ -370,8 +401,13 @@ class ForegroundTrackService {
       print("MYLOG Nowy serwis nie zgłosił gotowości na czas.");
     }
 
-    service.invoke(ServiceEvent.startService.name,{
-      'currentUserCompetition': AppData.instance.currentUser?.currentCompetition
+    service.invoke(ServiceEvent.startService.name, {
+      'currentUserCompetition': AppData.instance.currentUser?.currentCompetition,
+      'distanceToGo': AppData.instance.currentUserCompetition?.distanceToGo ?? 0.0,
+      'maxTimeToCompleteActivityHours':
+          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityHours ?? 0.0,
+      'maxTimeToCompleteActivityMinutes':
+          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0.0,
     });
     print("MYLOG after start in ui side");
   }

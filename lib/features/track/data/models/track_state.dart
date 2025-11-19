@@ -61,6 +61,8 @@ class TrackState extends ChangeNotifier {
     }
   }
 
+
+
   void pauseRun() {
     ForegroundTrackService.instance.pauseTracking();
     trackingState = TrackingState.paused;
@@ -73,7 +75,6 @@ class TrackState extends ChangeNotifier {
     _stopCompleter = Completer<void>();
 
     ForegroundTrackService.instance.stopTracking();
-    trackingState = TrackingState.stopped;
     try {
       await _stopCompleter!.future.timeout(const Duration(seconds: 5));
     } catch (e) {

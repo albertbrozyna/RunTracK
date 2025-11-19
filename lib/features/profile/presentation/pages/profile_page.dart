@@ -49,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void initialize() {
-    AuthService.instance.checkAppUseState(context);
+
   }
 
   /// Initialize async data
@@ -86,6 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
         relationshipStatus = UserRelationshipStatus.competitionNotConnected;
       }
     }
+    if(!mounted)return;
     setState(() {
       _isLoading = false;
     });
@@ -102,6 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted && !success) {
         AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
       } else {
+        if(!mounted)return;
         setState(() {
           relationshipStatus = UserRelationshipStatus.competitionPendingSent;
         });

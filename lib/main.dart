@@ -2,7 +2,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:run_track/app/theme/app_colors.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 
 import 'app/config/firebase_options.dart';
@@ -23,7 +22,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
- 
+
   await ForegroundTrackService.instance.init();
 
   runApp(const MyApp());

@@ -5,6 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/constants/app_constants.dart';
+import 'package:run_track/core/enums/visibility.dart';
+import 'package:run_track/core/models/activity.dart';
+import 'package:run_track/features/track/presentation/pages/activity_summary.dart';
 import 'package:run_track/features/track/presentation/widgets/action_buttons.dart';
 import 'package:run_track/features/track/presentation/widgets/current_competition_banner.dart';
 
@@ -16,7 +19,6 @@ import '../../../../core/enums/tracking_state.dart';
 import '../../../../core/services/activity_service.dart';
 import '../../../../core/services/preferences_service.dart';
 
-import '../../../competitions/data/services/competition_service.dart';
 import '../../data/models/track_state.dart';
 import '../widgets/activity_stats.dart';
 import '../widgets/fab_location.dart';
@@ -62,8 +64,59 @@ class TrackScreenState extends State<TrackScreen> {
   void initState() {
     super.initState();
     initialize();
+    TrackState.trackStateInstance.addListener(_onTrackStateChanged);
   }
 
+
+  void _onTrackStateChanged() {
+    final state = TrackState.trackStateInstance;
+
+    if (state.endSync && state.currentUserCompetition.isNotEmpty &&
+        mounted) {
+
+      state.endSync = false;
+
+      // WidgetsBinding.instance.addPostFrameCallback((_) {
+      //   if (mounted) {
+      //     _navigateToSummary();
+      //   }
+      // });
+    }
+  }
+
+  void _navigateToSummary() {
+    final state = TrackState.trackStateInstance;
+
+    final activityData = Activity(
+      activityId: "",
+      uid: AppData.instance.currentUser?.uid ?? "",
+      activityType: "Competition Run",
+      title: "Competition Run",
+      description: "Completed competition: ${state.currentUserCompetition}",
+      totalDistance: state.totalDistance,
+      elapsedTime: state.elapsedTime.inSeconds,
+      startTime: state.startTime ?? DateTime.now(),
+      trackedPath: List.from(state.trackedPath),
+      pace: state.pace ?? 0.0,
+      avgSpeed: state.avgSpeed ?? 0.0,
+      calories: state.calories ?? 0.0,
+      elevationGain: state.elevationGain ?? 0.0,
+      createdAt: DateTime.now(),
+      steps: state.steps ?? 0,
+      visibility: ComVisibility.me,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ActivitySummary(
+          activityData: activityData,
+          editMode: false,
+          readonly: false,
+          currentUserCompetition: AppData.instance.currentUserCompetition,
+        ),
+      ),
+    );
+  }
   Future<void> initialize() async {
     if (AppData.instance.currentCompetition != null) {
       // Set activity type from competition
@@ -72,6 +125,8 @@ class TrackScreenState extends State<TrackScreen> {
       final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
       activityController.text = lastActivity;
     }
+
+
 
     TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
@@ -221,6 +276,7 @@ class TrackScreenState extends State<TrackScreen> {
       ),
       floatingActionButtonLocation: CustomFabLocation(xOffset: 20, yOffset: 120),
       floatingActionButton: FloatingActionButton(
+        heroTag: "tag_follow",
         backgroundColor: AppColors.primary,
         onPressed: () {
           setState(() {

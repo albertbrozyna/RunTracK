@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/enums/visibility.dart' as enums;
-import '../../../../core/utils/utils.dart';
 
 class Competition {
   String competitionId; // Competition id
@@ -22,9 +21,7 @@ class Competition {
   String? locationName; // Location name
   LatLng? location; // Location
   double distanceToGo; // Km
-  List<String> photos; // Photos from competitions
   bool closedBeforeEndTime;
-  List<String >usersThatFinished = [];
 
 
   Competition({
@@ -45,14 +42,10 @@ class Competition {
     this.activityType,
     this.locationName,
     this.location,
-    List<String>?usersThatFinished,
     bool? closedBeforeEndTime,
-    List<String>? photos,
   }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
-       photos = photos ?? [],
        participantsUid = participantsUid ?? {},
-       invitedParticipantsUid = invitedParticipantsUid ?? {},
-      usersThatFinished = usersThatFinished ?? [];
+       invitedParticipantsUid = invitedParticipantsUid ?? {};
 
   factory Competition.fromMap(Map<String, dynamic> map) {
     return Competition(
@@ -75,9 +68,7 @@ class Competition {
       location: (map['latitude'] != null && map['longitude'] != null)
           ? LatLng((map['latitude'] as num).toDouble(), (map['longitude'] as num).toDouble())
           : null,
-      photos: map['photos'] != null ? List<String>.from(map['photos']) : [],
       closedBeforeEndTime: map['closedBeforeEndTime'] ?? false,
-      usersThatFinished: map['usersThatFinished'] != null ? List<String>.from(map['usersThatFinished']) : [],
     );
   }
 
@@ -101,9 +92,7 @@ class Competition {
       'locationName': locationName,
       'latitude': location?.latitude,
       'longitude': location?.longitude,
-      'photos': photos,
       'closedBeforeEndTime': closedBeforeEndTime,
-      'usersThatFinished': usersThatFinished,
     };
   }
 
@@ -147,7 +136,6 @@ class Competition {
       locationName: locationName ?? this.locationName,
       location: location ?? this.location,
       distanceToGo: goal ?? distanceToGo,
-      photos: photos ?? this.photos,
       closedBeforeEndTime: closedBeforeEndTime ?? this.closedBeforeEndTime,
     );
   }
@@ -167,14 +155,11 @@ class Competition {
         other.maxTimeToCompleteActivityHours == maxTimeToCompleteActivityHours &&
         other.maxTimeToCompleteActivityMinutes == maxTimeToCompleteActivityMinutes &&
         other.createdAt == createdAt &&
-        AppUtils.setsEqual(other.participantsUid, participantsUid) &&
-        AppUtils.setsEqual(other.invitedParticipantsUid, invitedParticipantsUid) &&
         other.visibility == visibility &&
         other.activityType == activityType &&
         other.locationName == locationName &&
         other.location == location &&
         other.distanceToGo == distanceToGo &&
-        AppUtils.listsEqual(other.photos, photos) &&
         other.closedBeforeEndTime == closedBeforeEndTime;
   }
 }

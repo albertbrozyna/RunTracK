@@ -68,8 +68,6 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
   }
 
   void initialize() {
-    AuthService.instance.checkAppUseState(context);
-
     // Load activities on start
     _loadMyActivities();
     _loadFriendsActivities();

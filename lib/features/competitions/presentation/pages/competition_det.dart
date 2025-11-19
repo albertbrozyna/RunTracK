@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
+import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/widgets/basic_info_section.dart';
 import 'package:run_track/features/competitions/presentation/widgets/build_bottom_buttons.dart';
 import 'package:run_track/features/competitions/presentation/widgets/time_settings_section.dart';
@@ -54,6 +55,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final TextEditingController _meetingPlaceController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
 
+  CompetitionResult? competitionResult;
   late Competition? competitionBeforeSave = widget.competitionData;
   String appBarTitle = "Competition details";
   enums.ComVisibility _visibility = enums.ComVisibility.me;
@@ -88,6 +90,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     _setReadOnlyState();
     _setupCompetitionData();
     _setAppBarTitle();
+    _getResults();
+  }
+
+  void _getResults()async {
+    if(widget.enterContext != CompetitionContext.ownerCreate){
+      competitionResult = await CompetitionService.fetchResult(widget.competitionData?.competitionId ?? '');
+    }
   }
 
   void _setAppBarTitle() {
@@ -247,13 +256,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       location: baseCompetition.location,
       locationName: baseCompetition.locationName,
       closedBeforeEndTime: baseCompetition.closedBeforeEndTime,
-      photos: baseCompetition.photos,
       createdAt: baseCompetition.createdAt ?? DateTime.now(),
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
       activityType: _activityController.text.trim(),
       visibility: _visibility,
-
       startDate: DateTime.tryParse(_startTimeController.text.trim()) ?? DateTime.now(),
       endDate: DateTime.tryParse(_endTimeController.text.trim()) ?? DateTime.now(),
       registrationDeadline: DateTime.tryParse(_registerDeadlineController.text.trim()) ?? DateTime.now(),
@@ -411,6 +418,8 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (!mounted) return;
 
     if (newCompetition != null) {
+      competitionBeforeSave = AppData.instance.currentCompetition!; // Save competition before save state
+
       if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
         AppData.instance.currentCompetition = newCompetition;
         tabToRefresh.add(widget.initTab);
@@ -425,7 +434,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           saved = true;
         });
       } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
-        competitionBeforeSave = AppData.instance.currentCompetition!;
         change = true;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
       }
@@ -433,6 +441,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       AppUtils.showMessage(currentContext, "Error saving competition");
     }
     saveInProgress = false;
+  }
+
+  void addTabToRefresh(int tab,bool current){
+    if(current){
+      tabToRefresh.add(widget.initTab);
+    }
+    tabToRefresh.add(tab);
   }
 
   /// Leave page if changes are done
@@ -528,7 +543,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TopInfoBanner(competition: AppData.instance.currentCompetition!, enterContext: widget.enterContext),
+                  TopInfoBanner(competition: AppData.instance.currentCompetition!,competitionResult: competitionResult ?? CompetitionResult(competitionId: "", ranking: []), enterContext: widget.enterContext),
 
                   BasicInfoSection(
                     readOnly: readOnly,
@@ -559,6 +574,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     competition: AppData.instance.currentCompetition!,
                     meetingPlaceController: _meetingPlaceController,
                     saved: saved,
+                    addTabToRefresh: addTabToRefresh,
                   ),
 
                   BottomButtons(

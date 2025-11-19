@@ -380,6 +380,7 @@ class CompetitionService {
 
   static Future<CompetitionResult?> fetchResult(String competitionId) async {
     try {
+      if(competitionId.isEmpty) return null;
       final docSnap = await FirebaseFirestore.instance.collection(FirestoreCollections.competitionResults)
           .doc(competitionId).get();
 

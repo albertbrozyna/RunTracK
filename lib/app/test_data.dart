@@ -5,12 +5,9 @@ import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
 
-import '../core/models/activity.dart';
-import '../core/services/activity_service.dart';
 import '../features/competitions/data/services/competition_service.dart';
 import '../features/notifications/data/models/notification.dart';
 import '../features/notifications/data/services/notification_service.dart';
-import 'config/app_data.dart';
 
 // Future<void> generate30Competitions() async {
 //   for (int i = 1; i <= 30; i++) {
@@ -148,8 +145,6 @@ Future<void> generate30Competitions() async{
       locationName: "Location",
       location: LatLng(52.0  , 21.0),
       activityType: "running",
-      photos: [],
-      usersThatFinished: []
     );
 
 

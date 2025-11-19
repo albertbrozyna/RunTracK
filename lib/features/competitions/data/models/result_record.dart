@@ -1,6 +1,7 @@
 class ResultRecord {
   final String recordId;
   final String userUid;
+  final String? activityId;
   final String firstName;
   final String lastName;
   final Duration time;
@@ -15,6 +16,7 @@ class ResultRecord {
     required this.time,
     required this.distance,
     required this.finished,
+    this.activityId
   });
 
   String get formattedTime {

@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Future.delayed(Duration(seconds: 1), () {
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home,(route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.appInitializer,(route) => false);
         }
       });
     } on FirebaseAuthException {
