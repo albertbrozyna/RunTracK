@@ -2,17 +2,22 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:run_track/core/models/activity.dart';
 
 class Storage {
+  Storage._();
+
   static final pathStats = 'stats.json';
+  static final pathActivity = 'stats.json';
   static final pathLocations = 'locations.json';
 
   /// Clear storage
-  static Future<void>clearStorage(){
-    return Future.wait([
-      _deleteFile(pathStats),
-      _deleteFile(pathLocations),
-    ]);
+  static Future<void> clearStorage() {
+    return Future.wait([_deleteFile(pathStats), _deleteFile(pathLocations)]);
+  }
+
+  static bool statsExists() {
+    return checkIfExist(pathStats);
   }
 
   static Future<void> _deleteFile(String filename) async {
@@ -44,10 +49,9 @@ class Storage {
     final path = await _getPath(Storage.pathLocations);
     final file = File(path);
 
-    final data = locations.map((loc) => {
-      'latitude': loc.latitude,
-      'longitude': loc.longitude,
-    }).toList();
+    final data = locations
+        .map((loc) => {'latitude': loc.latitude, 'longitude': loc.longitude})
+        .toList();
 
     await file.writeAsString(jsonEncode(data));
   }
@@ -63,12 +67,31 @@ class Storage {
       final content = await file.readAsString();
       final List<dynamic> data = jsonDecode(content);
 
-      return data.map((e) => LatLng(
-        e['latitude'] as double,
-        e['longitude'] as double,
-      )).toList();
+      return data.map((e) => LatLng(e['latitude'] as double, e['longitude'] as double)).toList();
     } catch (_) {
       return [];
+    }
+  }
+
+  static bool checkIfActivityExists() {
+    return checkIfExist(pathActivity);
+  }
+
+  static Future<void> saveActivity(Activity activity) async {
+    final path = await _getPath(Storage.pathStats);
+    final file = File(path);
+    await file.writeAsString(jsonEncode(activity.toMap()));
+  }
+
+  static Future<Activity?> loadActivity() async {
+    try {
+      final path = await _getPath(pathActivity);
+      final file = File(path);
+      if (!await file.exists()) return null;
+      final content = await file.readAsString();
+      return Activity.fromMap(jsonDecode(content));
+    } catch (_) {
+      return null;
     }
   }
 

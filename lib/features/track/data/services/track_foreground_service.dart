@@ -4,6 +4,8 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
+import 'package:run_track/core/enums/visibility.dart';
+import 'package:run_track/core/models/activity.dart';
 import '../../../../core/enums/tracking_state.dart' show TrackingState;
 import '../models/storage.dart';
 
@@ -295,6 +297,31 @@ void onStart(ServiceInstance serviceInstance) async {
     // Stop service
     serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
       sendSync("E"); // End sync
+
+      // Save stats to local storage
+      if(currentCompetition.isNotEmpty){
+        final activityData = Activity(
+          activityId: DateTime.now().millisecondsSinceEpoch.toString(),
+          uid: AppData.instance.currentUser?.uid ?? "unknown_user",
+          activityType: currentCompetition.isNotEmpty ? "Competition Run" : "General Run",
+          title: currentCompetition.isNotEmpty ? "Competition: $currentCompetition" : "Quick Run",
+          description: "Completed activity summary.",
+          totalDistance: totalDistance,
+          elapsedTime: elapsedTime.inSeconds,
+          startTime: startTime ?? DateTime.now().subtract(elapsedTime),
+          trackedPath: List.from(trackedPath),
+          pace: pace,
+          avgSpeed: avgSpeed,
+          calories: calories,
+          elevationGain: elevationGain,
+          createdAt: DateTime.now(),
+          steps: steps,
+          visibility: ComVisibility.me,
+        );
+
+        await Storage.saveActivity(activityData);
+      }
+
 
       stopLocationTimerAndStream();
       clearStats();
