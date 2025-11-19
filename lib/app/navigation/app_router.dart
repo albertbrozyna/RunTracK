@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
+import 'package:run_track/features/settings/presentation/pages/change_password.dart';
+import 'package:run_track/features/settings/presentation/pages/your_personal_info.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
 import 'package:run_track/features/track/presentation/pages/tracked_path_map.dart';
@@ -57,6 +59,10 @@ class AppRouter {
       case AppRoutes.activitySummary:
         final args = settings.arguments as Map<String, dynamic>?;
         final Activity? activity = args?['activity'] as Activity?;
+        final String firstName = args?['firstName'] ?? '';
+        final String lastName = args?['lastName'] ?? '';
+        final bool readOnly = args?['readOnly'] ?? true;
+        final bool editMode = args?['editMode'] ?? false;
 
         if (activity == null) {
           return MaterialPageRoute(
@@ -64,11 +70,6 @@ class AppRouter {
                 Scaffold(body: Center(child: Text('No route defined for ${settings.name}'))),
           );
         }
-
-        final firstName = args?['firstName'] ?? '';
-        final lastName = args?['lastName'] ?? '';
-        final readOnly = args?['readOnly'] ?? '';
-        final editMode = args?['editMode'] ?? '';
 
         return MaterialPageRoute(
           builder: (_) => ActivitySummary(
@@ -125,6 +126,10 @@ class AppRouter {
         );
       case AppRoutes.notifications:
         return MaterialPageRoute(builder: (_) => NotificationsPage());
+      case AppRoutes.changePassword:
+        return MaterialPageRoute(builder: (_) => const ChangePasswordPage());
+      case AppRoutes.yourPersonalInfo:
+        return MaterialPageRoute(builder: (_) => const YourPersonalInfoPage());
       case AppRoutes.meetingPlaceMap:
         final args = settings.arguments as Map<String, dynamic>?;
         final latLng = args?['latLng'] as LatLng?;

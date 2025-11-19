@@ -79,14 +79,12 @@ class _HomePageState extends State<HomePage> {
       animation: TrackState.trackStateInstance,
       builder: (context, child) {
         final trackState = TrackState.trackStateInstance;
-        final bool isTrackingActive =
-            trackState.trackingState == TrackingState.running ||
-            trackState.trackingState == TrackingState.paused;
+        final bool isTrackingActive = trackState.trackingState == TrackingState.running || trackState.trackingState == TrackingState.paused;
         final bool hasCompetition = trackState.currentUserCompetition.isNotEmpty;
         final bool shouldHideBars = isTrackingActive && hasCompetition;
 
         return Scaffold(
-          appBar: shouldHideBars ? null : TopBar(title: currentPageName(_selectedIndex)),
+          appBar: TopBar(title: currentPageName(_selectedIndex),shouldHideButtons: shouldHideBars,),
           body: IndexedStack(index: _selectedIndex, children: _pages),
           bottomNavigationBar: shouldHideBars ? null
               : BottomNavBar(currentIndex: _selectedIndex, onTap: _onItemTapped),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_icons.dart';

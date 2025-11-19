@@ -1,14 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/features/auth/presentation/widgets/field_form.dart';
+import 'package:run_track/features/auth/utils/validators.dart';
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/utils/utils.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/page_container.dart';
 import '../../data/models/auth_response.dart';

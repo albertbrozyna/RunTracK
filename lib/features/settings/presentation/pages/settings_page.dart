@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/message_type.dart';
+import 'package:run_track/core/widgets/alert_dialog.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_images.dart';
@@ -18,25 +20,43 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final ScrollController _scrollController = ScrollController();
-  List<SettingsTile> accountInformation = [
-    SettingsTile(
-      title: "You personal info",
-      description: "Update your basic account information",
-      leadingIcon: Icons.person,
-      action: () {},
-    ),
-    SettingsTile(
-      title: "Change password",
-      description: "Update your account password regularly for security reasons",
-      leadingIcon: Icons.password,
-      action: () {},
-    ),
-  ];
+  List<SettingsTile> accountInformation = [];
 
-  List<SettingsTile> generalPreferences = [
-    SettingsTile(title: "Settings", description: "Settings description", leadingIcon: Icons.password, action: () {}),
-    SettingsTile(title: "Settings", description: "Settings description", leadingIcon: Icons.password, action: () {}),
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    accountInformation = [
+      SettingsTile(
+        title: "You personal info",
+        description: "Update your basic account information",
+        leadingIcon: Icons.person,
+        action: handleYourPersonalInfo,
+      ),
+      SettingsTile(
+        title: "Change password",
+        description: "Update your account password regularly for security reasons",
+        leadingIcon: Icons.password,
+        action: handleChangePassword,
+      ),
+    ];
+
+    locationAndTracking = [
+      SettingsTile(title: "Location and tracking settings", description: "Manage your location and tracking settings.", leadingIcon: Icons.gps_fixed,action: (){},)
+    ];
+  }
+
+  void handleChangePassword(){
+    Navigator.of(context).pushNamed("/changePassword");
+  }
+
+  void handleYourPersonalInfo(){
+    Navigator.of(context).pushNamed("/yourPersonalInfo");
+  }
+
+
+  List<SettingsTile> locationAndTracking = [];
 
   late List<SettingsTile> dangerZone = [
     SettingsTile(
@@ -49,60 +69,35 @@ class _SettingsPageState extends State<SettingsPage> {
   ];
 
   /// Delete account action
-  void deleteAccountButtonPressed(BuildContext context) {
+  void deleteAccountButtonPressed(BuildContext context) async {
+    final deleteConfirmDialog = AppAlertDialog(
+      titleText: "Confirm Delete",
+      contentText: "Are you sure you want to delete your account? This action cannot be undone.",
+      onPressedLeft: () {
+        Navigator.of(context).pop();
+      },
+      onPressedRight: () async {
+        final response = await AuthService.instance.deleteUserAccount();
+        if (response.message == 'Account deleted successfully') {
+          if (!mounted) return;
+          AppUtils.showMessage(
+            context,
+            "User account deleted successfully",
+            messageType: MessageType.info,
+          );
+        }
+      },
+      textLeft: "Cancel",
+      textRight: "Delete my account",
+      colorBackgroundButtonRight: AppColors.danger,
+      colorButtonForegroundRight: AppColors.white,
+    );
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.alertDialogColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-          title: const Text("Confirm Delete", textAlign: TextAlign.center),
-          content: const Text("Are you sure you want to delete your account? This action cannot be undone.", textAlign: TextAlign.center),
-          alignment: Alignment.center,
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Cancel button
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor: AppColors.gray,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text("Cancel",textAlign: TextAlign.center,),
-                  ),
-                ),
-                SizedBox(width: AppUiConstants.horizontalSpacingButtons),
-                // Delete button
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      backgroundColor: AppColors.danger,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
-                    ),
-                    onPressed: () async {
-                      Navigator.of(context).pop(); // close dialog
-                      // TODO
-                      if (await AuthService.instance.deleteUserAccount() ==  "") {
-                        if (mounted) {
-                          AppUtils.showMessage(context, "User account deleted successfully", messageType: MessageType.info);
-                        }
-                      }
-                    },
-                    child: const Text("Delete my account",textAlign: TextAlign.center,),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
+        return deleteConfirmDialog;
       },
     );
   }
@@ -127,12 +122,16 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: AppUiConstants.verticalSpacingButtons),
               SettingsSection(
-                sectionTitle: "General preferences",
-                sectionDescription: "Adjust basic application settings and display option",
-                settings: generalPreferences,
+                sectionTitle: "Location And Tracking",
+                sectionDescription: "Manage your location and tracking settings.",
+                settings: locationAndTracking,
               ),
               const SizedBox(height: AppUiConstants.verticalSpacingButtons),
-              SettingsSection(sectionTitle: "Danger zone", sectionDescription: "", settings: dangerZone),
+              SettingsSection(
+                sectionTitle: "Danger Zone",
+                sectionDescription: "",
+                settings: dangerZone,
+              ),
             ],
           ),
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_images.dart';
-import 'package:run_track/core/utils/utils.dart';
+import 'package:run_track/core/utils/extensions.dart';
 
 import '../../app/theme/ui_constants.dart';
 

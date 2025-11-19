@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
+import 'package:run_track/core/constants/app_constants.dart';
+import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
@@ -383,32 +385,44 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                if (widget.currentUserCompetition != null)
+                SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                if (widget.currentUserCompetition != null) ...[
                   CompetitionFinishBanner(
                     competition: widget.currentUserCompetition!,
                     activity: widget.activityData,
                   ),
-
+                  SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                ],
                 // First name and last name
                 TextFormField(
+                  controller: fullNameController,
+                  textAlign: TextAlign.left,
                   readOnly: true,
-                  controller: titleController,
+                  enabled: true,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: "Title",
-                    labelStyle: TextStyle(fontSize: 18),
+                    contentPadding: EdgeInsets.all(20),
+                    border: AppUiConstants.borderTextFields,
+                    label: Text("Full name"),
+                    labelStyle: AppUiConstants.labelStyleTextFields,
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto),
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Title
                 TextFormField(
                   readOnly: widget.readonly,
-                  enabled: !widget.readonly,
                   controller: titleController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Title",
-                    labelStyle: TextStyle(fontSize: 18),
+                    labelStyle: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
@@ -418,7 +432,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       !(widget.readonly && (widget.activityData.description?.isEmpty ?? false)),
                   child: TextField(
                     readOnly: widget.readonly,
-                    enabled: !widget.readonly,
                     maxLines: 3,
                     controller: descriptionController,
                     decoration: InputDecoration(labelText: "Description"),
@@ -431,11 +444,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   children: [
                     Expanded(
                       child: TextField(
-                        enabled: !widget.readonly,
+                        readOnly: true,
                         style: TextStyle(color: Colors.white),
                         textAlign: TextAlign.left,
                         controller: activityController,
-                        readOnly: true,
                         decoration: InputDecoration(
                           labelText: "Activity type",
                           suffixIcon: IconButton(
@@ -446,38 +458,67 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                       ),
                     ),
                     SizedBox(width: AppUiConstants.horizontalSpacingTextFields),
+
                     // Visibility
                     Expanded(
                       child: Theme(
                         data: Theme.of(
                           context,
                         ).copyWith(iconTheme: IconThemeData(color: Colors.white)),
-                        child: DropdownMenu(
-                          enabled: !widget.readonly,
-                          initialSelection: _visibility,
-                          label: Text("Visibility", style: TextStyle(color: Colors.white)),
-                          textStyle: TextStyle(color: Colors.white),
-                          width: double.infinity,
-                          textAlign: TextAlign.left,
-                          // Selecting visibility
-                          onSelected: (enums.ComVisibility? visibility) {
-                            setState(() {
-                              if (visibility != null) {
-                                _visibility = visibility;
-                              }
-                            });
-                          },
-                          // Icon
-                          trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
-                          selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
-                          dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
-                            DropdownMenuEntry(value: enums.ComVisibility.me, label: "Only Me"),
-                            DropdownMenuEntry(value: enums.ComVisibility.friends, label: "Friends"),
-                            DropdownMenuEntry(
-                              value: enums.ComVisibility.everyone,
-                              label: "Everyone",
+                        child: IgnorePointer(
+                          ignoring: widget.readonly,
+                          child: DropdownMenu(
+                            initialSelection: _visibility,
+                            label: Text("Visibility", style: TextStyle(color: Colors.white)),
+                            textStyle: TextStyle(color: Colors.white),
+                            width: double.infinity,
+                            menuStyle: MenuStyle(
+                              backgroundColor: WidgetStatePropertyAll(AppColors.primary),
                             ),
-                          ],
+                            inputDecorationTheme: InputDecorationTheme(
+                              labelStyle: TextStyle(color: Colors.white),
+                              disabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white24),
+                                borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                              ),
+                            ),
+                            textAlign: TextAlign.left,
+                            // Selecting visibility
+                            onSelected: (enums.ComVisibility? visibility) {
+                              setState(() {
+                                if (visibility != null) {
+                                  _visibility = visibility;
+                                }
+                              });
+                            },
+                            // Icon
+                            trailingIcon: Icon(color: Colors.white, Icons.arrow_drop_down),
+                            selectedTrailingIcon: Icon(color: Colors.white, Icons.arrow_drop_up),
+                            dropdownMenuEntries: <DropdownMenuEntry<enums.ComVisibility>>[
+                              DropdownMenuEntry(
+                                value: enums.ComVisibility.me,
+                                label: "Only Me",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                                ),
+                              ),
+                              DropdownMenuEntry(
+                                value: enums.ComVisibility.friends,
+                                label: "Friends",
+                                style: ButtonStyle(
+                                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                                ),
+                              ),
+                              DropdownMenuEntry(
+                                value: enums.ComVisibility.everyone,
+                                label: "Everyone",
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStatePropertyAll(AppColors.primary),
+                                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -506,10 +547,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                                 '${(widget.activityData.totalDistance! / 1000).toStringAsFixed(2)} km',
                             icon: Icon(Icons.social_distance),
                           ),
-                        if (widget.activityData.totalDistance != null)
+                        if (widget.activityData.pace != null)
                           StatCard(
                             title: "Pace",
-                            value: widget.activityData.pace.toString(),
+                            value: AppUtils.formatPace(widget.activityData.pace!),
                             icon: Icon(Icons.man),
                           ),
                         if (widget.activityData.calories != null)
@@ -552,7 +593,9 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         child: FlutterMap(
                           mapController: _mapController,
                           options: MapOptions(
-                            initialCenter: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                            initialCenter:
+                                widget.activityData.trackedPath?.first ??
+                                LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
                             initialZoom: 15.0,
                             onMapReady: () async {
                               // Delay to load a tiles properly
@@ -605,7 +648,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                 // Photos section
-                if (!widget.readonly || !activitySaved)
+                if (!widget.readonly && !activitySaved)
                   SizedBox(
                     width: double.infinity,
                     height: 50,

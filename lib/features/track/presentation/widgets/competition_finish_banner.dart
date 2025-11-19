@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/theme/ui_constants.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import '../../../../core/models/activity.dart';
 
@@ -19,9 +20,7 @@ class CompetitionFinishBanner extends StatelessWidget {
 
     final double targetDistance = competition.distanceToGo;
 
-    final Duration targetTime = (competition.maxTimeToCompleteActivityHours == 0 && competition.maxTimeToCompleteActivityMinutes == 0)
-        ? const Duration(days: 365)
-        : Duration(hours: competition.maxTimeToCompleteActivityHours!, minutes: competition.maxTimeToCompleteActivityMinutes!);
+    final Duration targetTime = (competition.maxTimeToCompleteActivityHours == 0 && competition.maxTimeToCompleteActivityMinutes == 0) ? const Duration(days: 365) : Duration(hours: competition.maxTimeToCompleteActivityHours!, minutes: competition.maxTimeToCompleteActivityMinutes!);
 
     bool distanceMet = runDistance >= targetDistance;
     bool timeMet = runTime <= targetTime;
@@ -41,6 +40,7 @@ class CompetitionFinishBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: Colors.green.shade700,
+        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
         ],
@@ -77,6 +77,7 @@ class CompetitionFinishBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: Colors.orange.shade800,
+        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
       ),
       child: Row(
         children: [
@@ -92,7 +93,7 @@ class CompetitionFinishBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Ran: ${(current / 1000).toStringAsFixed(2)} km / Goal: ${(target / 1000).toStringAsFixed(2)} km",
+                  "Ran: ${(current / 1000).toStringAsFixed(2)} km / Goal: ${(target).toStringAsFixed(2)} km",
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
@@ -109,6 +110,7 @@ class CompetitionFinishBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: Colors.red.shade700,
+        borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
       ),
       child: Row(
         children: [

@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/core/enums/message_type.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/ui_constants.dart';
 
-
-extension StringCapitalize on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return this[0].toUpperCase() + substring(1).toLowerCase();
-  }
-}
-
-enum MessageType{
-  info,
-  success,
-  warning,
-  error
-}
-
 class AppUtils {
+  AppUtils._();
+
+  static String formatPace(double paceMinutesPerKm) {
+    if (paceMinutesPerKm.isNaN || paceMinutesPerKm.isInfinite || paceMinutesPerKm <= 0) {
+      return "00:00 min/km";
+    }
+    final int minutes = paceMinutesPerKm.floor();
+    final int seconds = ((paceMinutesPerKm - minutes) * 60).round();
+    final String minutesStr = minutes.toString().padLeft(2, '0');
+    final String secondsStr = seconds.toString().padLeft(2, '0');
+    return "$minutesStr:$secondsStr min/km";
+  }
+
   static String formatDateTime(DateTime? time, {bool onlyDate = false}) {
     if (time == null) {
       return "";
     }
 
-    if(onlyDate){
+    if (onlyDate) {
       return "${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} ";
     }
 
@@ -35,28 +34,35 @@ class AppUtils {
   }
 
   // Show message using scaffold
-  static void showMessage(BuildContext context, String message, {MessageType messageType = MessageType.info}) {
+  static void showMessage(
+    BuildContext context,
+    String message, {
+    MessageType messageType = MessageType.info,
+  }) {
     Color bgColor;
-    if(MessageType.info == messageType){
+    if (MessageType.info == messageType) {
       bgColor = AppColors.scaffoldMessengerInfoColor;
-    }else if(MessageType.success == messageType){
+    } else if (MessageType.success == messageType) {
       bgColor = AppColors.scaffoldMessengerSuccessColor;
-    }else if(MessageType.warning == messageType){
+    } else if (MessageType.warning == messageType) {
       bgColor = AppColors.scaffoldMessengerWarningColor;
-    }else{
+    } else {
       bgColor = AppColors.scaffoldMessengerErrorColor;
     }
 
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message,textAlign: TextAlign.center,style: TextStyle(
-          fontSize: AppUiConstants.textSizeApp
-        ),),
+        content: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: AppUiConstants.textSizeApp),
+        ),
         backgroundColor: bgColor,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppUiConstants.borderRadiusApp),
+        ),
       ),
     );
   }
@@ -68,7 +74,10 @@ class AppUtils {
     }
     final bounds = LatLngBounds.fromPoints(path);
     controller.fitCamera(
-      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(AppUiConstants.flutterMapInnerPaddingRectangleBounds)),
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(AppUiConstants.flutterMapInnerPaddingRectangleBounds),
+      ),
     );
   }
 
@@ -146,16 +155,22 @@ class AppUtils {
     DateTime firstDate,
     DateTime lastDate,
     TextEditingController? dateController,
-      bool onlyDate
+    bool onlyDate,
   ) async {
-    final DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: firstDate, lastDate: lastDate);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
 
     if (picked == null) {
       return null;
     }
 
-    if(onlyDate){
-      dateController?.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')} ";
+    if (onlyDate) {
+      dateController?.text =
+          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')} ";
       return picked;
     }
 
@@ -164,7 +179,13 @@ class AppUtils {
     if (pickedTime == null) {
       return null;
     }
-    DateTime fullDateTime = DateTime(picked.year, picked.month, picked.day, pickedTime.hour, pickedTime.minute);
+    DateTime fullDateTime = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
 
     String formattedDateTime =
         "${fullDateTime.year}-${fullDateTime.month.toString().padLeft(2, '0')}-${fullDateTime.day.toString().padLeft(2, '0')} "

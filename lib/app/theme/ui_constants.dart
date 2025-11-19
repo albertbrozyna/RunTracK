@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppUiConstants {
+  AppUiConstants._();
+
   static const double scaffoldBodyPadding = 16.0;
   static const double paddingTextFields = 8.0;
 

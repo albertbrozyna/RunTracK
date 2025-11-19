@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/utils/extensions.dart';
 import 'package:run_track/features/auth/data/models/auth_response.dart';
 
 import '../../app/config/app_data.dart';
@@ -477,6 +478,35 @@ class UserService {
           u2.receivedInvitationsToCompetitions,
         ) &&
         AppUtils.setsEqual(u1.participatedCompetitions, u2.participatedCompetitions);
+  }
+
+  static Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return "User not logged in.";
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+     await user.updatePassword(newPassword.trim());
+
+      return "Password successfully changed.";
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'user-not-found') {
+        return "Current password is incorrect.";
+      }
+      return "Error changing password: ${e.message}";
+    } catch (e) {
+      return "An unknown error occurred: $e";
+    }
   }
 
   static Future<bool> checkIfUserAccountExists(String uid) async {

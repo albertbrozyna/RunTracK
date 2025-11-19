@@ -18,8 +18,8 @@ class AppRoutes {
   static const String competitionResults = '/competitionResults';
   static const String trackedPathMap = '/trackedPathMap';
   static const String appInitializer = '/appInitializer';
-
-
-
+  static const String changePassword = '/changePassword';
+  static const String yourPersonalInfo = '/yourPersonalInfo';
+  // static const String
 
 }

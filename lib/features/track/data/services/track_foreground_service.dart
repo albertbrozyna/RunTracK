@@ -49,6 +49,8 @@ void onStart(ServiceInstance serviceInstance) async {
   double distanceToGo = 10.0;
   Duration maxTimeToComplete = Duration.zero;
 
+  DateTime? startTime;
+
   Timer? timeTimer;
   StreamSubscription<Position>? positionSubscription;
 
@@ -119,11 +121,11 @@ void onStart(ServiceInstance serviceInstance) async {
   void startLocationTimerAndStream() {
     if (positionSubscription != null || timeTimer != null) return;
 
-    print("MYLOG Serwis: Uruchomiono timer i strumień lokalizacji.");
+    startTime = DateTime.now().subtract(elapsedTime);
     // Elapsed time timer
     timeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (trackingState == TrackingState.running) {
-        elapsedTime += const Duration(seconds: 1);
+        elapsedTime = DateTime.now().difference(startTime!);
       }
     });
 
@@ -137,11 +139,12 @@ void onStart(ServiceInstance serviceInstance) async {
         latestPosition = position;
         return;
       }
+      print("MYLOG Serwis: Uruchomiono timer i strumień lokalizacji.");
 
       currentPosition = LatLng(position.latitude, position.longitude);
 
       print("MYLOG new position");
-      if (latestPosition != null && trackingState == TrackingState.running) {
+      if (trackingState == TrackingState.running) {
         double distance = distanceCalculator.as(
           LengthUnit.Meter,
           LatLng(latestPosition!.latitude, latestPosition!.longitude),
@@ -276,9 +279,9 @@ void onStart(ServiceInstance serviceInstance) async {
     serviceInstance.on(ServiceEvent.startService.name).listen((Map<String, dynamic>? data) {
       clearStats();
       currentCompetition = data?['currentUserCompetition'] ?? "";
-      distanceToGo = data?['distanceToGo'] ?? 0.0;
-      int maxTimeToCompleteActivityMinutes = data?['maxTimeToCompleteActivityMinutes'];
-      int maxTimeToCompleteActivityHours = data?['maxTimeToCompleteActivityHours'];
+      distanceToGo = (data?['distanceToGo'] as num?)?.toDouble() ?? 0.0;
+      int maxTimeToCompleteActivityMinutes = (data?['maxTimeToCompleteActivityMinutes'] ?? 0).toInt();
+      int maxTimeToCompleteActivityHours = (data?['maxTimeToCompleteActivityHours'] ?? 0).toInt();
       maxTimeToComplete = Duration(
         hours: maxTimeToCompleteActivityHours,
         minutes: maxTimeToCompleteActivityMinutes,
@@ -292,6 +295,7 @@ void onStart(ServiceInstance serviceInstance) async {
     // Stop service
     serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
       sendSync("E"); // End sync
+
       stopLocationTimerAndStream();
       clearStats();
 
@@ -318,6 +322,7 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // resume service
     serviceInstance.on(ServiceEvent.resume.name).listen((_) {
+      startTime = DateTime.now().subtract(elapsedTime);
       print("MYLOG res");
       trackingState = TrackingState.running;
     });
@@ -380,8 +385,10 @@ class ForegroundTrackService {
       service.invoke(ServiceEvent.stopService.name);
 
       try {
-        await completer.future.timeout(const Duration(seconds: 4));
-      } catch (e) {}
+        await completer.future.timeout(const Duration(seconds: 8));
+      } catch (e) {
+        print("$e");
+      }
     }
 
     await service.startService();
@@ -405,9 +412,9 @@ class ForegroundTrackService {
       'currentUserCompetition': AppData.instance.currentUser?.currentCompetition,
       'distanceToGo': AppData.instance.currentUserCompetition?.distanceToGo ?? 0.0,
       'maxTimeToCompleteActivityHours':
-          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityHours ?? 0.0,
+          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityHours ?? 0,
       'maxTimeToCompleteActivityMinutes':
-          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0.0,
+          AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0,
     });
     print("MYLOG after start in ui side");
   }

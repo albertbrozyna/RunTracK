@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/utils/utils.dart';
 
 import '../../../../app/theme/app_colors.dart';

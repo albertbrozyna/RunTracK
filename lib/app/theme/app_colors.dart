@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  AppColors._();
+
+
   // Primary app UI colors
   static const Color primary = Color(0xFF678FE3);
   static const Color secondary = Color(0xFF5374C8);

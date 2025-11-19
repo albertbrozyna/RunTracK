@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
 import 'package:run_track/core/widgets/app_loading_indicator.dart';
 import 'package:run_track/core/widgets/no_items_msg.dart';
-import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';

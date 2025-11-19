@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/core/models/user.dart';
-import 'package:run_track/core/utils/utils.dart';
+import 'package:run_track/core/utils/extensions.dart';
 
 import '../../app/config/app_data.dart';
 import '../../app/config/app_images.dart';

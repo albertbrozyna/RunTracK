@@ -76,11 +76,11 @@ class TrackScreenState extends State<TrackScreen> {
 
       state.endSync = false;
 
-      // WidgetsBinding.instance.addPostFrameCallback((_) {
-      //   if (mounted) {
-      //     _navigateToSummary();
-      //   }
-      // });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _navigateToSummary();
+        }
+      });
     }
   }
 
@@ -90,7 +90,7 @@ class TrackScreenState extends State<TrackScreen> {
     final activityData = Activity(
       activityId: "",
       uid: AppData.instance.currentUser?.uid ?? "",
-      activityType: "Competition Run",
+      activityType:activityController.text.toString().trim(),
       title: "Competition Run",
       description: "Completed competition: ${state.currentUserCompetition}",
       totalDistance: state.totalDistance,
@@ -109,6 +109,8 @@ class TrackScreenState extends State<TrackScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
+          firstName: AppData.instance.currentUser?.firstName ?? '',
+          lastName: AppData.instance.currentUser?.lastName ?? '',
           activityData: activityData,
           editMode: false,
           readonly: false,
@@ -118,15 +120,13 @@ class TrackScreenState extends State<TrackScreen> {
     );
   }
   Future<void> initialize() async {
-    if (AppData.instance.currentCompetition != null) {
+    if (AppData.instance.currentUserCompetition != null) {
       // Set activity type from competition
       activityController.text = AppData.instance.currentUserCompetition!.name;
     } else {
       final lastActivity = await ActivityService.fetchLastActivityFromPrefs();
       activityController.text = lastActivity;
     }
-
-
 
     TrackState.trackStateInstance.mapController = _mapController; // Assign map controller to move the map
   }
@@ -171,11 +171,11 @@ class TrackScreenState extends State<TrackScreen> {
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.zero),
                             suffixIcon: IconButton(
-                              onPressed: AppData.instance.currentCompetition == null ? () => onTapActivity() : null,
+                              onPressed: AppData.instance.currentUserCompetition == null ? () => onTapActivity() : null,
                               icon: Icon(
                                 Icons.edit,
                                 size: 26,
-                                color: AppData.instance.currentCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),
+                                color: AppData.instance.currentUserCompetition == null ? AppColors.secondary : Colors.grey.withAlpha(50),
                               ),
                             ),
                           ),
@@ -183,8 +183,7 @@ class TrackScreenState extends State<TrackScreen> {
                       ),
                     ],
                   ),
-                  CurrentCompetitionBanner(),
-
+                  CurrentCompetitionBanner(canCheckDetails: TrackState.trackStateInstance.trackingState == TrackingState.stopped),
                   // Expanded map
                   Expanded(
                     child: FlutterMap(

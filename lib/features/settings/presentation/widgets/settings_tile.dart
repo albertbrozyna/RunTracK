@@ -17,7 +17,16 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: backgroundColor,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.0),
+        color: backgroundColor,
+        boxShadow: [BoxShadow(
+          offset: Offset(0, 5),
+          blurRadius: 4.0,
+
+          color: backgroundColor.withValues(alpha: 50)
+        )]
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         child: InkWell(

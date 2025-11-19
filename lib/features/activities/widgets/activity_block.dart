@@ -4,12 +4,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/core/utils/utils.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/models/activity.dart';
 import '../../../core/services/activity_service.dart';
 import '../../../core/services/user_service.dart';
-import '../../../core/utils/utils.dart';
 import '../../../core/widgets/stat_card.dart';
 
 
@@ -77,7 +77,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
   void onTapBlock(BuildContext context) {
     Navigator.pushNamed(context,AppRoutes.activitySummary, arguments: {
       "activity": widget.activity,
-      "readonly": readonly,
+      "readOnly": readonly,
       "editMode": edit,
       "firstName": firstname,
       "lastName": lastname,
@@ -189,10 +189,10 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                     innerPadding: widget.innerPaddingBlock,
                                     cardWidth: widget.blockWidth,
                                   ),
-                                if (widget.activity.totalDistance != null)
+                                if (widget.activity.pace != null)
                                   StatCard(
                                     title: "Pace",
-                                    value: widget.activity.pace.toString(),
+                                    value: AppUtils.formatPace(widget.activity.pace!),
                                     icon: Icon(Icons.man, size: widget.iconSize),
                                   ),
                                 if (widget.activity.calories != null)

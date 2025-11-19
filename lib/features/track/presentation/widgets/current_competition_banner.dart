@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/navigation/app_routes.dart';
+import 'package:run_track/app/theme/ui_constants.dart';
+import 'package:run_track/core/enums/competition_role.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../competitions/data/services/competition_service.dart';
 
 class CurrentCompetitionBanner extends StatefulWidget {
-  const CurrentCompetitionBanner({super.key});
+  final bool canCheckDetails;
+
+  const CurrentCompetitionBanner({super.key,required this.canCheckDetails});
 
   @override
   State<CurrentCompetitionBanner> createState() => _CurrentCompetitionBannerState();
@@ -53,11 +58,33 @@ class _CurrentCompetitionBannerState extends State<CurrentCompetitionBanner> {
                     style: TextStyle(color: Colors.white.withAlpha(80), fontSize: 13),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    AppData.instance.currentUserCompetition!.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  Row(
+                    children: [
+                      Text(
+                        AppData.instance.currentUserCompetition!.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(width: AppUiConstants.horizontalSpacingTextFields,),
+
+                      Visibility(
+                        visible: widget.canCheckDetails,
+                        child: ElevatedButton(onPressed: (){
+                          Navigator.of(context).pushNamed(AppRoutes.competitionDetails,arguments: {
+                            "competitionData": AppData.instance.currentUserCompetition,
+                            "initTab": 3,
+                            "enterContext": CompetitionContext.participant
+                          });
+                        },
+                          style: ButtonStyle(
+                            padding: WidgetStatePropertyAll(EdgeInsets.all(2.0))
+                          ),
+                        child: Text("View details",style: TextStyle(
+                          fontSize: 15
+                        ),),),
+                      ),
+                    ],
                   ),
                   Text(
                     "Distance to go: ${AppData.instance.currentUserCompetition!.distanceToGo}",
