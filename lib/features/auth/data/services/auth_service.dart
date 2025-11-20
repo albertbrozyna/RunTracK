@@ -47,12 +47,48 @@ class AuthService {
     }
   }
 
+  // TODO: Implement this method
+  Future<void> _deleteDocumentsByQuery(Query query) async {
+    const batchSize = 10;
+
+    QuerySnapshot snapshot = await query.limit(batchSize).get();
+
+    while (snapshot.docs.isNotEmpty) {
+      final WriteBatch batch = firestore.batch();
+
+      for (DocumentSnapshot doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+
+      snapshot = await query.limit(batchSize).get();
+    }
+  }
+
   Future<AuthResponse> deleteUserAccount() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         return AuthResponse(message: "User is not logged in.");
       }
+
+      // Delete notifications
+      final notificationsQuery = firestore
+          .collection(FirestoreCollections.notifications)
+          .where('userId', isEqualTo: uid);
+      await _deleteDocumentsByQuery(notificationsQuery);
+
+      final activitiesQuery = firestore
+          .collection(FirestoreCollections.activities)
+          .where('userId', isEqualTo: uid);
+      await _deleteDocumentsByQuery(activitiesQuery);
+      // Delete user collections from firestore
+      await firestore.collection(FirestoreCollections.users).doc(user.uid).delete();
+      await firestore.collection(FirestoreCollections.competitions).doc(user.uid).delete();
+
+
+
       final uid = user.uid;
       await firestore.collection(FirestoreCollections.users).doc(uid).delete();
       await user.delete();

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:run_track/core/widgets/app_loading_indicator.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -61,6 +62,11 @@ class _ActionButtonsState extends State<ActionButtons> {
 
   @override
   Widget build(BuildContext context) {
+    if(TrackState.trackStateInstance.isFinishing){
+      return AppLoadingIndicator(
+        message: "Finishing...",
+      );
+    }
     switch (TrackState.trackStateInstance.trackingState) {
       case TrackingState.stopped:
         return CustomButton(

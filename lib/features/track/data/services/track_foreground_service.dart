@@ -250,6 +250,13 @@ void onStart(ServiceInstance serviceInstance) async {
           minutes: maxTimeToCompleteActivityMinutes,
         );
 
+        print("Settings");
+        print('Distance filter: $settingDistanceFilter');
+        print('Max accuracy: $settingMaxAccuracy');
+        print('Max speed: $settingMaxSpeedKmh');
+        print('Accuracy level: $settingAccuracyLevel');
+
+
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
       print("MYLOG start");

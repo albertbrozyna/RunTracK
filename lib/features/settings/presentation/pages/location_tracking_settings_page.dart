@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/config/app_images.dart';
 import 'package:run_track/app/config/app_settings.dart';
+import 'package:run_track/app/theme/app_colors.dart';
+import 'package:run_track/app/theme/ui_constants.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/widgets/page_container.dart';
 import 'package:run_track/features/settings/data/services/settings_service.dart';
@@ -23,9 +26,12 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
     initialize();
   }
 
-  void initialize(){
-    _maxSpeed = AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps;
-    _accuracyLevel = SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy);
+  void initialize() {
+    _maxSpeed =
+        AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps;
+    _accuracyLevel = SettingsService.accuracyEnumToString(
+      AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy,
+    );
     _distanceFilter = AppSettings.instance.gpsDistanceFilter ?? AppConstants.gpsDistanceFilter;
     _positionMinAccuracy = AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy;
   }
@@ -40,18 +46,28 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
     SettingsService.saveSettings();
   }
 
+  void handleSaveSettings() {
+    AppSettings.instance.gpsMinAccuracy = _positionMinAccuracy;
+    AppSettings.instance.gpsMaxSpeedToDetectJumps = _maxSpeed;
+    AppSettings.instance.gpsAccuracyLevel = SettingsService.getAccuracyEnum(_accuracyLevel);
+    AppSettings.instance.gpsDistanceFilter = _distanceFilter;
+
+    SettingsService.saveSettings();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("GPS Configuration")),
       body: PageContainer(
+        assetPath: AppImages.appBg5,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionHeader("Hardware Accuracy"),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
@@ -60,25 +76,19 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
+                    dropdownColor: AppColors.primary,
                     value: _accuracyLevel,
                     isExpanded: true,
+                    style: TextStyle(color: AppColors.white),
+
                     items: const [
                       DropdownMenuItem(
                         value: 'best',
                         child: Text("Best (High Battery Usage) - Recommended for Running"),
                       ),
-                      DropdownMenuItem(
-                        value: 'high',
-                        child: Text("High (Standard GPS)"),
-                      ),
-                      DropdownMenuItem(
-                        value: 'medium',
-                        child: Text("Medium (Balanced Power)"),
-                      ),
-                      DropdownMenuItem(
-                        value: 'low',
-                        child: Text("Low (City/Coarse)"),
-                      ),
+                      DropdownMenuItem(value: 'high', child: Text("High (Standard GPS)")),
+                      DropdownMenuItem(value: 'medium', child: Text("Medium (Balanced Power)")),
+                      DropdownMenuItem(value: 'low', child: Text("Low (City/Coarse)")),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -91,7 +101,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
               const SizedBox(height: 5),
               Text(
                 "Determines which sensors (GPS, Wi-Fi, Cell) are used.",
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                style: TextStyle(color: AppColors.white, fontSize: 13),
               ),
 
               const Divider(height: 40),
@@ -121,9 +131,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 unit: "m",
                 onChanged: (val) => setState(() => _positionMinAccuracy = val),
               ),
-
               const SizedBox(height: 20),
-
               _buildSlider(
                 title: "Max Human Speed",
                 description: "Reject points implying impossible speed.",
@@ -134,9 +142,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 unit: "km/h",
                 onChanged: (val) => setState(() => _maxSpeed = val),
               ),
-
               const SizedBox(height: 40),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -159,7 +165,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                     backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: SettingsService.saveSettings,
+                  onPressed: handleSaveSettings,
                   child: const Text(
                     "Save Configuration",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -176,7 +182,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.white),
     );
   }
 
@@ -196,8 +202,14 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text("${value.toStringAsFixed(0)} $unit", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.white),
+            ),
+            Text(
+              "${value.toStringAsFixed(0)} $unit",
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.white),
+            ),
           ],
         ),
         Slider(
@@ -207,8 +219,10 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
           divisions: divisions,
           label: "${value.round()} $unit",
           onChanged: onChanged,
+          activeColor: AppColors.primary,
+          inactiveColor: AppColors.white,
         ),
-        Text(description, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+        Text(description, style: TextStyle(color: AppColors.white, fontSize: 12)),
       ],
     );
   }

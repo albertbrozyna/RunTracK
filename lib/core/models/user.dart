@@ -13,9 +13,9 @@ class User {
   DateTime? createdAt;
   String? gender;
 
-  int kilometers;
+  double kilometers;
   int burnedCalories;
-  int hoursOfActivity;
+  int secondsOfActivity;
   int activitiesCount;
   int competitionsCount;
 
@@ -38,7 +38,7 @@ class User {
     this.createdAt,
     this.kilometers = 0,
     this.burnedCalories = 0,
-    this.hoursOfActivity = 0,
+    this.secondsOfActivity = 0,
     this.activitiesCount = 0,
     this.competitionsCount = 0,
     Set<String>? friends,
@@ -72,7 +72,7 @@ class User {
       'participatedCompetitions': participatedCompetitions.toList(),
       'kilometers': kilometers,
       'burnedCalories': burnedCalories,
-      'hoursOfActivity': hoursOfActivity,
+      'secondsOfActivity': secondsOfActivity,
       'activitiesCount': activitiesCount,
       'competitionsCount': competitionsCount,
       'currentCompetition': currentCompetition,
@@ -103,9 +103,9 @@ class User {
       dateOfBirth: map['dateOfBirth'] != null ? (map['dateOfBirth'] as Timestamp).toDate() : null,
       createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
       gender: map['gender'],
-      kilometers: map['kilometers'] ?? 0,
+      kilometers: (map['kilometers'] ?? 0).toDouble(),
       burnedCalories: map['burnedCalories'] ?? 0,
-      hoursOfActivity: map['hoursOfActivity'] ?? 0,
+      secondsOfActivity: map['secondsOfActivity'] ?? 0,
       activitiesCount: map['activitiesCount'] ?? 0,
       competitionsCount: map['competitionsCount'] ?? 0,
       currentCompetition: map['currentCompetition'] ?? "",
@@ -123,9 +123,9 @@ class User {
     DateTime? createdAt,
     String? gender,
     LatLng? userDefaultLocation,
-    int? kilometers,
+    double? kilometers,
     int? burnedCalories,
-    int? hoursOfActivity,
+    int? secondsOfActivity,
     int? activitiesCount,
     int? competitionsCount,
     Set<String>? friends,
@@ -146,7 +146,7 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       kilometers: kilometers ?? this.kilometers,
       burnedCalories: burnedCalories ?? this.burnedCalories,
-      hoursOfActivity: hoursOfActivity ?? this.hoursOfActivity,
+      secondsOfActivity: secondsOfActivity ?? this.secondsOfActivity,
       activitiesCount: activitiesCount ?? this.activitiesCount,
       competitionsCount: competitionsCount ?? this.competitionsCount,
       friends: friends ?? this.friends,

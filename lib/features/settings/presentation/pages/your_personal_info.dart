@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/app/theme/app_colors.dart';
+import 'package:run_track/app/theme/ui_constants.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/core/utils/utils.dart';
@@ -7,7 +9,7 @@ import 'package:run_track/core/widgets/page_container.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/utils/extensions.dart';
-
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 class YourPersonalInfoPage extends StatefulWidget {
   const YourPersonalInfoPage({super.key});
@@ -22,28 +24,31 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _birthDateController = TextEditingController();
-
   String? _selectedGender;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    initialize();
+  }
+
+  void initialize() {
+    AuthService.instance.checkAppUseState(context);
     _loadCurrentUserData();
   }
 
   void _loadCurrentUserData() {
-    final currentUser = AppData.instance.currentUser;
-    if (currentUser != null) {
-      _firstNameController.text = currentUser.firstName;
-      _lastNameController.text = currentUser.lastName;
+    _firstNameController.text = AppData.instance.currentUser?.firstName ?? '';
+    _lastNameController.text = AppData.instance.currentUser?.lastName ?? '';
 
-      if (currentUser.dateOfBirth != null) {
-        _birthDateController.text = AppUtils.formatDateTime(currentUser.dateOfBirth, onlyDate: true);
-      }
-
-      _selectedGender = currentUser.gender?.capitalize();
+    if (AppData.instance.currentUser?.dateOfBirth != null) {
+      _birthDateController.text = AppUtils.formatDateTime(
+        AppData.instance.currentUser?.dateOfBirth,
+        onlyDate: true,
+      );
     }
+    _selectedGender = AppData.instance.currentUser?.gender?.capitalize();
   }
 
   @override
@@ -52,16 +57,6 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
     _lastNameController.dispose();
     _birthDateController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    await AppUtils.pickDate(
-      context,
-      DateTime(1900),
-      DateTime.now(),
-      _birthDateController,
-      true,
-    );
   }
 
   void _saveChanges() async {
@@ -74,8 +69,8 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
       setState(() {
         _isLoading = true;
       });
-      try{
-        final newBirthDate =DateTime.tryParse('${_birthDateController.text.trim()} 00:00:00');
+      try {
+        final newBirthDate = DateTime.tryParse('${_birthDateController.text.trim()} 00:00:00');
         final Map<String, dynamic> fieldsToUpdate = {
           'firstName': _firstNameController.text.trim().toLowerCase().capitalize(),
           'lastName': _lastNameController.text.trim().toLowerCase().capitalize(),
@@ -96,18 +91,24 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
           AppData.instance.currentUser?.lastName = fieldsToUpdate['lastName'];
           AppData.instance.currentUser?.dateOfBirth = fieldsToUpdate['dateOfBirth'];
           AppData.instance.currentUser?.gender = fieldsToUpdate['gender'];
-          if(!mounted) return;
-          AppUtils.showMessage(context, "Profile updated successfully.", messageType: MessageType.success);
+          if (!mounted) return;
+          AppUtils.showMessage(
+            context,
+            "Profile updated successfully.",
+            messageType: MessageType.success,
+          );
           Navigator.of(context).pop();
         } else {
-          if(!mounted) return;
-          AppUtils.showMessage(context, "Failed to update profile. Check your connection.", messageType: MessageType.error);
+          if (!mounted) return;
+          AppUtils.showMessage(
+            context,
+            "Failed to update profile. Check your connection.",
+            messageType: MessageType.error,
+          );
         }
-      }catch (e){
+      } catch (e) {
         AppUtils.showMessage(context, "Failed to update profile. ", messageType: MessageType.error);
       }
-
-
     }
   }
 
@@ -116,7 +117,7 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Your Personal Info")),
       body: PageContainer(
-      assetPath: AppImages.appBg5,
+        assetPath: AppImages.appBg5,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -126,9 +127,11 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
               children: [
                 TextFormField(
                   controller: _firstNameController,
+                  style: TextStyle(color: AppColors.white),
                   decoration: const InputDecoration(
                     labelText: 'First Name',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -137,12 +140,14 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 TextFormField(
                   controller: _lastNameController,
+                  style: TextStyle(color: AppColors.white),
                   decoration: const InputDecoration(
                     labelText: 'Last Name',
+                    prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -151,16 +156,25 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-
+                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                // Birth date
                 TextFormField(
                   controller: _birthDateController,
+                  style: TextStyle(color: AppColors.white),
                   readOnly: true,
-                  onTap: _pickDate,
+                  onTap: () async {
+                    await AppUtils.pickDate(
+                      context,
+                      DateTime(1900),
+                      DateTime.now(),
+                      _birthDateController,
+                      true,
+                    );
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Date of Birth (YYYY-MM-DD)',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                    labelStyle: TextStyle(color: AppColors.white),
+                    prefixIcon: Icon(Icons.calendar_today),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -169,19 +183,23 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
+                  dropdownColor: AppColors.primary,
+                  decoration: InputDecoration(
                     labelText: 'Gender',
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    suffixIconColor: AppColors.white,
+                    suffixIcon: Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: Icon(Icons.arrow_drop_down, color: AppColors.white),
+                    ),
                   ),
+                  style: TextStyle(color: AppColors.white),
                   initialValue: _selectedGender,
                   items: AppConstants.genders.map((String genderLabel) {
-                    return DropdownMenuItem<String>(
-                      value: genderLabel,
-                      child: Text(genderLabel),
-                    );
+                    return DropdownMenuItem<String>(value: genderLabel, child: Text(genderLabel));
                   }).toList(),
                   onChanged: (String? newValue) {
                     setState(() {
@@ -195,7 +213,7 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _saveChanges,
@@ -204,14 +222,11 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                  )
-                      : const Text(
-                    'Save Changes',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        )
+                      : const Text('Save Changes', style: TextStyle(fontSize: 18)),
                 ),
               ],
             ),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/core/enums/message_type.dart';
+import 'package:run_track/core/widgets/app_loading_indicator.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/widgets/basic_info_section.dart';
@@ -66,6 +67,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   bool saveInProgress = false;
   bool saved = false;
   bool leavingPage = false;
+  bool _isLoading = false;
   final Set<int> tabToRefresh = {};  // Tab we need to refresh on competition page
   @override
   void dispose() {
@@ -82,6 +84,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   @override
   void initState() {
     super.initState();
+    _isLoading = true;
     initialize();
     initializeAsync();
   }
@@ -91,12 +94,17 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     _setReadOnlyState();
     _setupCompetitionData();
     _setAppBarTitle();
-    _getResults();
   }
 
-  void _getResults()async {
+  Future<void> _getResults()async {
     if(widget.enterContext != CompetitionContext.ownerCreate){
-      competitionResult = await CompetitionService.fetchResult(widget.competitionData?.competitionId ?? '');
+      final result = await CompetitionService.fetchResult(widget.competitionData?.competitionId ?? '');
+      if(!mounted)return;
+      if(result != null){
+        setState(() {
+          competitionResult = result;
+        });
+      }
     }
   }
 
@@ -210,7 +218,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if(widget.enterContext == CompetitionContext.ownerCreate){
       await setLastActivityType();  // Set last used activity
     }
-    setState(() {});
+    await _getResults();
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void setVisibility(enums.ComVisibility visibility) {
@@ -537,7 +549,8 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
               ),
           ],
         ),
-        body: Form(
+        body: _isLoading ? AppLoadingIndicator() :
+        Form(
           key: _formKey,
           child: PageContainer(
             assetPath: AppImages.appBg4,

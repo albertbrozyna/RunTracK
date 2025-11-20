@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -5,6 +6,7 @@ import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/enums/message_type.dart';
+import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
@@ -68,6 +70,10 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   void initialize() {
+    // Change finishing flag
+    TrackState.trackStateInstance.isFinishing = false;
+    TrackState.trackStateInstance.refreshUi();
+
     AuthService.instance.checkAppUseState(context);
 
     setState(() {
@@ -215,23 +221,51 @@ class _ActivitySummaryState extends State<ActivitySummary> {
 
     if (savedActivity != null) {
       // Save competition result
-      final userResult = ResultRecord(
-        recordId: "",
-        userUid: AppData.instance.currentUser!.uid,
-        firstName: AppData.instance.currentUser!.firstName,
-        lastName: AppData.instance.currentUser!.lastName,
-        distance: widget.activityData.totalDistance ?? 0.0,
-        finished: widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
-        time: Duration(seconds: widget.activityData.elapsedTime!),
-        activityId: savedActivity.activityId,
-      );
-
       if (widget.currentUserCompetition != null) {
+        final userResult = ResultRecord(
+          recordId: "",
+          userUid: AppData.instance.currentUser!.uid,
+          firstName: AppData.instance.currentUser!.firstName,
+          lastName: AppData.instance.currentUser!.lastName,
+          distance: widget.activityData.totalDistance ?? 0.0,
+          finished: widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
+          time: Duration(seconds: widget.activityData.elapsedTime!),
+          activityId: savedActivity.activityId,
+        );
+
         CompetitionService.addOrUpdateRecord(
           widget.currentUserCompetition!.competitionId,
           userResult,
         );
+
+        // Clear current user activity
       }
+
+      Map<String,dynamic> fieldsToUpdate = {
+        'activitiesCount':FieldValue.increment(1),
+        'kilometers':FieldValue.increment(widget.activityData.totalDistance! / 1000),
+        'burnedCalories':FieldValue.increment(widget.activityData.calories ?? 0),
+        'secondsOfActivity':FieldValue.increment(widget.activityData.elapsedTime ?? 0),
+      };
+
+      if (widget.currentUserCompetition != null) {
+        Map<String,dynamic> clearCompetition = {"currentCompetition" :"" };
+        fieldsToUpdate.addAll(clearCompetition);
+      }
+
+      final success = await UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '', fieldsToUpdate);
+
+      if(success){
+        AppData.instance.currentUser?.activitiesCount++;
+        AppData.instance.currentUser?.kilometers += widget.activityData.totalDistance! / 1000;
+        AppData.instance.currentUser?.burnedCalories += widget.activityData.calories?.toInt() ?? 0;
+        AppData.instance.currentUser?.secondsOfActivity += widget.activityData.elapsedTime ?? 0;
+        if(widget.currentUserCompetition != null){
+          AppData.instance.currentUserCompetition = null;
+          AppData.instance.currentUser?.currentCompetition = "";
+        }
+      }
+
       // Clear all fields from track state
       TrackState.trackStateInstance.clearAllFields(notify: true);
       saveLastVisibility();

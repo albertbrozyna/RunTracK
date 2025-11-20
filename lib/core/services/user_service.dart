@@ -468,7 +468,7 @@ class UserService {
         u1.dateOfBirth == u2.dateOfBirth &&
         u1.kilometers == u2.kilometers &&
         u1.burnedCalories == u2.burnedCalories &&
-        u1.hoursOfActivity == u2.hoursOfActivity &&
+        u1.secondsOfActivity == u2.secondsOfActivity &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
         AppUtils.setsEqual(u1.friends, u2.friends) &&
         AppUtils.setsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&

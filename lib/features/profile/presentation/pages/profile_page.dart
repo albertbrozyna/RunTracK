@@ -393,7 +393,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                         StatCard(
                           title: "Total hours\nof activity",
-                          value: "${user!.hoursOfActivity.toString()} h",
+                          value: "${(user!.secondsOfActivity / 3600).toString()} h",
                           icon: Icon(Icons.timer),
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,

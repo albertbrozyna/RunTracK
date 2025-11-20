@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/widgets/alert_dialog.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
@@ -21,7 +22,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final ScrollController _scrollController = ScrollController();
   List<SettingsTile> accountInformation = [];
-
+  List<SettingsTile> locationAndTracking = [];
+  List<SettingsTile> dangerZone = [];
 
   @override
   void initState() {
@@ -33,43 +35,51 @@ class _SettingsPageState extends State<SettingsPage> {
         description: "Update your basic account information",
         leadingIcon: Icons.person,
         action: handleYourPersonalInfo,
+        backgroundColor: AppColors.secondary
       ),
       SettingsTile(
         title: "Change password",
         description: "Update your account password regularly for security reasons",
         leadingIcon: Icons.password,
         action: handleChangePassword,
+        backgroundColor: AppColors.secondary,
       ),
     ];
 
     locationAndTracking = [
-      SettingsTile(title: "Location and tracking settings", description: "Manage your location and tracking settings.", leadingIcon: Icons.gps_fixed,action: (){},)
+      SettingsTile(
+        title: "Location and tracking settings",
+        description: "Manage your location and tracking settings.",
+        leadingIcon: Icons.gps_fixed,
+        action: handleLocationAndTrackingSettings,
+        backgroundColor: AppColors.secondary,
+      ),
+    ];
+
+    dangerZone = [
+      SettingsTile(
+        backgroundColor: AppColors.danger,
+        leadingIcon: Icons.delete_forever,
+        title: "Delete my account",
+        description: "Permanently remove all your data from the app",
+        action: () => deleteAccountButtonPressed(context),
+      ),
     ];
   }
 
-  void handleChangePassword(){
-    Navigator.of(context).pushNamed("/changePassword");
+  void handleChangePassword() {
+    Navigator.of(context).pushNamed(AppRoutes.changePassword);
   }
 
-  void handleYourPersonalInfo(){
-    Navigator.of(context).pushNamed("/yourPersonalInfo");
+  void handleYourPersonalInfo() {
+    Navigator.of(context).pushNamed(AppRoutes.yourPersonalInfo);
   }
 
+  void handleLocationAndTrackingSettings() {
+    Navigator.of(context).pushNamed(AppRoutes.locationTrackingSettings);
+  }
 
-  List<SettingsTile> locationAndTracking = [];
-
-  late List<SettingsTile> dangerZone = [
-    SettingsTile(
-      backgroundColor: AppColors.danger,
-      leadingIcon: Icons.delete_forever,
-      title: "Delete my account",
-      description: "Permanently remove all your data from the app",
-      action: () => deleteAccountButtonPressed(context),
-    ),
-  ];
-
-  /// Delete account action
-  void deleteAccountButtonPressed(BuildContext context) async {
+  void deleteAccountButtonPressed(BuildContext context) {
     final deleteConfirmDialog = AppAlertDialog(
       titleText: "Confirm Delete",
       contentText: "Are you sure you want to delete your account? This action cannot be undone.",
@@ -77,13 +87,30 @@ class _SettingsPageState extends State<SettingsPage> {
         Navigator.of(context).pop();
       },
       onPressedRight: () async {
+        Navigator.of(context).pop();
+
         final response = await AuthService.instance.deleteUserAccount();
-        if (response.message == 'Account deleted successfully') {
-          if (!mounted) return;
+        if (!mounted) return;
+
+        if (response.message?.contains('Account deleted successfully.') ?? false) {
+
           AppUtils.showMessage(
             context,
             "User account deleted successfully",
             messageType: MessageType.info,
+          );
+
+          await Future.delayed(const Duration(milliseconds: 50));
+
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoutes.start, (Route<dynamic> route) => false,
+          );
+        } else {
+          if (!mounted) return;
+          AppUtils.showMessage(
+            context,
+            response.message ?? "Failed to delete account.",
+            messageType: MessageType.error,
           );
         }
       },
@@ -101,7 +128,6 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

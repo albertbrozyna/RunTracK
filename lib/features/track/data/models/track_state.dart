@@ -48,43 +48,78 @@ class TrackState extends ChangeNotifier {
   int fetchCounter = 0; // Counter that counts to fetch gps signal once at 5s
   bool _isFetchingLocation = false;
 
+  bool isFinishing = false; // We are finishing run
   final double averageStepLength = 0.78; // Avg steps length
+
+  bool _isStarting = false;
+
   void startRun(BuildContext context) async {
-    clearAllFields();
-    Position? pos = await checkPermissions(context);
-    if (pos != null) {
-      currentPosition = LatLng(pos.latitude, pos.longitude);
-      positionAccuracy = pos.accuracy;
-      ForegroundTrackService.instance.startTracking();
-      trackingState = TrackingState.running;
-      notifyListeners();
+    try {
+      if (_isStarting == true || trackingState == TrackingState.running || isFinishing) {
+        return;
+      }
+      Position? pos = await checkPermissions(context);
+      _isStarting = true;
+      clearAllFields();
+      if (pos != null) {
+        currentPosition = LatLng(pos.latitude, pos.longitude);
+        positionAccuracy = pos.accuracy;
+        await ForegroundTrackService.instance.startTracking();
+        trackingState = TrackingState.running;
+        notifyListeners();
+      }
+    } catch (e) {
+      print("$e");
+    } finally {
+      _isStarting = false;
     }
   }
 
+  bool _isPausing = false;
 
+  void pauseRun() async {
+    try {
+      if (_isPausing == true || isFinishing) {
+        return;
+      }
+      isFinishing = true;
+      notifyListeners();
+      _isPausing = true;
 
-  void pauseRun() {
-    ForegroundTrackService.instance.pauseTracking();
-    trackingState = TrackingState.paused;
-    notifyListeners();
+      await ForegroundTrackService.instance.pauseTracking();
+      trackingState = TrackingState.paused;
+      notifyListeners();
+    } catch (e) {
+      print("$e");
+    } finally {
+      _isPausing = false;
+    }
   }
+
   Completer<void>? _stopCompleter;
 
   Future<void> stopRun() async {
-    endSync = false;
-    _stopCompleter = Completer<void>();
-
-    ForegroundTrackService.instance.stopTracking();
+    if(isFinishing){
+      return;
+    }
     try {
-      await _stopCompleter!.future.timeout(const Duration(seconds: 5));
+      endSync = false;
+      _stopCompleter = Completer<void>();
+
+      await ForegroundTrackService.instance.stopTracking();
+      try {
+        await _stopCompleter!.future.timeout(const Duration(seconds: 5));
+      } catch (e) {
+        print("Sync timeout - forcing stop");
+      } finally {
+        trackingState = TrackingState.stopped;
+      }
     } catch (e) {
-      print("Sync timeout - forcing stop");
-    } finally {
-      trackingState = TrackingState.stopped;
+      print("$e");
     }
   }
 
-  void refreshUi(){
+  void refreshUi() {
     notifyListeners();
   }
 
@@ -156,19 +191,19 @@ class TrackState extends ChangeNotifier {
         pace = update.pace;
         steps = update.steps;
         trackedPath = update.trackedPath ?? [];
-        if(update.trackedPath != null && update.trackedPath!.isNotEmpty){
+        if (update.trackedPath != null && update.trackedPath!.isNotEmpty) {
           currentPosition = update.trackedPath?.last;
         }
         _lastUpdateFromTask = DateTime.now();
-        if(update.type == 'E') {
+        if (update.type == 'E') {
           endSync = true;
           // Finish completer
           if (_stopCompleter != null && !_stopCompleter!.isCompleted) {
             _stopCompleter!.complete();
           }
         }
-          notifyListeners();
-        }
+        notifyListeners();
+      }
     });
   }
 
@@ -188,7 +223,7 @@ class TrackState extends ChangeNotifier {
       //print("timerMain ${elapsedTime.inSeconds}");
       notifyListeners();
       final now = DateTime.now();
-      if (now.difference(_lastUpdateFromTask) > Duration(seconds: 6) ) {
+      if (now.difference(_lastUpdateFromTask) > Duration(seconds: 6)) {
         // If there is no signal from background service
         _fetchLocation(); // Get gps location
       }
@@ -204,14 +239,19 @@ class TrackState extends ChangeNotifier {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return;
 
-      Position position = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.best));
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(accuracy: LocationAccuracy.best),
+      );
 
       latestPosition = position;
-      currentPosition =LatLng(position.latitude, position.longitude);
+      currentPosition = LatLng(position.latitude, position.longitude);
       positionAccuracy = position.accuracy;
 
       if (followUser && mapController != null) {
-        mapController?.move(LatLng(latestPosition!.latitude, latestPosition!.longitude), mapController?.camera.zoom ?? 15);
+        mapController?.move(
+          LatLng(latestPosition!.latitude, latestPosition!.longitude),
+          mapController?.camera.zoom ?? 15,
+        );
       }
 
       updateGpsIcon(); // Update gps
@@ -259,11 +299,12 @@ class TrackState extends ChangeNotifier {
     positionAccuracy = 0;
     _isFetchingLocation = false;
     _lastUpdateFromTask = DateTime.now();
+    currentUserCompetition = "";
 
     gpsIcon = const Icon(Icons.signal_cellular_off, color: Colors.grey, size: 24);
 
     // Invoke it conditionally
-    if(notify){
+    if (notify) {
       notifyListeners();
     }
   }
@@ -291,7 +332,9 @@ class TrackState extends ChangeNotifier {
       }
 
       // Get location
-      return await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 10));
+      return await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 10),
+      );
     } catch (e) {
       AppUtils.showMessage(context, e.toString());
       return null;
