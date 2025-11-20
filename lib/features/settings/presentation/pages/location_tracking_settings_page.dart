@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_settings.dart';
+import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/widgets/page_container.dart';
 import 'package:run_track/features/settings/data/services/settings_service.dart';
 
@@ -12,11 +13,10 @@ class LocationTrackingSettingsPage extends StatefulWidget {
 
 class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsPage> {
   int _distanceFilter = 15;
-  double _positionAccuracy = 30.0;
+  double _positionMinAccuracy = 30.0;
   double _maxSpeed = 43.0;
   String _accuracyLevel = 'best';
 
-  bool _isLoading = false;
   @override
   void initState() {
     super.initState();
@@ -24,15 +24,16 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
   }
 
   void initialize(){
-    // TODO USE CONST INSTEAD OF THIS NORMAL VALUES
-    _maxSpeed = AppSettings.instance.gpsMaxSpeedToDetectJumps ?? 34.0;
-
+    _maxSpeed = AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps;
+    _accuracyLevel = SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy);
+    _distanceFilter = AppSettings.instance.gpsDistanceFilter ?? AppConstants.gpsDistanceFilter;
+    _positionMinAccuracy = AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy;
   }
 
   void _setBestSettings() {
     setState(() {
       _distanceFilter = 5;
-      _positionAccuracy = 20.0;
+      _positionMinAccuracy = 20.0;
       _maxSpeed = 34.0;
       _accuracyLevel = 'best';
     });
@@ -113,12 +114,12 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
               _buildSlider(
                 title: "Min Accuracy Threshold",
                 description: "Reject points with accuracy worse than X meters.",
-                value: _positionAccuracy,
+                value: _positionMinAccuracy,
                 min: 5,
                 max: 100,
                 divisions: 19,
                 unit: "m",
-                onChanged: (val) => setState(() => _positionAccuracy = val),
+                onChanged: (val) => setState(() => _positionMinAccuracy = val),
               ),
 
               const SizedBox(height: 20),

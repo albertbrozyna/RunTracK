@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/config/app_settings.dart';
+import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/enums/visibility.dart';
 import 'package:run_track/core/models/activity.dart';
 import '../../../../core/enums/tracking_state.dart' show TrackingState;
@@ -394,10 +395,10 @@ class ForegroundTrackService {
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityHours ?? 0,
       'maxTimeToCompleteActivityMinutes':
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0,
-      'distanceFilter': AppSettings.instance.gpsDistanceFilter ?? 15,
-      'mixAccuracy' : AppSettings.instance.gpsMinAccuracy ?? 30.0,
-      'maxSpeed' : AppSettings.instance.gpsMaxSpeedToDetectJumps ?? 43.0,
-      'accuracyLevel':SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? LocationAccuracy.best)
+      'distanceFilter': AppSettings.instance.gpsDistanceFilter ?? AppConstants.gpsDistanceFilter,
+      'mixAccuracy' : AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy,
+      'maxSpeed' : AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps,
+      'accuracyLevel':SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy)
     });
     print("MYLOG after start in ui side");
   }
