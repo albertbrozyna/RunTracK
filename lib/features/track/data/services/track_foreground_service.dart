@@ -4,11 +4,12 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
+import 'package:run_track/app/config/app_settings.dart';
 import 'package:run_track/core/enums/visibility.dart';
 import 'package:run_track/core/models/activity.dart';
 import '../../../../core/enums/tracking_state.dart' show TrackingState;
 import '../models/storage.dart';
-
+import 'package:run_track/features/settings/data/services/settings_service.dart';
 import '../models/location_update.dart';
 
 enum ServiceEvent {
@@ -45,11 +46,19 @@ void onStart(ServiceInstance serviceInstance) async {
   int steps = 0;
   double pace = 0.0;
   LatLng? currentPosition;
-  const double maxHumanSpeed = 12.0; // 43 km/h
   // Competition
   String currentCompetition = ""; // Current competition
   double distanceToGo = 10.0;
   Duration maxTimeToComplete = Duration.zero;
+
+  // Settings
+  int settingDistanceFilter = 15; // meters
+  double settingMaxAccuracy = 30.0; // meters (GPS jump threshold)
+  double settingMaxSpeedKmh = 43.0;
+  LocationAccuracy settingAccuracyLevel = LocationAccuracy.best;
+
+
+
 
   DateTime? startTime;
 
@@ -84,55 +93,24 @@ void onStart(ServiceInstance serviceInstance) async {
     print("Serwis: Zatrzymano timer i strumień lokalizacji.");
   }
 
-  // try {
-  //   final stats = await Storage.loadStats();
-  //   final savedLocations = await Storage.loadLocations();
-  //
-  //   if (stats.isNotEmpty) {
-  //     print("znaleziono stare pliki");
-  //     totalDistance = (stats['totalDistance'] ?? 0.0).toDouble();
-  //     elevationGain = (stats['elevationGain'] ?? 0.0).toDouble();
-  //     elevationLoss = (stats['elevationLoss'] ?? 0.0).toDouble();
-  //     calories = (stats['calories'] ?? 0.0).toDouble();
-  //     avgSpeed = (stats['avgSpeed'] ?? 0.0).toDouble();
-  //     pace = (stats['pace'] ?? 0.0).toDouble();
-  //     steps = (stats['steps'] ?? 0).toInt();
-  //     currentSpeedValue = (stats['currentSpeedValue'] ?? 0.0).toDouble();
-  //     elapsedTime = Duration(seconds: (stats['elapsedTime'] ?? 0).toInt());
-  //     currentCompetition = stats['currentCompetition'];
-  //
-  //     // Read saved state
-  //     final savedState = stats['trackingState'] as String?;
-  //     if (savedState == 'running') {
-  //       trackingState = TrackingState.running;
-  //     } else if (savedState == 'paused') {
-  //       trackingState = TrackingState.paused;
-  //     } else {
-  //       trackingState = TrackingState.stopped;
-  //       print("zatrzymany");
-  //     }
-  //   }
-  //
-  //   if (savedLocations.isNotEmpty) {
-  //     trackedPath = savedLocations;
-  //     currentPosition = savedLocations.last;
-  //     print("lokalizacje tez");
-  //   }
-  // } catch (e) {}
-
   void startLocationTimerAndStream() {
-    if (positionSubscription != null || timeTimer != null) return;
+    if (positionSubscription != null) {
+      positionSubscription!.cancel();
+    }
+
+    if (timeTimer == null) {
+      startTime = DateTime.now().subtract(elapsedTime);
+      timeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (trackingState == TrackingState.running) {
+          elapsedTime = DateTime.now().difference(startTime!);
+        }
+      });
+    }
 
     startTime = DateTime.now().subtract(elapsedTime);
-    // Elapsed time timer
-    timeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (trackingState == TrackingState.running) {
-        elapsedTime = DateTime.now().difference(startTime!);
-      }
-    });
 
     // location stream
-    final locationSettings = LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 15);
+    final locationSettings = LocationSettings(accuracy: settingAccuracyLevel, distanceFilter: settingDistanceFilter);
     positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((
       Position position,
     ) {
@@ -141,11 +119,8 @@ void onStart(ServiceInstance serviceInstance) async {
         latestPosition = position;
         return;
       }
-      print("MYLOG Serwis: Uruchomiono timer i strumień lokalizacji.");
-
       currentPosition = LatLng(position.latitude, position.longitude);
 
-      print("MYLOG new position");
       if (trackingState == TrackingState.running) {
         double distance = distanceCalculator.as(
           LengthUnit.Meter,
@@ -154,9 +129,7 @@ void onStart(ServiceInstance serviceInstance) async {
         );
 
         currentSpeedValue = position.speed * 3.6;
-
-        if (currentSpeedValue > maxHumanSpeed || position.accuracy > 30) {
-          print('MYLOG jump');
+        if (currentSpeedValue > settingMaxSpeedKmh || position.accuracy > settingMaxAccuracy) {
           // Gps jump
         } else {
           totalDistance += distance;
@@ -233,24 +206,6 @@ void onStart(ServiceInstance serviceInstance) async {
         );
         serviceInstance.invoke(ServiceEvent.update.name, update.toJson());
       }
-
-      // saveCounter++;
-      // if (saveCounter % 10 == 0) {
-      //   Storage.saveLocations(trackedPath);
-      //   Storage.saveStats({
-      //     'totalDistance': totalDistance,
-      //     'elapsedTime': elapsedTime.inSeconds,
-      //     'elevationGain': elevationGain,
-      //     'elevationLoss': elevationLoss,
-      //     'calories': calories,
-      //     'avgSpeed': avgSpeed,
-      //     'pace': pace,
-      //     'steps': steps,
-      //     'currentSpeedValue': currentSpeedValue,
-      //     'trackingState': trackingState.name,
-      //     'currentCompetition': currentCompetition,
-      //   });
-      // }
     });
   }
 
@@ -280,14 +235,20 @@ void onStart(ServiceInstance serviceInstance) async {
     // Start service
     serviceInstance.on(ServiceEvent.startService.name).listen((Map<String, dynamic>? data) {
       clearStats();
-      currentCompetition = data?['currentUserCompetition'] ?? "";
-      distanceToGo = (data?['distanceToGo'] as num?)?.toDouble() ?? 0.0;
-      int maxTimeToCompleteActivityMinutes = (data?['maxTimeToCompleteActivityMinutes'] ?? 0).toInt();
-      int maxTimeToCompleteActivityHours = (data?['maxTimeToCompleteActivityHours'] ?? 0).toInt();
-      maxTimeToComplete = Duration(
-        hours: maxTimeToCompleteActivityHours,
-        minutes: maxTimeToCompleteActivityMinutes,
-      );
+      if(data == null) return;
+        if (data.containsKey('distanceFilter')) settingDistanceFilter = data['distanceFilter'];
+        if (data.containsKey('maxAccuracy')) settingMaxAccuracy = (data['maxAccuracy'] as num).toDouble();
+        if (data.containsKey('maxSpeed')) settingMaxSpeedKmh = (data['maxSpeed'] as num).toDouble();
+        if (data.containsKey('accuracyLevel')) settingAccuracyLevel = SettingsService.getAccuracyEnum(data['accuracyLevel']);
+        currentCompetition = data['currentUserCompetition'] ?? "";
+        distanceToGo = (data['distanceToGo'] as num?)?.toDouble() ?? 0.0;
+        int maxTimeToCompleteActivityMinutes = (data['maxTimeToCompleteActivityMinutes'] ?? 0).toInt();
+        int maxTimeToCompleteActivityHours = (data['maxTimeToCompleteActivityHours'] ?? 0).toInt();
+        maxTimeToComplete = Duration(
+          hours: maxTimeToCompleteActivityHours,
+          minutes: maxTimeToCompleteActivityMinutes,
+        );
+
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
       print("MYLOG start");
@@ -302,10 +263,10 @@ void onStart(ServiceInstance serviceInstance) async {
       if(currentCompetition.isNotEmpty){
         final activityData = Activity(
           activityId: DateTime.now().millisecondsSinceEpoch.toString(),
-          uid: AppData.instance.currentUser?.uid ?? "unknown_user",
-          activityType: currentCompetition.isNotEmpty ? "Competition Run" : "General Run",
-          title: currentCompetition.isNotEmpty ? "Competition: $currentCompetition" : "Quick Run",
-          description: "Completed activity summary.",
+          uid: AppData.instance.currentUser?.uid ?? "",
+          activityType: "Competition activity",
+          title: "Competition: $totalDistance",
+          description: "",
           totalDistance: totalDistance,
           elapsedTime: elapsedTime.inSeconds,
           startTime: startTime ?? DateTime.now().subtract(elapsedTime),
@@ -359,15 +320,6 @@ void onStart(ServiceInstance serviceInstance) async {
       serviceInstance.invoke(ServiceEvent.ready.name);
     });
   }
-
-  // // Start run if state is different from stopped
-  // if (trackingState != TrackingState.stopped) {
-  //   print("MYLOG auto start");
-  //   startLocationTimerAndStream();
-  //   if (serviceInstance is AndroidServiceInstance) {
-  //     serviceInstance.setAsForegroundService();
-  //   }
-  // }
 
   print("MYLOG test nowy kodV4");
 }
@@ -442,6 +394,10 @@ class ForegroundTrackService {
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityHours ?? 0,
       'maxTimeToCompleteActivityMinutes':
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0,
+      'distanceFilter': AppSettings.instance.gpsDistanceFilter ?? 15,
+      'mixAccuracy' : AppSettings.instance.gpsMinAccuracy ?? 30.0,
+      'maxSpeed' : AppSettings.instance.gpsMaxSpeedToDetectJumps ?? 43.0,
+      'accuracyLevel':SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? LocationAccuracy.best)
     });
     print("MYLOG after start in ui side");
   }

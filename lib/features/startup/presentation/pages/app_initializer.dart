@@ -8,6 +8,7 @@ import 'package:run_track/core/widgets/app_loading_indicator.dart';
 import 'package:run_track/core/widgets/page_container.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
+import 'package:run_track/features/settings/data/services/settings_service.dart';
 
 import '../../../../core/utils/utils.dart';
 
@@ -84,8 +85,9 @@ class _AppInitializerState extends State<AppInitializer> {
         }
       }
 
+      // Load settings
+      SettingsService.loadSettings();
       _navigateToHome();
-
     } catch (e) {
       print("Bootstrap error: $e");
 

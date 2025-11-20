@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
 import 'package:run_track/features/settings/presentation/pages/change_password.dart';
+import 'package:run_track/features/settings/presentation/pages/location_tracking_settings_page.dart';
 import 'package:run_track/features/settings/presentation/pages/your_personal_info.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
@@ -130,6 +131,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ChangePasswordPage());
       case AppRoutes.yourPersonalInfo:
         return MaterialPageRoute(builder: (_) => const YourPersonalInfoPage());
+      case AppRoutes.locationTrackingSettings:
+        return MaterialPageRoute(builder: (_) => const LocationTrackingSettingsPage());
       case AppRoutes.meetingPlaceMap:
         final args = settings.arguments as Map<String, dynamic>?;
         final latLng = args?['latLng'] as LatLng?;

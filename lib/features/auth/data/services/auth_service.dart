@@ -9,7 +9,7 @@ import '../../../../app/config/app_data.dart';
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../core/constants/firestore_names.dart';
 import '../../../../core/enums/sign_in_status.dart';
-import '../../../../core/models/sign_in_result.dart';
+import '../models/sign_in_result.dart';
 import '../../../../core/models/user.dart' as model;
 import '../../../../core/services/user_service.dart';
 import '../models/auth_response.dart';

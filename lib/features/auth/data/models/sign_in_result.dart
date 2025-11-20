@@ -1,6 +1,6 @@
 import 'package:run_track/core/models/user.dart';
 
-import '../enums/sign_in_status.dart';
+import '../../../../core/enums/sign_in_status.dart';
 
 class SignInResult {
   final SignInStatus status;

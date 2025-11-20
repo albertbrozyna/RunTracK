@@ -8,7 +8,7 @@ class Storage {
   Storage._();
 
   static final pathStats = 'stats.json';
-  static final pathActivity = 'stats.json';
+  static final pathActivity = 'activity.json';
   static final pathLocations = 'locations.json';
 
   /// Clear storage
@@ -77,6 +77,13 @@ class Storage {
     return checkIfExist(pathActivity);
   }
 
+  static Future<void> deleteActivity()async{
+    try{
+      await Storage._deleteFile(Storage.pathActivity);
+    }catch (e){
+      print("$e");
+    }
+  }
   static Future<void> saveActivity(Activity activity) async {
     final path = await _getPath(Storage.pathStats);
     final file = File(path);

@@ -20,6 +20,7 @@ class AppRoutes {
   static const String appInitializer = '/appInitializer';
   static const String changePassword = '/changePassword';
   static const String yourPersonalInfo = '/yourPersonalInfo';
+  static const String locationTrackingSettings = '/locationTrackingSettings';
   // static const String
 
 }

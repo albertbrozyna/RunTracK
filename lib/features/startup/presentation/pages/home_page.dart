@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/enums/user_mode.dart';
+import 'package:run_track/core/enums/visibility.dart';
 import 'package:run_track/core/models/activity.dart';
 import 'package:run_track/core/utils/permission_utils.dart';
 import 'package:run_track/core/utils/utils.dart';
@@ -11,6 +13,7 @@ import 'package:run_track/features/competitions/presentation/pages/competition_p
 import 'package:run_track/features/profile/presentation/pages/profile_page.dart';
 import 'package:run_track/features/track/data/models/location_update.dart';
 import 'package:run_track/features/track/data/models/storage.dart';
+import 'package:run_track/features/track/presentation/pages/activity_summary.dart';
 import 'package:run_track/features/track/presentation/pages/track_screen.dart';
 import 'package:run_track/features/track/data/models/track_state.dart';
 import 'package:run_track/core/enums/tracking_state.dart';
@@ -42,34 +45,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _navigateToSummary(Map<String, dynamic> stats) {
-    final activityData = Activity(
-      activityId: "",
-      uid: FirebaseAuth.instance.currentUser?.uid ?? "unknown_user",
-      activityType: "Competition Run",
-      title: "Competition Run",
-      description: "Completed competition: ${stats['currentCompetition']}",
-      totalDistance: (stats['totalDistance'] as num?)?.toDouble() ?? 0.0,
-      elapsedTime: (stats['elapsedTime'] as num?)?.toInt() ?? 0,
-      startTime: DateTime.now().subtract(Duration(seconds: (stats['elapsedTime'] as num?)?.toInt() ?? 0)),
-      trackedPath: [],
-      pace: (stats['pace'] as num?)?.toDouble() ?? 0.0,
-      avgSpeed: (stats['avgSpeed'] as num?)?.toDouble() ?? 0.0,
-      calories: (stats['calories'] as num?)?.toDouble() ?? 0.0,
-      elevationGain: (stats['elevationGain'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.now(),
-      steps: (stats['steps'] as num?)?.toInt() ?? 0,
-      visibility: ComVisibility.me,
-    );
-
-    Storage.clearStats();
+  void _navigateToSummary(Activity? activity) {
+    if(activity == null){
+      return;
+    }
+    // Change activity type to competition type activity
+    activity.activityType = AppData.instance.currentUserCompetition?.activityType ?? '';
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ActivitySummary(
           firstName: AppData.instance.currentUser?.firstName ?? '',
           lastName: AppData.instance.currentUser?.lastName ?? '',
-          activityData: activityData,
+          activityData: activity,
           editMode: false,
           readonly: false,
           currentUserCompetition: AppData.instance.currentUserCompetition,
@@ -97,12 +85,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> initializeAsync() async {
     // Check if file exists
     if(Storage.statsExists()){
-      Map<String,dynamic>stats = await Storage.loadStats();
-
-
+      Activity? activity = await Storage.loadActivity();
+      _navigateToSummary(activity);
+      Storage.deleteActivity(); // Delete data from local storage
     }
-
-
     _askLocation();
   }
 

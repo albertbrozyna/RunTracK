@@ -12,7 +12,7 @@ class Activity {
   double? totalDistance;
   int? elapsedTime;
   List<LatLng>? trackedPath;
-  final String? activityType;
+  String? activityType;
   final DateTime? createdAt;
   final DateTime? startTime;
   String? title;
@@ -22,6 +22,7 @@ class Activity {
   double? calories;
   double? avgSpeed; // km/h
   double? elevationGain; // m
+  double? elevationLoss; // m
   int? steps;
   double? pace;
   String competitionId = "";
@@ -42,6 +43,7 @@ class Activity {
     this.calories,
     this.avgSpeed,
     this.elevationGain,
+    this.elevationLoss,
     this.steps,
     this.pace,
     this.competitionId = ""
@@ -70,6 +72,7 @@ class Activity {
       avgSpeed: map['avgSpeed']?.toDouble(),
       calories: map['calories']?.toDouble(),
       elevationGain: map['elevationGain']?.toDouble(),
+      elevationLoss: map['elevationLoss']?.toDouble(),
       steps: map['steps']?.toInt(),
       pace: map['pace']?.toDouble(),
       competitionId: map['competitionId'] ?? '',
@@ -93,6 +96,7 @@ class Activity {
       'calories': calories,
       'avgSpeed': avgSpeed,
       'elevationGain': elevationGain,
+      'elevationLoss':elevationLoss,
       'steps': steps,
       'pace': pace,
       'competitionId': competitionId,
@@ -111,6 +115,7 @@ class Activity {
         calories == a.calories &&
         avgSpeed == a.avgSpeed &&
         elevationGain == a.elevationGain &&
+        elevationLoss == a.elevationLoss &&
         competitionId == a.competitionId &&
         steps == a.steps &&
         pace == a.pace &&
