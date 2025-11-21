@@ -11,7 +11,6 @@ import 'package:run_track/core/widgets/top_bar.dart';
 import 'package:run_track/features/activities/pages/user_activities.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_page.dart';
 import 'package:run_track/features/profile/presentation/pages/profile_page.dart';
-import 'package:run_track/features/track/data/models/location_update.dart';
 import 'package:run_track/features/track/data/models/storage.dart';
 import 'package:run_track/features/track/presentation/pages/activity_summary.dart';
 import 'package:run_track/features/track/presentation/pages/track_screen.dart';
@@ -26,7 +25,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late List<Widget> _pages;
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
@@ -46,10 +44,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToSummary(Activity? activity) {
-    if(activity == null){
-      return;
-    }
-    // Change activity type to competition type activity
+    if (activity == null) return;
     activity.activityType = AppData.instance.currentUserCompetition?.activityType ?? '';
 
     Navigator.of(context).push(
@@ -69,25 +64,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    initialize();
     initializeAsync();
   }
 
-  void initialize() {
-    _pages = [
-      TrackScreen(),
-      ActivitiesPage(),
-      CompetitionsPage(),
-      ProfilePage(userMode: UserMode.friends, uid: FirebaseAuth.instance.currentUser?.uid ?? ""),
-    ];
-  }
-
   Future<void> initializeAsync() async {
-    // Check if file exists
-    if(Storage.statsExists()){
+    if (Storage.statsExists()) {
       Activity? activity = await Storage.loadActivity();
       _navigateToSummary(activity);
-      Storage.deleteActivity(); // Delete data from local storage
+      Storage.deleteActivity();
     }
     _askLocation();
   }
@@ -106,20 +90,45 @@ class _HomePageState extends State<HomePage> {
     return "";
   }
 
+  Widget _getFreshPage(int index) {
+    switch (index) {
+      case 1:
+        return const ActivitiesPage();
+      case 2:
+        return const CompetitionsPage();
+      case 3:
+        return ProfilePage(
+          userMode: UserMode.friends,
+          uid: FirebaseAuth.instance.currentUser?.uid ?? "",
+        );
+      default:
+        return const SizedBox();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: TrackState.trackStateInstance,
       builder: (context, child) {
         final trackState = TrackState.trackStateInstance;
-        final bool isTrackingActive = trackState.trackingState == TrackingState.running || trackState.trackingState == TrackingState.paused;
+        final bool isTrackingActive =
+            trackState.trackingState == TrackingState.running ||
+            trackState.trackingState == TrackingState.paused;
         final bool hasCompetition = trackState.currentUserCompetition.isNotEmpty;
         final bool shouldHideBars = isTrackingActive && hasCompetition;
 
         return Scaffold(
-          appBar: TopBar(title: currentPageName(_selectedIndex),shouldHideButtons: shouldHideBars,),
-          body: IndexedStack(index: _selectedIndex, children: _pages),
-          bottomNavigationBar: shouldHideBars ? null
+          appBar: TopBar(title: currentPageName(_selectedIndex), shouldHideButtons: shouldHideBars),
+          body: Stack(
+            children: [
+              Offstage(offstage: _selectedIndex != 0, child: const TrackScreen()),
+
+              if (_selectedIndex != 0) _getFreshPage(_selectedIndex),
+            ],
+          ),
+          bottomNavigationBar: shouldHideBars
+              ? null
               : BottomNavBar(currentIndex: _selectedIndex, onTap: _onItemTapped),
         );
       },

@@ -9,6 +9,7 @@ class AppLoadingIndicator extends StatelessWidget {
   final String? message;
   final TextStyle? messageStyle;
   final EdgeInsetsGeometry? padding;
+  final Color indicatorColor;
 
   const AppLoadingIndicator({
     super.key,
@@ -18,6 +19,7 @@ class AppLoadingIndicator extends StatelessWidget {
     this.message,
     this.messageStyle,
     this.padding,
+    this.indicatorColor =  AppColors.white,
   });
 
   @override
@@ -32,8 +34,8 @@ class AppLoadingIndicator extends StatelessWidget {
               width: size ?? 20,
               height: size ?? 20,
               child: CircularProgressIndicator(
-                color: AppColors.white,
-                strokeWidth: 4,
+                color: indicatorColor,
+                strokeWidth:strokeWidth,
               ),
             ),
             if (message != null && message!.isNotEmpty) ...[

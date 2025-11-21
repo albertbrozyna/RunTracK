@@ -35,7 +35,7 @@ class SettingsService {
     }
   }
 
-  static void saveSettings() async {
+  static Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('gps_distance_filter', AppSettings.instance.gpsDistanceFilter ?? 15);
     await prefs.setDouble('gps_min_accuracy', AppSettings.instance.gpsMinAccuracy ?? 30);

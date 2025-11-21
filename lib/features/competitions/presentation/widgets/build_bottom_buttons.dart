@@ -121,7 +121,7 @@ class _BottomButtonsState extends State<BottomButtons> {
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Resign from competition", onPressed: widget.resignFromCompetition),
         ],
-        if (widget.competition.startDate?.isBefore(DateTime.now()) ?? false) ...[
+        if ((widget.competition.startDate?.isBefore(DateTime.now()) ?? false) && widget.enterContext != CompetitionContext.ownerCreate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(
             text: "Show results",

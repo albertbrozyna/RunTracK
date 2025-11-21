@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
-import 'package:run_track/core/constants/app_constants.dart';
 
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -19,7 +18,6 @@ class LocationAndParticipantsSection extends StatefulWidget {
   final Competition competition;
   final TextEditingController meetingPlaceController;
   final bool saved;
-  final void Function(int,bool) addTabToRefresh;
 
   const LocationAndParticipantsSection({
     super.key,
@@ -27,7 +25,6 @@ class LocationAndParticipantsSection extends StatefulWidget {
     required this.meetingPlaceController,
     required this.enterContext,
     required this.saved,
-    required this.addTabToRefresh,
   });
 
   @override
@@ -37,54 +34,58 @@ class LocationAndParticipantsSection extends StatefulWidget {
 class _LocationAndParticipantsSectionState extends State<LocationAndParticipantsSection> {
   /// Add place where runners can meet
   Future<void> onTapAddMeetingPlace() async {
-    String locationNameBefore = widget.competition.locationName ?? "";
-    LatLng latLngBefore = widget.competition.location ?? LatLng(AppConstants.defaultLat,AppConstants.defaultLon);
-    LatLng? latLng;
-    final location = widget.competition.location;
+    LatLng? latLngBefore = widget.competition.location;
 
-    if (location?.latitude != null && location?.longitude != null) {
-      latLng = LatLng(location!.latitude, location.longitude);
+    LatLng? latLngArg;
+    if (widget.competition.location != null) {
+      latLngArg = LatLng(
+        widget.competition.location!.latitude,
+        widget.competition.location!.longitude,
+      );
     }
 
     Mode mode = Mode.view;
-    if (AppData.instance.currentUser?.uid == widget.competition.organizerUid){
+    if (AppData.instance.currentUser?.uid == widget.competition.organizerUid) {
       mode = Mode.edit;
     }
+
     final result = await Navigator.pushNamed(
       context,
       AppRoutes.meetingPlaceMap,
-      arguments: {'mode':mode,
-      "latLng": latLng},
+      arguments: {'mode': mode, "latLng": latLngArg},
     );
 
     if (result != null && result is LatLng) {
+      String latStr = result.latitude.toStringAsFixed(4);
+      String lngStr = result.longitude.toStringAsFixed(4);
 
-      String? latStr = widget.competition.location?.latitude.toStringAsFixed(4);
-      String? lngStr = widget.competition.location?.longitude.toStringAsFixed(4);
+      try {
+        final placeNames = await placemarkFromCoordinates(result.latitude, result.longitude);
 
-      final placeNames = await placemarkFromCoordinates(result.latitude, result.longitude);
+        if (placeNames.isNotEmpty) {
+          final place = placeNames.first;
+          String newLocationName = "${place.locality ?? ''}, ${place.thoroughfare ?? ''}".trim();
 
-      if (placeNames.isNotEmpty) {
-        final place = placeNames.first;
+          if (widget.competition.locationName != newLocationName) {
+            widget.competition.locationName = newLocationName;
 
-        // If it is different change and add tab
-        if(widget.competition.locationName != locationNameBefore ){
-          widget.competition.locationName = "${place.locality ?? ''}, ${place.thoroughfare ?? ''}"
-              .trim();
-
+            setState(() {
+              widget.meetingPlaceController.text = "$newLocationName\nLat: $latStr, Lng: $lngStr";
+            });
+          }
+        } else {
           setState(() {
-            widget.meetingPlaceController.text =
-            "${widget.competition.locationName}\nLat: ${latStr ?? ''}, Lng: ${lngStr ?? ''}";
+            widget.meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
           });
-          widget.addTabToRefresh(0,true);
         }
-        if(widget.competition.location != latLngBefore){
-          widget.competition.location = result;
-          widget.addTabToRefresh(0,true);
-        }
-      } else {
-        // Only lat and lng without name
-        widget.meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
+      } catch (e) {
+        setState(() {
+          widget.meetingPlaceController.text = "Lat: $latStr, Lng: $lngStr";
+        });
+      }
+
+      if (latLngBefore != result) {
+        widget.competition.location = result;
       }
     }
   }

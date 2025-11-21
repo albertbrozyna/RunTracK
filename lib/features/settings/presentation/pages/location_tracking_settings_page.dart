@@ -4,6 +4,7 @@ import 'package:run_track/app/config/app_settings.dart';
 import 'package:run_track/app/theme/app_colors.dart';
 import 'package:run_track/app/theme/ui_constants.dart';
 import 'package:run_track/core/constants/app_constants.dart';
+import 'package:run_track/core/utils/utils.dart';
 import 'package:run_track/core/widgets/page_container.dart';
 import 'package:run_track/features/settings/data/services/settings_service.dart';
 
@@ -46,13 +47,24 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
     SettingsService.saveSettings();
   }
 
-  void handleSaveSettings() {
-    AppSettings.instance.gpsMinAccuracy = _positionMinAccuracy;
-    AppSettings.instance.gpsMaxSpeedToDetectJumps = _maxSpeed;
-    AppSettings.instance.gpsAccuracyLevel = SettingsService.getAccuracyEnum(_accuracyLevel);
-    AppSettings.instance.gpsDistanceFilter = _distanceFilter;
+  void handleSaveSettings(BuildContext context) {
+    try{
+      AppSettings.instance.gpsMinAccuracy = _positionMinAccuracy;
+      AppSettings.instance.gpsMaxSpeedToDetectJumps = _maxSpeed;
+      AppSettings.instance.gpsAccuracyLevel = SettingsService.getAccuracyEnum(_accuracyLevel);
+      AppSettings.instance.gpsDistanceFilter = _distanceFilter;
 
-    SettingsService.saveSettings();
+      SettingsService.saveSettings();
+
+      if(context.mounted){
+        AppUtils.showMessage(context, "Settings saved successfully");
+      }
+    }catch(e){
+      if(context.mounted){
+        AppUtils.showMessage(context, "Failed to save settings: $e");
+      }
+      print("$e");
+    }
   }
 
   @override
@@ -80,7 +92,6 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                     value: _accuracyLevel,
                     isExpanded: true,
                     style: TextStyle(color: AppColors.white),
-
                     items: const [
                       DropdownMenuItem(
                         value: 'best',
@@ -105,7 +116,6 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
               ),
 
               const Divider(height: 40),
-
               _buildSectionHeader("Filters & Sensitivity"),
               const SizedBox(height: 10),
               _buildSlider(
@@ -118,9 +128,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 unit: "m",
                 onChanged: (val) => setState(() => _distanceFilter = val.toInt()),
               ),
-
-              const SizedBox(height: 20),
-
+              const SizedBox(height: AppUiConstants.verticalSpacingButtons),
               _buildSlider(
                 title: "Min Accuracy Threshold",
                 description: "Reject points with accuracy worse than X meters.",
@@ -131,7 +139,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 unit: "m",
                 onChanged: (val) => setState(() => _positionMinAccuracy = val),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppUiConstants.verticalSpacingButtons),
               _buildSlider(
                 title: "Max Human Speed",
                 description: "Reject points implying impossible speed.",
@@ -142,7 +150,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 unit: "km/h",
                 onChanged: (val) => setState(() => _maxSpeed = val),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 2 * AppUiConstants.verticalSpacingButtons),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -156,16 +164,14 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                   onPressed: _setBestSettings,
                 ),
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: AppUiConstants.verticalSpacingButtons),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
+                  style: ButtonStyle(
+                    padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 15)),
                   ),
-                  onPressed: handleSaveSettings,
+                  onPressed: () => handleSaveSettings(context),
                   child: const Text(
                     "Save Configuration",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

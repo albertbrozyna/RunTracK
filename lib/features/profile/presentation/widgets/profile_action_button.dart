@@ -15,6 +15,7 @@ class ProfileActionButton extends StatefulWidget {
   final VoidCallback onPressedSendInvitationToCompetition;
   final VoidCallback onPressedRemoveInvitationToCompetition;
   final VoidCallback onPressedRemoveCompetitor;
+  final VoidCallback navigateToSettings;
 
   const ProfileActionButton({
     super.key,
@@ -27,6 +28,7 @@ class ProfileActionButton extends StatefulWidget {
     required this.onPressedSendInvitationToCompetition,
     required this.onPressedRemoveInvitationToCompetition,
     required this.onPressedRemoveCompetitor,
+    required this.navigateToSettings,
   });
 
   @override
@@ -126,7 +128,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
           ),
         ),
         InkWell(
-          onTap: () => Navigator.pushNamed(context, '/settings'),
+          onTap: widget.navigateToSettings,
           child: Row(
             children: [
               Padding(

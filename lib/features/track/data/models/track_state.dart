@@ -82,10 +82,7 @@ class TrackState extends ChangeNotifier {
       if (_isPausing == true || isFinishing) {
         return;
       }
-      isFinishing = true;
-      notifyListeners();
       _isPausing = true;
-
       await ForegroundTrackService.instance.pauseTracking();
       trackingState = TrackingState.paused;
       notifyListeners();
@@ -102,20 +99,27 @@ class TrackState extends ChangeNotifier {
     if(isFinishing){
       return;
     }
+    isFinishing = true;
+    endSync = false;
+    notifyListeners();
     try {
-      endSync = false;
       _stopCompleter = Completer<void>();
 
       await ForegroundTrackService.instance.stopTracking();
+
       try {
-        await _stopCompleter!.future.timeout(const Duration(seconds: 5));
+        await _stopCompleter!.future.timeout(const Duration(seconds: 15));
       } catch (e) {
-        print("Sync timeout - forcing stop");
+        endSync = true;
       } finally {
         trackingState = TrackingState.stopped;
+        notifyListeners();
       }
     } catch (e) {
-      print("$e");
+      print("Stop run error: $e");
+      endSync = true;
+      isFinishing = false;
+      notifyListeners();
     }
   }
 

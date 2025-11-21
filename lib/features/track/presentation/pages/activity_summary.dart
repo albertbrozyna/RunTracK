@@ -4,7 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
-import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
@@ -62,6 +61,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   final MapController _mapController = MapController();
+  late List<LatLng> _localTrackedPath;
 
   @override
   void initState() {
@@ -70,12 +70,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   }
 
   void initialize() {
-    // Change finishing flag
-    TrackState.trackStateInstance.isFinishing = false;
-    TrackState.trackStateInstance.refreshUi();
-
     AuthService.instance.checkAppUseState(context);
 
+    // Copy of passed list because after save here was problem with empty points list
+    _localTrackedPath = List<LatLng>.from(widget.activityData.trackedPath ?? []);
+    // Change finishing flag
+    TrackState.trackStateInstance.isFinishing = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TrackState.trackStateInstance.refreshUi();
+    });
+
+    if (!mounted) return;
     setState(() {
       fullNameController.text = "${widget.firstName} ${widget.lastName}";
       titleController.text =
@@ -189,11 +194,15 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
+  bool saving = false;
   /// Handle saving activity to database
   Future<void> handleSaveActivity() async {
-    if (widget.readonly) {
+    if (widget.readonly || saving) {
       return;
     }
+    setState(() {
+      saving = true;
+    });
 
     // Activity data
     Activity userActivity = Activity(
@@ -228,7 +237,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           firstName: AppData.instance.currentUser!.firstName,
           lastName: AppData.instance.currentUser!.lastName,
           distance: widget.activityData.totalDistance ?? 0.0,
-          finished: widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
+          finished:
+              widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
           time: Duration(seconds: widget.activityData.elapsedTime!),
           activityId: savedActivity.activityId,
         );
@@ -241,26 +251,29 @@ class _ActivitySummaryState extends State<ActivitySummary> {
         // Clear current user activity
       }
 
-      Map<String,dynamic> fieldsToUpdate = {
-        'activitiesCount':FieldValue.increment(1),
-        'kilometers':FieldValue.increment(widget.activityData.totalDistance! / 1000),
-        'burnedCalories':FieldValue.increment(widget.activityData.calories ?? 0),
-        'secondsOfActivity':FieldValue.increment(widget.activityData.elapsedTime ?? 0),
+      Map<String, dynamic> fieldsToUpdate = {
+        'activitiesCount': FieldValue.increment(1),
+        'kilometers': FieldValue.increment(widget.activityData.totalDistance! / 1000),
+        'burnedCalories': FieldValue.increment(widget.activityData.calories ?? 0),
+        'secondsOfActivity': FieldValue.increment(widget.activityData.elapsedTime ?? 0),
       };
 
       if (widget.currentUserCompetition != null) {
-        Map<String,dynamic> clearCompetition = {"currentCompetition" :"" };
+        Map<String, dynamic> clearCompetition = {"currentCompetition": ""};
         fieldsToUpdate.addAll(clearCompetition);
       }
 
-      final success = await UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '', fieldsToUpdate);
+      final success = await UserService.updateFieldsInTransaction(
+        AppData.instance.currentUser?.uid ?? '',
+        fieldsToUpdate,
+      );
 
-      if(success){
+      if (success) {
         AppData.instance.currentUser?.activitiesCount++;
         AppData.instance.currentUser?.kilometers += widget.activityData.totalDistance! / 1000;
         AppData.instance.currentUser?.burnedCalories += widget.activityData.calories?.toInt() ?? 0;
         AppData.instance.currentUser?.secondsOfActivity += widget.activityData.elapsedTime ?? 0;
-        if(widget.currentUserCompetition != null){
+        if (widget.currentUserCompetition != null) {
           AppData.instance.currentUserCompetition = null;
           AppData.instance.currentUser?.currentCompetition = "";
         }
@@ -280,8 +293,13 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       /// Save last visibility to local prefs
       setState(() {
         activitySaved = true;
+        saving = false;
       });
     } else {
+      if(!mounted) return;
+      setState(() {
+        saving = false;
+      });
       if (mounted) {
         AppUtils.showMessage(context, 'Failed to save activity. Please try again.');
       }
@@ -379,7 +397,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   void onTapMap(BuildContext context) {
     Navigator.of(
       context,
-    ).pushNamed(AppRoutes.trackedPathMap, arguments: {'activity': widget.activityData});
+    ).pushNamed(AppRoutes.trackedPathMap, arguments: {'trackedPath': _localTrackedPath});
   }
 
   /// Method invoked when user wants to select change activity
@@ -617,7 +635,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                 ),
 
                 // Flutter map if there is a path
-                if (widget.activityData.trackedPath?.isNotEmpty ?? false)
+                if (_localTrackedPath.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 10.0, bottom: 10.0),
                     child: ClipRRect(
@@ -627,17 +645,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                         child: FlutterMap(
                           mapController: _mapController,
                           options: MapOptions(
-                            initialCenter:
-                                widget.activityData.trackedPath?.first ??
-                                LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
+                            initialCenter: _localTrackedPath.first,
                             initialZoom: 15.0,
                             onMapReady: () async {
                               // Delay to load a tiles properly
                               Future.delayed(const Duration(milliseconds: 100), () {
-                                AppUtils.fitMapToPath(
-                                  widget.activityData.trackedPath ?? [],
-                                  _mapController,
-                                );
+                                AppUtils.fitMapToPath(_localTrackedPath, _mapController);
                               });
                             },
                             interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
@@ -651,7 +664,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             PolylineLayer(
                               polylines: [
                                 Polyline(
-                                  points: widget.activityData.trackedPath ?? [],
+                                  points: _localTrackedPath,
                                   color: Colors.blue,
                                   strokeWidth: 4.0,
                                 ),
@@ -660,15 +673,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                             MarkerLayer(
                               markers: [
                                 Marker(
-                                  point: widget.activityData.trackedPath?.first ?? LatLng(0, 0),
+                                  point: _localTrackedPath.first,
                                   width: 40,
                                   height: 40,
                                   child: Icon(Icons.flag, color: Colors.green),
                                 ),
-                                if (widget.activityData.trackedPath != null &&
-                                    widget.activityData.trackedPath!.length > 1)
+                                if (_localTrackedPath.length > 1)
                                   Marker(
-                                    point: widget.activityData.trackedPath?.last ?? LatLng(0, 0),
+                                    point: _localTrackedPath.last,
                                     width: 40,
                                     height: 40,
                                     child: Icon(Icons.stop, color: Colors.red),

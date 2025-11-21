@@ -52,9 +52,9 @@ class AppRouter {
         );
       case AppRoutes.trackedPathMap:
         final args = settings.arguments as Map<String, dynamic>?;
-        final activity = args?['activity'] as Activity?;
+        final List<LatLng> trackedPath = List<LatLng>.from(args?['trackedPath'] ?? []);
 
-        return MaterialPageRoute(builder: (_) => TrackedPathMap(activity: activity));
+        return MaterialPageRoute(builder: (_) => TrackedPathMap(trackedPath: trackedPath));
       case AppRoutes.appInitializer:
         return MaterialPageRoute(builder: (_) => AppInitializer());
       case AppRoutes.activitySummary:

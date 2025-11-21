@@ -5,7 +5,6 @@ import '../enums/visibility.dart' as enums;
 import '../utils/utils.dart';
 
 
-
 class Activity {
   String activityId; // Activity id
   String uid; // User id

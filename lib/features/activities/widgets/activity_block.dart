@@ -12,7 +12,6 @@ import '../../../core/services/activity_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/widgets/stat_card.dart';
 
-
 class ActivityBlock extends StatefulWidget {
   final String firstName;
   final String lastName;
@@ -24,9 +23,9 @@ class ActivityBlock extends StatefulWidget {
   final double blockHeight = 100;
   final double iconSize = 26;
 
-  const ActivityBlock({super.key, required this.activity,String? firstName, String? lastName}):
-  firstName = firstName ?? "",
-  lastName = lastName ?? "";
+  const ActivityBlock({super.key, required this.activity, String? firstName, String? lastName})
+    : firstName = firstName ?? "",
+      lastName = lastName ?? "";
 
   @override
   State<ActivityBlock> createState() => _ActivityBlockState();
@@ -62,26 +61,41 @@ class _ActivityBlockState extends State<ActivityBlock> {
       // If there is no name and last name fetch it from firestore
       return UserService.fetchUserForBlock(widget.activity.uid)
           .then((user) {
+        if (!mounted) return;
             setState(() {
-              firstname = user?.firstName;
-              lastname = user?.lastName;
+              if (user != null) {
+                firstname = user.firstName;
+                lastname = user.lastName;
+              } else {
+                firstname = "Deleted";
+                lastname = "User";
+              }
             });
           })
           .catchError((error) {
             print("Error fetching user data: $error");
+            if (!mounted) return;
+            setState(() {
+              firstname = "User";
+              lastname = "Unknown";
+            });
           });
     }
   }
 
   /// On activity block tap
   void onTapBlock(BuildContext context) {
-    Navigator.pushNamed(context,AppRoutes.activitySummary, arguments: {
-      "activity": widget.activity,
-      "readOnly": readonly,
-      "editMode": edit,
-      "firstName": firstname,
-      "lastName": lastname,
-    });
+    Navigator.pushNamed(
+      context,
+      AppRoutes.activitySummary,
+      arguments: {
+        "activity": widget.activity,
+        "readOnly": readonly,
+        "editMode": edit,
+        "firstName": firstname,
+        "lastName": lastname,
+      },
+    );
   }
 
   @override
@@ -125,12 +139,20 @@ class _ActivityBlockState extends State<ActivityBlock> {
                         Text(
                           "$firstname $lastname",
                           textAlign: TextAlign.left,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
                         if (widget.activity.startTime != null)
                           Text(
                             "Time: ${DateFormat('dd-MM-yyyy hh:mm').format(widget.activity.startTime!)}",
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
                       ],
                     ),
@@ -142,8 +164,13 @@ class _ActivityBlockState extends State<ActivityBlock> {
                   padding: EdgeInsets.all(8.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
-                    boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2))],
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +179,11 @@ class _ActivityBlockState extends State<ActivityBlock> {
                       if (widget.activity.title != null && widget.activity.title!.isNotEmpty)
                         Text(
                           widget.activity.title!,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
                         ),
                       SizedBox(height: 4),
                       // Stats on the left and map on the right
@@ -172,7 +203,9 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                 if (widget.activity.elapsedTime != null)
                                   StatCard(
                                     title: "Time",
-                                    value: ActivityService.formatElapsedTimeFromSeconds(widget.activity.elapsedTime!),
+                                    value: ActivityService.formatElapsedTimeFromSeconds(
+                                      widget.activity.elapsedTime!,
+                                    ),
                                     icon: Icon(Icons.timer, size: widget.iconSize),
                                     titleFontSize: widget.titleFontSizeBlock,
                                     valueFontSize: widget.valueFontSizeBlock,
@@ -182,7 +215,8 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                 if (widget.activity.totalDistance != null)
                                   StatCard(
                                     title: "Distance",
-                                    value: '${(widget.activity.totalDistance! / 1000).toStringAsFixed(2)} km',
+                                    value:
+                                        '${(widget.activity.totalDistance! / 1000).toStringAsFixed(2)} km',
                                     icon: Icon(Icons.social_distance),
                                     titleFontSize: widget.titleFontSizeBlock,
                                     valueFontSize: widget.valueFontSizeBlock,
@@ -248,27 +282,36 @@ class _ActivityBlockState extends State<ActivityBlock> {
 
                 if (widget.activity.trackedPath?.isNotEmpty ?? false)
                   ClipRRect(
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.2,
                       child: FlutterMap(
                         mapController: _mapController,
                         options: MapOptions(
-                          initialCenter: widget.activity.trackedPath != null && widget.activity.trackedPath!.isNotEmpty
+                          initialCenter:
+                              widget.activity.trackedPath != null &&
+                                  widget.activity.trackedPath!.isNotEmpty
                               ? widget.activity.trackedPath!.first
                               : LatLng(37.7749, -122.4194),
                           // default location
-                            onMapReady: () async {
+                          onMapReady: () async {
                             // Delay to load a tiles properly
                             Future.delayed(const Duration(milliseconds: 100), () {
-                                  AppUtils.fitMapToPath(widget.activity.trackedPath ?? [], _mapController);
-                              });
-                            },
+                              AppUtils.fitMapToPath(
+                                widget.activity.trackedPath ?? [],
+                                _mapController,
+                              );
+                            });
+                          },
                           onTap: (tapPosition, point) {
                             onTapBlock(context);
                           },
                           initialZoom: 15.0,
-                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none)),
+                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                        ),
                         children: [
                           TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -286,14 +329,16 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           ),
                           MarkerLayer(
                             markers: [
-                              if (widget.activity.trackedPath != null && widget.activity.trackedPath!.isNotEmpty)
+                              if (widget.activity.trackedPath != null &&
+                                  widget.activity.trackedPath!.isNotEmpty)
                                 Marker(
                                   point: widget.activity.trackedPath!.first,
                                   width: 40,
                                   height: 40,
                                   child: Icon(Icons.location_pin, color: Colors.green, size: 40),
                                 ),
-                              if (widget.activity.trackedPath != null && widget.activity.trackedPath!.length > 1)
+                              if (widget.activity.trackedPath != null &&
+                                  widget.activity.trackedPath!.length > 1)
                                 Marker(
                                   point: widget.activity.trackedPath!.last,
                                   width: 40,
@@ -320,7 +365,12 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           padding: const EdgeInsets.all(4.0),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Image.network(widget.activity.photos[index], width: 120, height: 120, fit: BoxFit.cover),
+                            child: Image.network(
+                              widget.activity.photos[index],
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         );
                       },

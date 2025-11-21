@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/core/constants/app_constants.dart';
+import 'package:run_track/core/utils/utils.dart';
 
-import '../../../../core/models/activity.dart' show Activity;
-import '../../../../core/utils/utils.dart';
 
 class TrackedPathMap extends StatefulWidget {
-  final Activity? activity;
+  final List<LatLng>trackedPath;
 
-  const TrackedPathMap({super.key, this.activity});
+  const TrackedPathMap({super.key, required this.trackedPath});
 
   @override
   State<TrackedPathMap> createState() => _TrackedPathMapState();
@@ -26,13 +24,12 @@ class _TrackedPathMapState extends State<TrackedPathMap> {
         mapController: _mapController,
         options: MapOptions(
           initialCenter:
-              widget.activity?.trackedPath?.first ??
-              LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
+              widget.trackedPath.first,
           initialZoom: 15.0,
           onMapReady: () async {
             // Delay to load a tiles properly
             Future.delayed(const Duration(milliseconds: 100), () {
-              AppUtils.fitMapToPath(widget.activity?.trackedPath ?? [], _mapController);
+              AppUtils.fitMapToPath(widget.trackedPath, _mapController);
             });
           },
         ),
@@ -41,29 +38,29 @@ class _TrackedPathMapState extends State<TrackedPathMap> {
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.example.runtrack',
           ),
-          if (widget.activity?.trackedPath?.isNotEmpty ?? false)
+          if (widget.trackedPath.isNotEmpty)
             PolylineLayer(
               polylines: [
                 Polyline(
-                  points: widget.activity?.trackedPath ?? [],
+                  points: widget.trackedPath ,
                   color: Colors.blue,
                   strokeWidth: 4.0,
                 ),
               ],
             ),
-          if (widget.activity?.trackedPath?.isNotEmpty ?? false)
+          if (widget.trackedPath.isNotEmpty )
             MarkerLayer(
               markers: [
                 Marker(
-                  point: widget.activity!.trackedPath!.first,
+                  point: widget.trackedPath.first,
                   width: 40,
                   height: 40,
                   child: Icon(Icons.flag, color: Colors.green),
                 ),
-                if (widget.activity!.trackedPath != null &&
-                    widget.activity!.trackedPath!.length > 1)
+                if (
+                widget.trackedPath.length > 1)
                   Marker(
-                    point: widget.activity!.trackedPath!.last,
+                    point: widget.trackedPath.last,
                     width: 40,
                     height: 40,
                     child: Icon(Icons.stop, color: Colors.red),

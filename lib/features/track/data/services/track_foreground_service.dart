@@ -58,9 +58,6 @@ void onStart(ServiceInstance serviceInstance) async {
   double settingMaxSpeedKmh = 43.0;
   LocationAccuracy settingAccuracyLevel = LocationAccuracy.best;
 
-
-
-
   DateTime? startTime;
 
   Timer? timeTimer;
@@ -111,7 +108,10 @@ void onStart(ServiceInstance serviceInstance) async {
     startTime = DateTime.now().subtract(elapsedTime);
 
     // location stream
-    final locationSettings = LocationSettings(accuracy: settingAccuracyLevel, distanceFilter: settingDistanceFilter);
+    final locationSettings = LocationSettings(
+      accuracy: settingAccuracyLevel,
+      distanceFilter: settingDistanceFilter,
+    );
     positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((
       Position position,
     ) {
@@ -154,24 +154,54 @@ void onStart(ServiceInstance serviceInstance) async {
             pace = 0.0;
           }
 
-          if (trackingState == TrackingState.running &&
-              (trackedPath.isEmpty ||
-                  distanceCalculator.as(LengthUnit.Meter, trackedPath.last, currentPosition!) >
-                      2)) {
-            trackedPath.add(currentPosition!);
-            print("MYLOG added");
-          }
+          if (trackedPath.isEmpty ||
+              distanceCalculator.as(LengthUnit.Meter, trackedPath.last, currentPosition!) > 2) {
+            if (trackedPath.length >= 2) {
+              LatLng pointA = trackedPath[trackedPath.length - 2];
+              LatLng pointB = trackedPath.last;
+              LatLng pointC = currentPosition!;
 
-          // Finish competition
-          if (currentCompetition.isNotEmpty) {
-            if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
-              serviceInstance.invoke(ServiceEvent.stopService.name);
+              // Calc bearing between point to avoid adding redundant positions in straight line
+              double bearingBetweenAB = Geolocator.bearingBetween(
+                pointA.latitude,
+                pointA.longitude,
+                pointB.latitude,
+                pointB.longitude,
+              );
+              double bearingBetweenBC = Geolocator.bearingBetween(
+                pointB.latitude,
+                pointB.longitude,
+                pointC.latitude,
+                pointC.longitude,
+              );
+
+              double diff = (bearingBetweenAB - bearingBetweenBC).abs();
+              if (diff > 180) {
+                diff = 360 - diff;
+              }
+
+              double straightLineThreshold = 10.0;
+
+              if (diff < straightLineThreshold) {
+                trackedPath.last = pointC;
+                print("MYLOG optimized: replaced last point (diff: ${diff.toStringAsFixed(2)}°)");
+              } else {
+                trackedPath.add(pointC);
+                print("MYLOG added new point (turn detected)");
+              }
+            } else {
+              trackedPath.add(currentPosition!);
             }
           }
         }
-        print('MYLOG location');
-      }
 
+        // Finish competition
+        if (currentCompetition.isNotEmpty) {
+          if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
+            serviceInstance.invoke(ServiceEvent.stopService.name);
+          }
+        }
+      }
       latestPosition = position;
 
       if (trackingState == TrackingState.running) {
@@ -236,26 +266,28 @@ void onStart(ServiceInstance serviceInstance) async {
     // Start service
     serviceInstance.on(ServiceEvent.startService.name).listen((Map<String, dynamic>? data) {
       clearStats();
-      if(data == null) return;
-        if (data.containsKey('distanceFilter')) settingDistanceFilter = data['distanceFilter'];
-        if (data.containsKey('maxAccuracy')) settingMaxAccuracy = (data['maxAccuracy'] as num).toDouble();
-        if (data.containsKey('maxSpeed')) settingMaxSpeedKmh = (data['maxSpeed'] as num).toDouble();
-        if (data.containsKey('accuracyLevel')) settingAccuracyLevel = SettingsService.getAccuracyEnum(data['accuracyLevel']);
-        currentCompetition = data['currentUserCompetition'] ?? "";
-        distanceToGo = (data['distanceToGo'] as num?)?.toDouble() ?? 0.0;
-        int maxTimeToCompleteActivityMinutes = (data['maxTimeToCompleteActivityMinutes'] ?? 0).toInt();
-        int maxTimeToCompleteActivityHours = (data['maxTimeToCompleteActivityHours'] ?? 0).toInt();
-        maxTimeToComplete = Duration(
-          hours: maxTimeToCompleteActivityHours,
-          minutes: maxTimeToCompleteActivityMinutes,
-        );
+      if (data == null) return;
+      if (data.containsKey('distanceFilter')) settingDistanceFilter = data['distanceFilter'];
+      if (data.containsKey('maxAccuracy'))
+        settingMaxAccuracy = (data['maxAccuracy'] as num).toDouble();
+      if (data.containsKey('maxSpeed')) settingMaxSpeedKmh = (data['maxSpeed'] as num).toDouble();
+      if (data.containsKey('accuracyLevel'))
+        settingAccuracyLevel = SettingsService.getAccuracyEnum(data['accuracyLevel']);
+      currentCompetition = data['currentUserCompetition'] ?? "";
+      distanceToGo = (data['distanceToGo'] as num?)?.toDouble() ?? 0.0;
+      int maxTimeToCompleteActivityMinutes = (data['maxTimeToCompleteActivityMinutes'] ?? 0)
+          .toInt();
+      int maxTimeToCompleteActivityHours = (data['maxTimeToCompleteActivityHours'] ?? 0).toInt();
+      maxTimeToComplete = Duration(
+        hours: maxTimeToCompleteActivityHours,
+        minutes: maxTimeToCompleteActivityMinutes,
+      );
 
-        print("Settings");
-        print('Distance filter: $settingDistanceFilter');
-        print('Max accuracy: $settingMaxAccuracy');
-        print('Max speed: $settingMaxSpeedKmh');
-        print('Accuracy level: $settingAccuracyLevel');
-
+      print("Settings");
+      print('Distance filter: $settingDistanceFilter');
+      print('Max accuracy: $settingMaxAccuracy');
+      print('Max speed: $settingMaxSpeedKmh');
+      print('Accuracy level: $settingAccuracyLevel');
 
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
@@ -268,7 +300,7 @@ void onStart(ServiceInstance serviceInstance) async {
       sendSync("E"); // End sync
 
       // Save stats to local storage
-      if(currentCompetition.isNotEmpty){
+      if (currentCompetition.isNotEmpty) {
         final activityData = Activity(
           activityId: DateTime.now().millisecondsSinceEpoch.toString(),
           uid: AppData.instance.currentUser?.uid ?? "",
@@ -290,7 +322,6 @@ void onStart(ServiceInstance serviceInstance) async {
 
         await Storage.saveActivity(activityData);
       }
-
 
       stopLocationTimerAndStream();
       clearStats();
@@ -403,9 +434,12 @@ class ForegroundTrackService {
       'maxTimeToCompleteActivityMinutes':
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0,
       'distanceFilter': AppSettings.instance.gpsDistanceFilter ?? AppConstants.gpsDistanceFilter,
-      'mixAccuracy' : AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy,
-      'maxSpeed' : AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps,
-      'accuracyLevel':SettingsService.accuracyEnumToString(AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy)
+      'mixAccuracy': AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy,
+      'maxSpeed':
+          AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps,
+      'accuracyLevel': SettingsService.accuracyEnumToString(
+        AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy,
+      ),
     });
     print("MYLOG after start in ui side");
   }

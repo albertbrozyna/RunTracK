@@ -141,7 +141,6 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                   },
                 ),
                 const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
-
                 TextFormField(
                   controller: _lastNameController,
                   style: TextStyle(color: AppColors.white),

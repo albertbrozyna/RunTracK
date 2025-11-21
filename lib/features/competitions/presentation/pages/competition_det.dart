@@ -68,7 +68,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   bool saved = false;
   bool leavingPage = false;
   bool _isLoading = false;
-  final Set<int> tabToRefresh = {};  // Tab we need to refresh on competition page
   @override
   void dispose() {
     _nameController.dispose();
@@ -324,10 +323,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     if (!mounted) return;
 
-    if (res) {
+    if (res && screenContext.mounted) {
       AppUtils.showMessage(screenContext, "Competition deleted successfully");
-      Navigator.of(screenContext).pop();
+      Navigator.of(screenContext).pop({
+        'deletedCompetitionId': competitionId
+      });
+
     } else {
+      if(!screenContext.mounted) return;
       AppUtils.showMessage(screenContext, "Error deleting competition");
     }
   }
@@ -344,13 +347,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {
-      tabToRefresh.add(3); // Refresh invites
-      tabToRefresh.add(4);  // Refresh participated tab
-      if(widget.initTab != 3){
-        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
-      }
-    });
+
   }
 
   void declineInvitation() async {
@@ -365,13 +362,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {
-      tabToRefresh.add(3); // Refresh invites
-      tabToRefresh.add(4);  // Refresh participated tab
-      if(widget.initTab != 3){
-        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
-      }
-    });
+
   }
 
   void joinCompetition() async {
@@ -386,13 +377,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {
-      tabToRefresh.add(3); // Refresh invites
-      tabToRefresh.add(4);  // Refresh participated tab
-      if(widget.initTab != 3){
-        tabToRefresh.add(widget.initTab); // Init tab if we accepted invite from different tab
-      }
-    });
+
   }
 
   void resignFromCompetition() async {
@@ -407,10 +392,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
     change = true;
-    setState(() {
-      tabToRefresh.add(4);  // Refresh participated tab
-      tabToRefresh.add(widget.initTab);
-    });
+
   }
 
   /// Save competition to database
@@ -418,10 +400,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (saveInProgress == false) {
         saveInProgress = true;
     }
-    if (!_formKey.currentState!.validate()) {
-      saveInProgress = false;
-      return;
-    }
+    // if (!_formKey.currentState!.validate()) {
+    //   saveInProgress = false;
+    //   return;
+    // }
 
     final currentContext = context;
 
@@ -435,33 +417,28 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
       if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
         AppData.instance.currentCompetition = newCompetition;
-        tabToRefresh.add(widget.initTab);
 
         // Update user counter for created competitions
         UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? "", {
           'competitionsCount' : FieldValue.increment(1),
         });
-
+        if(!currentContext.mounted) return;
         AppUtils.showMessage(currentContext, "Competition saved successfully", messageType: MessageType.success);
         setState(() {
           saved = true;
         });
       } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
         change = true;
+        if(!currentContext.mounted) return;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
       }
     } else {
+      if(!currentContext.mounted) return;
       AppUtils.showMessage(currentContext, "Error saving competition");
     }
     saveInProgress = false;
   }
 
-  void addTabToRefresh(int tab,bool current){
-    if(current){
-      tabToRefresh.add(widget.initTab);
-    }
-    tabToRefresh.add(tab);
-  }
 
   /// Leave page if changes are done
   void leavePage() async{
@@ -488,9 +465,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     // If there is no changes, just pop
     if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
       if(change){ // Something was changes, rebuild competitions page
-        Navigator.of(context).pop(tabToRefresh);
+        Navigator.of(context).pop({
+          'updatedCompetition': AppData.instance.currentCompetition
+        });
       }else{
-        Navigator.of(context).pop(tabToRefresh);
+        Navigator.of(context).pop({
+          'updatedCompetition': AppData.instance.currentCompetition
+        });
       }
       return;
     }
@@ -518,9 +499,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
             Navigator.of(dialogContext).pop();
             if(mounted){
               if(change){
-                Navigator.of(context).pop(tabToRefresh); // There is change, return true to reload all competitions
+                Navigator.of(context).pop({
+                  'updatedCompetition': AppData.instance.currentCompetition
+                }); // There is change, return true to reload all competitions
               }else{
-                Navigator.of(context).pop(tabToRefresh);
+                Navigator.of(context).pop({
+                  'updatedCompetition': AppData.instance.currentCompetition
+                });
               }
             }
           },
@@ -588,7 +573,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     competition: AppData.instance.currentCompetition!,
                     meetingPlaceController: _meetingPlaceController,
                     saved: saved,
-                    addTabToRefresh: addTabToRefresh,
                   ),
 
                   BottomButtons(

@@ -1,17 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:run_track/core/widgets/app_loading_indicator.dart';
 
-import '../../../../app/config/app_data.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/tracking_state.dart';
-import '../../../../core/models/activity.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../data/models/track_state.dart';
-import '../pages/activity_summary.dart';
 
 class ActionButtons extends StatefulWidget {
   final TextEditingController activityController;
@@ -26,47 +22,8 @@ class _ActionButtonsState extends State<ActionButtons> {
   final ValueNotifier<double> _finishProgressNotifier = ValueNotifier(0.0);
   Timer? _finishTimer;
 
-  void handleStopTracking() async {
-    await TrackState.trackStateInstance.stopRun();
-
-    if (mounted) {
-      print("Pushing page");
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ActivitySummary(
-            firstName: AppData.instance.currentUser?.firstName ?? '',
-            lastName: AppData.instance.currentUser?.lastName ?? '',
-            readonly: false,
-            currentUserCompetition: AppData.instance.currentUserCompetition,
-            activityData: Activity(
-              uid: AppData.instance.currentUser!.uid,
-              activityType: widget.activityController.text.trim(),
-              avgSpeed: TrackState.trackStateInstance.avgSpeed,
-              calories: TrackState.trackStateInstance.calories,
-              steps: TrackState.trackStateInstance.steps,
-              elevationGain: TrackState.trackStateInstance.elevationGain,
-              trackedPath: TrackState.trackStateInstance.trackedPath,
-              elapsedTime: TrackState.trackStateInstance.elapsedTime.inSeconds.toInt(),
-              totalDistance: TrackState.trackStateInstance.totalDistance,
-              pace: TrackState.trackStateInstance.pace,
-              startTime: TrackState.trackStateInstance.startTime,
-              createdAt: DateTime.now(),
-            ),
-          ),
-        ),
-      );
-    }
-    TrackState.trackStateInstance.refreshUi();
-  }
-
   @override
   Widget build(BuildContext context) {
-    if(TrackState.trackStateInstance.isFinishing){
-      return AppLoadingIndicator(
-        message: "Finishing...",
-      );
-    }
     switch (TrackState.trackStateInstance.trackingState) {
       case TrackingState.stopped:
         return CustomButton(
@@ -105,7 +62,7 @@ class _ActionButtonsState extends State<ActionButtons> {
                         _finishProgressNotifier.value += 0.04;
                         if (_finishProgressNotifier.value >= 1.0) {
                           _finishTimer?.cancel();
-                          handleStopTracking();
+                          TrackState.trackStateInstance.stopRun();
                         }
                       });
                     },

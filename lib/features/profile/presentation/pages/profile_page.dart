@@ -52,6 +52,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   }
 
+  void navigateToSettings()async {
+    await Navigator.pushNamed(context, AppRoutes.settings);
+    if (!mounted) return;
+    initializeAsync();
+  }
+
   /// Initialize async data
   Future<void> initializeAsync() async {
     setState(() {
@@ -286,6 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressedSendInvitationToCompetition: onPressedInviteToCompetition,
                     onPressedRemoveInvitationToCompetition: onPressedRemoveInvitationToCompetition,
                     onPressedRemoveCompetitor: onPressedRemoveCompetitor,
+                    navigateToSettings: navigateToSettings,
                   ),
                 ),
               ),

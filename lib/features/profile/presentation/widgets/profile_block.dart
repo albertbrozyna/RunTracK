@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/config/app_images.dart';
 
 import '../../../../core/models/user.dart';
 
@@ -16,14 +17,14 @@ class ProfileBlock extends StatelessWidget {
             children: [
               ClipOval(
                 child: Image.asset(
-                  "assets/DefaultProfilePhoto.png",),
+                 AppImages.defaultProfilePhoto,),
               ),
               SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "${user?.firstName ?? "Unknown"} ${user?.lastName ?? ""}",
+                    "${user?.firstName ?? "User"} ${user?.lastName ?? "Unknown"}",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],

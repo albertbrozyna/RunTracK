@@ -47,10 +47,9 @@ class AuthService {
     }
   }
 
-  // TODO: Implement this method
-  Future<void> _deleteDocumentsByQuery(Query query) async {
-    const batchSize = 10;
 
+  Future<void> deleteDocumentsByQuery(Query query) async {
+    const batchSize = 40;
     QuerySnapshot snapshot = await query.limit(batchSize).get();
 
     while (snapshot.docs.isNotEmpty) {
@@ -59,9 +58,7 @@ class AuthService {
       for (DocumentSnapshot doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
-
       await batch.commit();
-
       snapshot = await query.limit(batchSize).get();
     }
   }
@@ -73,24 +70,18 @@ class AuthService {
         return AuthResponse(message: "User is not logged in.");
       }
 
-      // Delete notifications
-      final notificationsQuery = firestore
-          .collection(FirestoreCollections.notifications)
-          .where('userId', isEqualTo: uid);
-      await _deleteDocumentsByQuery(notificationsQuery);
-
-      final activitiesQuery = firestore
-          .collection(FirestoreCollections.activities)
-          .where('userId', isEqualTo: uid);
-      await _deleteDocumentsByQuery(activitiesQuery);
-      // Delete user collections from firestore
-      await firestore.collection(FirestoreCollections.users).doc(user.uid).delete();
-      await firestore.collection(FirestoreCollections.competitions).doc(user.uid).delete();
-
-
-
       final uid = user.uid;
+      // Delete notifications
+      final queryNotifications = firestore.collection(FirestoreCollections.notifications)
+          .where('uid', isEqualTo: uid);
+      await deleteDocumentsByQuery(queryNotifications);
+      // Delete activities
+      final queryActivities = firestore.collection(FirestoreCollections.activities)
+          .where('uid', isEqualTo: uid);
+      await deleteDocumentsByQuery(queryActivities);
+      // Delete user profile
       await firestore.collection(FirestoreCollections.users).doc(uid).delete();
+
       await user.delete();
       await signOutUser();
 
