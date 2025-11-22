@@ -12,12 +12,13 @@ class RunStats extends StatelessWidget {
   final Duration elapsedTime;
   final double? avgSpeed; // km/h
   final int? steps;
-  final double? elevation;
+  final double? elevationGain;
+  final double? elevationLoss;
   final double? calories;
   final DateTime? startTime;
 
 
-  const RunStats({super.key, required this.totalDistance, required this.pace, required this.elapsedTime,this.avgSpeed,this.calories,this.steps,this.startTime,this.elevation});
+  const RunStats({super.key, required this.totalDistance, required this.pace, required this.elapsedTime,this.avgSpeed,this.calories,this.steps,this.startTime,this.elevationGain,this.elevationLoss});
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +58,10 @@ class RunStats extends StatelessWidget {
                       StatCard(title:"Avg Speed",value: '${avgSpeed?.toStringAsFixed(1)} km/h',icon: Icon(Icons.speed)),
                     if(steps != null)
                       StatCard(title:"Steps",value: steps.toString(), icon:Icon(Icons.directions_walk)),
-                    if(elevation != null)
-                      StatCard(title:"Elevation",value: '${elevation?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
+                    if(elevationGain != null)
+                      StatCard(title:"Elevation gain",value: '${elevationGain?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
+                    if(elevationLoss != null)
+                      StatCard(title:"Elevation loss",value: '${elevationLoss?.toStringAsFixed(0)} m',icon: Icon(Icons.terrain)),
                   ],
                 ),
               ],

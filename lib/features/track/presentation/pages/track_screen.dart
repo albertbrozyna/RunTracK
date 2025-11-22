@@ -98,12 +98,9 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
     final activityData = Activity(
       activityId: "",
       uid: AppData.instance.currentUser?.uid ?? "",
-
       activityType: activityController.text.toString().trim(),
-
       title: isCompetition ? "Competition Run" : activityController.text.toString().trim(),
       description: isCompetition ? "Completed competition: ${state.currentUserCompetition}" : "",
-
       totalDistance: state.totalDistance,
       elapsedTime: state.elapsedTime.inSeconds,
       startTime: state.startTime ?? DateTime.now(),
@@ -112,6 +109,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
       avgSpeed: state.avgSpeed ?? 0.0,
       calories: state.calories ?? 0.0,
       elevationGain: state.elevationGain ?? 0.0,
+      elevationLoss: state.elevationLoss ?? 0.0,
       createdAt: DateTime.now(),
       steps: state.steps ?? 0,
       visibility: ComVisibility.me,
@@ -297,7 +295,8 @@ Widget build(BuildContext context) {
                     avgSpeed: TrackState.trackStateInstance.avgSpeed,
                     calories: TrackState.trackStateInstance.calories,
                     steps: TrackState.trackStateInstance.steps,
-                    elevation: TrackState.trackStateInstance.elevationGain,
+                    elevationGain: TrackState.trackStateInstance.elevationGain,
+                    elevationLoss: TrackState.trackStateInstance.elevationLoss,
                   ),
                 ),
               ),

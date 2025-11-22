@@ -37,7 +37,9 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
         AppData.instance.currentUserCompetition = widget.competition;
         AppData.instance.currentUser?.currentCompetition = widget.competition.competitionId;
       });
-      UserService.updateUser(AppData.instance.currentUser!);
+      UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '',{
+        'currentCompetition': widget.competition.competitionId,
+      });
     }
   }
 
@@ -46,7 +48,9 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
       AppData.instance.currentUserCompetition = null;
       AppData.instance.currentUser?.currentCompetition = "";
     });
-    UserService.updateUser(AppData.instance.currentUser!);
+    UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '',{
+      'currentCompetition': widget.competition.competitionId,
+    });;
   }
 
   @override

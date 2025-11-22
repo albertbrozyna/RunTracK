@@ -77,7 +77,9 @@ class ActivityChooseState extends State<ActivityChoose> {
 
     AppUtils.showMessage(context, "Activity added to list", messageType: MessageType.success);
     addingEnabled = false;
-    UserService.updateUser(AppData.instance.currentUser!);
+    UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '',{
+      "activityNames": AppData.instance.currentUser?.activityNames,
+    });
   }
 
   /// Delete activity from list
@@ -85,7 +87,9 @@ class ActivityChooseState extends State<ActivityChoose> {
     setState(() {
       AppData.instance.currentUser?.activityNames.removeAt(index);
     });
-    UserService.updateUser(AppData.instance.currentUser!);
+    UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '',{
+      "activityNames": AppData.instance.currentUser?.activityNames,
+    });
   }
 
   @override

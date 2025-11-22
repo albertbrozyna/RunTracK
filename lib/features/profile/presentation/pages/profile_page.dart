@@ -155,6 +155,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// Accept invitation
   void onPressedAcceptInvitationToFriends() async {
+    if(AppData.instance.currentUser!.friends.length >= 30 ){
+      AppUtils.showMessage(context, "You cannot add more that 30 friends due to our limits.");
+      return;
+    }
+    if(user!.friends.length >= 30 ){
+      AppUtils.showMessage(context, "You cannot accept this invitation because user ${user?.firstName} + ${user?.lastName} has already reached friends limit.");
+      return;
+    }
     bool success = await UserService.manageUsers(
       senderUid: myUid,
       receiverUid: user!.uid,
@@ -187,6 +195,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// Invite to friends
   void onPressedAddFriend() async {
+    if(AppData.instance.currentUser!.friends.length >= 30 ){
+      AppUtils.showMessage(context, "You cannot add more that 30 friends due to our limits.");
+      return;
+    }
+    if(user!.friends.length >= 30 ){
+      AppUtils.showMessage(context, "User which you want to invite has already reached friends limit.");
+      return;
+    }
     bool success = await UserService.manageUsers(
       senderUid: myUid,
       receiverUid: user!.uid,

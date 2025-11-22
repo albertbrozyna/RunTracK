@@ -91,6 +91,66 @@ void onStart(ServiceInstance serviceInstance) async {
     print("Serwis: Zatrzymano timer i strumień lokalizacji.");
   }
 
+  void sendSync(String type) {
+    final update = LocationUpdate(
+      lat: 0.0,
+      lng: 0.0,
+      type: type,
+      totalDistance: totalDistance,
+      steps: steps,
+      elevationGain: elevationGain,
+      elevationLoss: elevationLoss,
+      avgSpeed: avgSpeed,
+      pace: pace,
+      calories: calories,
+      positionAccuracy: 0.0,
+      trackingState: trackingState,
+      trackedPath: trackedPath,
+      elapsedTime: elapsedTime,
+      currentUserCompetition: currentCompetition,
+    );
+    serviceInstance.invoke(ServiceEvent.sync.name, update.toJson());
+  }
+
+  void stopService() async {
+    sendSync("E"); // End sync
+
+    // Save stats to local storage
+    if (currentCompetition.isNotEmpty) {
+      final activityData = Activity(
+        activityId: DateTime.now().millisecondsSinceEpoch.toString(),
+        uid: "",
+        activityType: "Competition activity",
+        title: "Competition: $totalDistance",
+        description: "",
+        totalDistance: totalDistance,
+        elapsedTime: elapsedTime.inSeconds,
+        startTime: startTime ?? DateTime.now().subtract(elapsedTime),
+        trackedPath: List.from(trackedPath),
+        pace: pace,
+        avgSpeed: avgSpeed,
+        calories: calories,
+        elevationGain: elevationGain,
+        createdAt: DateTime.now(),
+        steps: steps,
+        visibility: ComVisibility.me,
+      );
+
+      await Storage.saveActivity(activityData);
+    }
+
+    stopLocationTimerAndStream();
+    clearStats();
+
+    print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
+
+    serviceInstance.invoke(ServiceEvent.stopped.name);
+
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    serviceInstance.stopSelf();
+  }
+
   void startLocationTimerAndStream() {
     if (positionSubscription != null) {
       positionSubscription!.cancel();
@@ -193,16 +253,19 @@ void onStart(ServiceInstance serviceInstance) async {
               trackedPath.add(currentPosition!);
             }
           }
+          latestPosition = position;
         }
-
+        print("distance to go $distanceToGo");
         // Finish competition
         if (currentCompetition.isNotEmpty) {
           if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
-            serviceInstance.invoke(ServiceEvent.stopService.name);
+            stopService();
+            print("MYLOG stop distance reached");
           }
         }
+      } else {
+        latestPosition = position;
       }
-      latestPosition = position;
 
       if (trackingState == TrackingState.running) {
         final update = LocationUpdate(
@@ -240,27 +303,6 @@ void onStart(ServiceInstance serviceInstance) async {
     });
   }
 
-  void sendSync(String type) {
-    final update = LocationUpdate(
-      lat: 0.0,
-      lng: 0.0,
-      type: type,
-      totalDistance: totalDistance,
-      steps: steps,
-      elevationGain: elevationGain,
-      elevationLoss: elevationLoss,
-      avgSpeed: avgSpeed,
-      pace: pace,
-      calories: calories,
-      positionAccuracy: 0.0,
-      trackingState: trackingState,
-      trackedPath: trackedPath,
-      elapsedTime: elapsedTime,
-      currentUserCompetition: currentCompetition,
-    );
-    serviceInstance.invoke(ServiceEvent.sync.name, update.toJson());
-  }
-
   // Handle events from UI
   if (serviceInstance is AndroidServiceInstance) {
     // Start service
@@ -268,13 +310,16 @@ void onStart(ServiceInstance serviceInstance) async {
       clearStats();
       if (data == null) return;
       if (data.containsKey('distanceFilter')) settingDistanceFilter = data['distanceFilter'];
-      if (data.containsKey('maxAccuracy'))
+      if (data.containsKey('maxAccuracy')) {
         settingMaxAccuracy = (data['maxAccuracy'] as num).toDouble();
+      }
       if (data.containsKey('maxSpeed')) settingMaxSpeedKmh = (data['maxSpeed'] as num).toDouble();
-      if (data.containsKey('accuracyLevel'))
+      if (data.containsKey('accuracyLevel')) {
         settingAccuracyLevel = SettingsService.getAccuracyEnum(data['accuracyLevel']);
+      }
       currentCompetition = data['currentUserCompetition'] ?? "";
       distanceToGo = (data['distanceToGo'] as num?)?.toDouble() ?? 0.0;
+      distanceToGo = distanceToGo * 1000; // Convert to meters
       int maxTimeToCompleteActivityMinutes = (data['maxTimeToCompleteActivityMinutes'] ?? 0)
           .toInt();
       int maxTimeToCompleteActivityHours = (data['maxTimeToCompleteActivityHours'] ?? 0).toInt();
@@ -282,6 +327,10 @@ void onStart(ServiceInstance serviceInstance) async {
         hours: maxTimeToCompleteActivityHours,
         minutes: maxTimeToCompleteActivityMinutes,
       );
+
+      print("Current competition $currentCompetition");
+      print("Distance to go $distanceToGo");
+      print("Max time to complete $maxTimeToComplete");
 
       print("Settings");
       print('Distance filter: $settingDistanceFilter');
@@ -297,42 +346,7 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // Stop service
     serviceInstance.on(ServiceEvent.stopService.name).listen((_) async {
-      sendSync("E"); // End sync
-
-      // Save stats to local storage
-      if (currentCompetition.isNotEmpty) {
-        final activityData = Activity(
-          activityId: DateTime.now().millisecondsSinceEpoch.toString(),
-          uid: AppData.instance.currentUser?.uid ?? "",
-          activityType: "Competition activity",
-          title: "Competition: $totalDistance",
-          description: "",
-          totalDistance: totalDistance,
-          elapsedTime: elapsedTime.inSeconds,
-          startTime: startTime ?? DateTime.now().subtract(elapsedTime),
-          trackedPath: List.from(trackedPath),
-          pace: pace,
-          avgSpeed: avgSpeed,
-          calories: calories,
-          elevationGain: elevationGain,
-          createdAt: DateTime.now(),
-          steps: steps,
-          visibility: ComVisibility.me,
-        );
-
-        await Storage.saveActivity(activityData);
-      }
-
-      stopLocationTimerAndStream();
-      clearStats();
-
-      print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
-
-      serviceInstance.invoke(ServiceEvent.stopped.name);
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      serviceInstance.stopSelf();
+      stopService();
     });
 
     // Get current state

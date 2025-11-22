@@ -76,7 +76,9 @@ class _AppInitializerState extends State<AppInitializer> {
 
             AppData.instance.currentUser?.currentCompetition = "";
 
-            await UserService.updateUser(AppData.instance.currentUser!);
+            await UserService.updateFieldsInTransaction(AppData.instance.currentUser!.uid,{
+              "currentCompetition": "",
+            });
 
             if (mounted) {
               AppUtils.showMessage(context, "Previous competition no longer exists");

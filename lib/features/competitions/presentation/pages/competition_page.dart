@@ -66,6 +66,14 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   final int _limit = 10; // Competitions per page
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    _scrollControllerMy.dispose();
+    _scrollControllerFriends.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
@@ -119,33 +127,73 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
   }
 
+  void refreshCurrentTab(int tabIndex){
+      switch(tabIndex){
+        case 0:
+          _lastPageMyCompetitions = null;
+          _myCompetitions.clear();
+          _hasMoreMy = true;
+          _loadMyCompetitions();
+          break;
+          case 1:
+            _lastPageFriendsCompetitions = null;
+          _friendsCompetitions.clear();
+          _hasMoreFriends = true;
+          _loadFriendsCompetitions();
+          break;
+          case 2:
+            _lastPageAllCompetitions = null;
+            _allCompetitions.clear();
+          _hasMoreAll = true;
+          _loadAllCompetitions();
+          break;
+          case 3:
+            _lastPageInvites = null;
+          _invitedCompetitions.clear();
+          _hasMoreInvites = true;
+          _loadMyInvitedCompetitions();
+          break;
+          case 4:
+            lastCompetitionIdParticipated = "";
+          _participatedCompetitions.clear();
+          _hasMoreParticipating = true;
+          _loadMyParticipatedCompetitions();
+          break;
+      }
+  }
+
   // Load current tab
   void _loadCurrentTabData(int index) {
     switch (index) {
       case 0:
-        if (_myCompetitions.isEmpty) _loadMyCompetitions();
+        _lastPageMyCompetitions = null;
+        _myCompetitions.clear();
+        _hasMoreMy = true;
+        _loadMyCompetitions();
         break;
       case 1:
-        if (_friendsCompetitions.isEmpty) {
-          _loadFriendsCompetitions();
-        }
+        _lastPageFriendsCompetitions = null;
+        _friendsCompetitions.clear();
+        _hasMoreFriends = true;
+        _loadFriendsCompetitions();
         break;
       case 2:
-        if (_allCompetitions.isEmpty) {
-          _loadAllCompetitions();
-        }
-
+        _lastPageAllCompetitions = null;
+        _allCompetitions.clear();
+        _hasMoreAll = true;
+        _loadAllCompetitions();
         break;
       case 3:
-        if (_invitedCompetitions.isEmpty) {
-          _loadMyInvitedCompetitions();
-        }
+        _lastPageInvites = null;
+        _invitedCompetitions.clear();
+        _hasMoreInvites = true;
+        _loadMyInvitedCompetitions();
         break;
-
       case 4:
-        if (_participatedCompetitions.isEmpty) {
-          _loadMyParticipatedCompetitions();
-        }
+        lastCompetitionIdParticipated = "";
+        _participatedCompetitions.clear();
+        _hasMoreParticipating = true;
+        _loadMyParticipatedCompetitions();
         break;
     }
   }
@@ -387,13 +435,14 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
         (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
       enterContext = CompetitionContext.participant;
     }
-    final result = await Navigator.pushNamed(
+    int tabIndex = _tabController.index;
+    await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {
         'enterContext': enterContext,
         'competitionData': competition,
-        'initTab': _tabController.index,
+        'initTab': tabIndex,
       },
     );
 
@@ -401,55 +450,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-
-    if (result != null) {
-      if (result is Map) {
-        if (result.containsKey('deletedCompetitionId')) {
-          final deletedId = result['deletedCompetitionId'] as String?;
-          if (deletedId != null) {
-            _removeLocalCompetitionFromLists(deletedId);
-          }
-          return;
-        }
-
-        final updatedComp = result['updatedCompetition'] as Competition?;
-
-        if (updatedComp != null) {
-          _updateLocalCompetitionInLists(updatedComp);
-        }
-      }
-    }
-  }
-
-  void updateInList(List<Competition> list,Competition updatedCompetition) {
-    final index = list.indexWhere((c) => c.competitionId == updatedCompetition.competitionId);
-    if (index != -1) {
-      list[index] = updatedCompetition;
-    }
-  }
-
-  // Remove competition from local lists
-  void _removeLocalCompetitionFromLists(String competitionId) {
-    setState(() {
-      void removeFromList(List<Competition> list) {
-        list.removeWhere((comp) => comp.competitionId == competitionId);
-      }
-
-      removeFromList(_myCompetitions);
-      removeFromList(_friendsCompetitions);
-      removeFromList(_allCompetitions);
-      removeFromList(_invitedCompetitions);
-      removeFromList(_participatedCompetitions);
-    });
-  }
-  void _updateLocalCompetitionInLists(Competition updatedCompetition) {
-    setState(() {
-      updateInList(_myCompetitions,updatedCompetition);
-      updateInList(_friendsCompetitions,updatedCompetition);
-      updateInList(_allCompetitions,updatedCompetition);
-      updateInList(_invitedCompetitions,updatedCompetition);
-      updateInList(_participatedCompetitions,updatedCompetition);
-    });
+    refreshCurrentTab(tabIndex);
   }
 
   /// On pressed add competition button
@@ -462,13 +463,14 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isNavigating = true;
     });
 
-    final result = await Navigator.pushNamed(
+    int tabIndex = _tabController.index;
+    await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {
         'enterContext': CompetitionContext.ownerCreate,
         'competitionData': null,
-        'initTab': _tabController.index,
+        'initTab': tabIndex,
       },
     );
 
@@ -476,27 +478,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     setState(() {
       _isNavigating = false;
     });
-    if (result != null) {
-      if (result is Map) {
-        // Delete from lists
-        if (result.containsKey('deletedCompetitionId')) {
-          final deletedId = result['deletedCompetitionId'] as String?;
-          if (deletedId != null) {
-            _removeLocalCompetitionFromLists(deletedId);
-          }
-          return;
-        }
-
-
-        final updatedComp = result['updatedCompetition'] as Competition?;
-
-        if (updatedComp != null) {
-          _updateLocalCompetitionInLists(updatedComp);
-        }
-      }
-    }
+    refreshCurrentTab(tabIndex);
   }
-
 
 
   @override

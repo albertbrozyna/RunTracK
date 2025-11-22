@@ -62,6 +62,18 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
+      if (!user.emailVerified) {
+        if (mounted) {
+          // await user.sendEmailVerification();
+
+          AppUtils.showMessage(context, "Please verify your email address.", messageType: MessageType.warning);
+
+          Navigator.pushNamed(context, AppRoutes.verifyEmail);
+        }
+        return;
+      }
+
+
       AppData.instance.currentUser = await UserService.fetchUser(FirebaseAuth.instance.currentUser!.uid);
       if (AppData.instance.currentUser == null) {
         if (mounted) {
@@ -152,7 +164,21 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, AppRoutes.forgetPassword);
+                                  },
+                                  child: Text(
+                                    "Forgot Password?",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
                               CustomButton(text: "Login", onPressed: () => handleLogin()),
                             ],
                           ),

@@ -21,6 +21,7 @@ class AppRoutes {
   static const String changePassword = '/changePassword';
   static const String yourPersonalInfo = '/yourPersonalInfo';
   static const String locationTrackingSettings = '/locationTrackingSettings';
+  static const String forgetPassword = '/forgetPassword';
   // static const String
 
 }

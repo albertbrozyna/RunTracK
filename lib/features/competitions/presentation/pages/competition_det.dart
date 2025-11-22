@@ -43,6 +43,7 @@ class CompetitionDetailsPage extends StatefulWidget {
 
 enum CompetitionState { canStart, inProgress, finished,currentlyAssigned,notAssigned }
 
+
 class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -56,14 +57,12 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final TextEditingController _activityController = TextEditingController();
   final TextEditingController _meetingPlaceController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
-
   CompetitionResult? competitionResult;
   late Competition? competitionBeforeSave = widget.competitionData;
   String appBarTitle = "Competition details";
   enums.ComVisibility _visibility = enums.ComVisibility.me;
   bool readOnly = false;
   String message = "";
-  bool change = false;  // Change was done to competition, reload it all
   bool saveInProgress = false;
   bool saved = false;
   bool leavingPage = false;
@@ -318,17 +317,12 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     }
 
     if (!mounted) return;
-
     final bool res = await CompetitionService.deleteCompetition(competitionId ?? "");
-
     if (!mounted) return;
 
     if (res && screenContext.mounted) {
       AppUtils.showMessage(screenContext, "Competition deleted successfully");
-      Navigator.of(screenContext).pop({
-        'deletedCompetitionId': competitionId
-      });
-
+      Navigator.of(context).pop();
     } else {
       if(!screenContext.mounted) return;
       AppUtils.showMessage(screenContext, "Error deleting competition");
@@ -346,8 +340,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
     }
-    change = true;
-
   }
 
   void declineInvitation() async {
@@ -361,8 +353,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
     }
-    change = true;
-
   }
 
   void joinCompetition() async {
@@ -376,7 +366,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
     }
-    change = true;
 
   }
 
@@ -391,8 +380,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
     }
-    change = true;
-
   }
 
   /// Save competition to database
@@ -416,6 +403,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       competitionBeforeSave = AppData.instance.currentCompetition!; // Save competition before save state
 
       if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
+
         AppData.instance.currentCompetition = newCompetition;
 
         // Update user counter for created competitions
@@ -428,7 +416,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           saved = true;
         });
       } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
-        change = true;
+
         if(!currentContext.mounted) return;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
       }
@@ -451,28 +439,11 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
     await Future.delayed(const Duration(milliseconds: 50));
     if (!mounted) return;
-
-
     var compData = _getDataFromForm();
-
-    if ((widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate)|| (compData.startDate?.isBefore(DateTime.now()) ?? false)) {
-      // If it is not owner and he is not modifying competition, leave
-      Navigator.of(context).pop();
-      leavingPage = false;
-      return;
-    }
 
     // If there is no changes, just pop
     if (competitionBeforeSave == null || (competitionBeforeSave?.isEqual(compData) ?? false)) {
-      if(change){ // Something was changes, rebuild competitions page
-        Navigator.of(context).pop({
-          'updatedCompetition': AppData.instance.currentCompetition
-        });
-      }else{
-        Navigator.of(context).pop({
-          'updatedCompetition': AppData.instance.currentCompetition
-        });
-      }
+      Navigator.of(context).pop();
       return;
     }
     await showDialog(
@@ -497,17 +468,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           },
           onPressedRight: () {
             Navigator.of(dialogContext).pop();
-            if(mounted){
-              if(change){
-                Navigator.of(context).pop({
-                  'updatedCompetition': AppData.instance.currentCompetition
-                }); // There is change, return true to reload all competitions
-              }else{
-                Navigator.of(context).pop({
-                  'updatedCompetition': AppData.instance.currentCompetition
-                });
-              }
-            }
+            Navigator.of(context).pop();
           },
         );
       },

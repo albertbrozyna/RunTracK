@@ -228,20 +228,6 @@ class UserService {
     }
   }
 
-  /// Update existing user
-  static Future<model.User?> updateUser(model.User user) async {
-    try {
-      if (user.uid.isEmpty) {
-        return null;
-      }
-      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      await docRef.set(user.toMap());
-      return user;
-    } catch (e) {
-      print(e);
-      return null;
-    }
-  }
 
   /// Do action in one transaction to users depending on action type
   static Future<bool> manageUsers({
@@ -306,7 +292,10 @@ class UserService {
                 receiverFriendsList.contains(senderUid)) {
               return false;
             }
-
+            // Check limits
+            if(senderFriendsList.length >= 30 || receiverFriendsList.length >= 30){
+              return false;
+            }
             // Check if receiver do not send us request to friends before
             if (receiverPendingInvitationsList.contains(senderUid) ||
                 senderReceivedInvitationList.contains(receiverUid)) {
@@ -356,6 +345,10 @@ class UserService {
 
             break;
           case UserAction.acceptInvitationToFriends:
+            // Check limits
+            if(senderFriendsList.length >= 30 || receiverFriendsList.length >= 30){
+              return false;
+            }
             senderFriendsList.add(receiverUid);
             receiverFriendsList.add(senderUid);
             senderReceivedInvitationList.remove(receiverUid);
