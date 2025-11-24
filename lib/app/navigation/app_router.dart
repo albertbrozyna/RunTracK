@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/auth/presentation/pages/forget_password_page.dart';
+import 'package:run_track/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
 import 'package:run_track/features/settings/presentation/pages/change_password.dart';
@@ -60,6 +61,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => AppInitializer());
       case AppRoutes.forgetPassword:
         return MaterialPageRoute(builder: (_) => ForgotPasswordPage());
+      case AppRoutes.verifyEmail:
+        return MaterialPageRoute(builder: (_) => VerifyEmailPage());
       case AppRoutes.activitySummary:
         final args = settings.arguments as Map<String, dynamic>?;
         final Activity? activity = args?['activity'] as Activity?;

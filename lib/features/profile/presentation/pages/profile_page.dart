@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
 import 'package:run_track/core/widgets/app_loading_indicator.dart';
 import 'package:run_track/core/widgets/no_items_msg.dart';
@@ -40,6 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
   model.User? user;
   UserRelationshipStatus relationshipStatus = UserRelationshipStatus.notConnected;
   bool _isLoading = false;
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -49,10 +51,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void initialize() {
-
+    AuthService.instance.checkAppUseState(context);
   }
 
-  void navigateToSettings()async {
+  void navigateToSettings() async {
     await Navigator.pushNamed(context, AppRoutes.settings);
     if (!mounted) return;
     initializeAsync();
@@ -66,6 +68,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
     // Load user data
     user = await UserService.fetchUser(widget.uid);
+
+    if (user == null) {
+      if (!mounted) return;
+      AppUtils.showMessage(context, "User not found", messageType: MessageType.error);
+      setState(() {
+        _isLoading = false;
+        _loaded = false;
+      });
+      return;
+    }
 
     // Check user relations and set status
     if (user != null && widget.userMode == UserMode.friends) {
@@ -92,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
         relationshipStatus = UserRelationshipStatus.competitionNotConnected;
       }
     }
-    if(!mounted)return;
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });
@@ -109,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted && !success) {
         AppUtils.showMessage(context, "Error accepting invitation", messageType: MessageType.error);
       } else {
-        if(!mounted)return;
+        if (!mounted) return;
         setState(() {
           relationshipStatus = UserRelationshipStatus.competitionPendingSent;
         });
@@ -155,12 +167,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// Accept invitation
   void onPressedAcceptInvitationToFriends() async {
-    if(AppData.instance.currentUser!.friends.length >= 30 ){
+    if (AppData.instance.currentUser!.friends.length >= 30) {
       AppUtils.showMessage(context, "You cannot add more that 30 friends due to our limits.");
       return;
     }
-    if(user!.friends.length >= 30 ){
-      AppUtils.showMessage(context, "You cannot accept this invitation because user ${user?.firstName} + ${user?.lastName} has already reached friends limit.");
+    if (user!.friends.length >= 30) {
+      AppUtils.showMessage(
+        context,
+        "You cannot accept this invitation because user ${user?.firstName} + ${user?.lastName} has already reached friends limit.",
+      );
       return;
     }
     bool success = await UserService.manageUsers(
@@ -195,12 +210,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// Invite to friends
   void onPressedAddFriend() async {
-    if(AppData.instance.currentUser!.friends.length >= 30 ){
+    if (AppData.instance.currentUser!.friends.length >= 30) {
       AppUtils.showMessage(context, "You cannot add more that 30 friends due to our limits.");
       return;
     }
-    if(user!.friends.length >= 30 ){
-      AppUtils.showMessage(context, "User which you want to invite has already reached friends limit.");
+    if (user!.friends.length >= 30) {
+      AppUtils.showMessage(
+        context,
+        "User which you want to invite has already reached friends limit.",
+      );
       return;
     }
     bool success = await UserService.manageUsers(
@@ -267,18 +285,23 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return AppLoadingIndicator();
+      return Scaffold(
+        body: PageContainer(assetPath: AppImages.appBg4, child: AppLoadingIndicator()),
+      );
     }
 
-    if (user == null) {
+    if (_loaded == false) {
       return Scaffold(
-        body: Center(child: NoItemsMsg(textMessage: "User not found")),
+        body: PageContainer(
+          assetPath: AppImages.appBg4,
+          child: Center(child: NoItemsMsg(textMessage: "User not found")),
+        ),
       );
     }
 
     return Scaffold(
       appBar: !(relationshipStatus == UserRelationshipStatus.myProfile)
-          ? AppBar(title: Text("Profile"))
+          ? AppBar(title: const Text("Profile"))
           : null,
       body: PageContainer(
         assetPath: AppImages.appBg4,

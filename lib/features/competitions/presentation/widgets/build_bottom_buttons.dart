@@ -5,7 +5,6 @@ import 'package:run_track/core/enums/competition_role.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 
 import '../../../../app/config/app_data.dart';
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
 import '../../../../core/enums/visibility.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -15,7 +14,6 @@ class BottomButtons extends StatefulWidget {
   final CompetitionContext enterContext;
   final bool saved;
   final VoidCallback handleSaveCompetition;
-  final VoidCallback closeCompetition;
   final VoidCallback acceptInvitation;
   final VoidCallback declineInvitation;
   final VoidCallback joinCompetition;
@@ -26,7 +24,6 @@ class BottomButtons extends StatefulWidget {
     required this.enterContext,
     required this.competition,
     required this.handleSaveCompetition,
-    required this.closeCompetition,
     required this.acceptInvitation,
     required this.declineInvitation,
     required this.joinCompetition,
@@ -97,14 +94,6 @@ class _BottomButtonsState extends State<BottomButtons> {
                 (widget.competition.startDate?.isAfter(DateTime.now()) ??
                     false)) // We can't edit when the competition is started
           CustomButton(text: buttonText, onPressed: widget.handleSaveCompetition),
-        if (canClose) ...[
-          SizedBox(height: AppUiConstants.verticalSpacingButtons),
-          CustomButton(
-            text: "Close competition",
-            backgroundColor: AppColors.gray,
-            onPressed: widget.closeCompetition,
-          ),
-        ],
         if (invited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Accept invitation", onPressed: widget.acceptInvitation),

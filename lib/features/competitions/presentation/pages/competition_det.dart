@@ -540,7 +540,6 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     enterContext: widget.enterContext,
                     competition: AppData.instance.currentCompetition!,
                     handleSaveCompetition: handleSaveCompetition,
-                    closeCompetition: closeCompetition,
                     acceptInvitation: acceptInvitation,
                     declineInvitation: declineInvitation,
                     joinCompetition: joinCompetition,

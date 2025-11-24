@@ -79,7 +79,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
   void _onTrackStateChanged() {
     final state = TrackState.trackStateInstance;
 
-    if (state.endSync && mounted) {
+    if (state.endSync && mounted && state.trackingState == TrackingState.stopped) {
       state.endSync = false;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -91,10 +91,11 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
   }
 
   void _navigateToSummary() {
+
     final state = TrackState.trackStateInstance;
 
     final bool isCompetition = state.currentUserCompetition.isNotEmpty;
-
+    final competitionCopy = isCompetition ? AppData.instance.currentUserCompetition : null;
     final activityData = Activity(
       activityId: "",
       uid: AppData.instance.currentUser?.uid ?? "",
@@ -123,7 +124,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
           activityData: activityData,
           editMode: false,
           readonly: false,
-          currentUserCompetition: isCompetition ? AppData.instance.currentUserCompetition : null,
+          currentUserCompetition: isCompetition ? competitionCopy : null,
         ),
       ),
     );

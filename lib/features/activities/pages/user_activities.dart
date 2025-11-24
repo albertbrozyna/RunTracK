@@ -177,6 +177,16 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
     }
   }
 
+  // Update activity in list
+  void updateActivityInList(Activity updatedActivity){
+    final index = _myActivities.indexWhere((activity) => activity.activityId == updatedActivity.activityId);
+    if (index != -1) {
+      setState(() {
+        _myActivities[index] = updatedActivity;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -221,6 +231,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
                         firstName: currentUser!.firstName,
                         lastName: currentUser!.lastName,
                         activity: activity,
+                        onActivityUpdated: updateActivityInList,
                       );
                     },
                   ),
@@ -236,7 +247,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
                         return Center(child: CircularProgressIndicator());
                       }
                       final activity = _friendsActivities[index];
-                      return ActivityBlock(key: ValueKey(activity.activityId), firstName: "", lastName: "", activity: activity);
+                      return ActivityBlock(key: ValueKey(activity.activityId), firstName: "", lastName: "", activity: activity,onActivityUpdated: updateActivityInList,);
                     },
                   ),
                 ),
@@ -251,7 +262,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
                         return Center(child: CircularProgressIndicator());
                       }
                       final activity = _allActivities[index];
-                      return ActivityBlock(key: ValueKey(activity.activityId), firstName: "", lastName: "", activity: activity);
+                      return ActivityBlock(key: ValueKey(activity.activityId), firstName: "", lastName: "", activity: activity,onActivityUpdated: updateActivityInList,);
                     },
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/app/theme/app_colors.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 
@@ -24,8 +25,16 @@ class StartPage extends StatefulWidget {
 }
 
 class StartPageState extends State<StartPage> {
+  bool _signing = false;
+
   /// Handle sign in with google
   Future<void> handleSignInWithGoogle() async {
+    if (_signing) {
+      return;
+    }
+    setState(() {
+      _signing = true;
+    });
     SignInResult result = await AuthService.instance.signInWithGoogle();
 
     if (result.status == SignInStatus.success) {
@@ -35,7 +44,7 @@ class StartPageState extends State<StartPage> {
           Navigator.pushReplacementNamed(context, AppRoutes.appInitializer);
         });
         setState(() {
-
+          _signing = false;
         });
       }
       return;
@@ -44,6 +53,7 @@ class StartPageState extends State<StartPage> {
 
       if (newUser == null) {
         await AuthService.instance.signOutUser();
+        _signing = false;
         return;
       }
 
@@ -59,7 +69,8 @@ class StartPageState extends State<StartPage> {
           ),
         );
 
-        if(additionalData == null){
+        if (additionalData == null) {
+          _signing = false;
           return;
         }
 
@@ -80,9 +91,14 @@ class StartPageState extends State<StartPage> {
               Navigator.pushReplacementNamed(context, AppRoutes.appInitializer);
             });
             setState(() {
-
+              _signing = false;
             });
           } else {
+            if (!mounted) return;
+            setState(() {
+              _signing = false;
+            });
+            if (!mounted) return;
             AppUtils.showMessage(context, "Register failed!", messageType: MessageType.error);
           }
         }
@@ -91,6 +107,9 @@ class StartPageState extends State<StartPage> {
       if (mounted && result.errorMessage != null) {
         AppUtils.showMessage(context, result.errorMessage!, messageType: MessageType.error);
       }
+      setState(() {
+        _signing = false;
+      });
       return;
     }
   }
@@ -105,105 +124,131 @@ class StartPageState extends State<StartPage> {
 
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
-          body: PageContainer(
-          darken: false,
-          assetPath: AppImages.appBg4,
-          child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsetsGeometry.only(top: 14),
-                                  child: Text(
-                                    AppLocalizations.of(context)!.appName,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 34,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      shadows: [Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2))],
-                                    ),
-                                  ),
-                                ),
-                      
-                                Image.asset(
-                                  AppImages.runtrackAppIcon,
-                                  width: 300,
-                                ),
-                      
-                                // Text under the logo
-                                Text(
-                                  AppLocalizations.of(context)!.startPageWelcomeMessage,
+    return Scaffold(
+      body: PageContainer(
+        darken: false,
+        assetPath: AppImages.appBg4,
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding: EdgeInsetsGeometry.only(top: 14),
+                                child: Text(
+                                  AppLocalizations.of(context)!.appName,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 34,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white, // change if needed
-                                    shadows: [Shadow(blurRadius: 8, color: Colors.black45, offset: Offset(2, 2))],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Title
-                          Column(
-                            children: [
-                              SizedBox(
-                                height: 40,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    elevation: 2,
-                                    padding: EdgeInsets.symmetric(horizontal: 16),
-                                  ),
-                                  onPressed: () => handleSignInWithGoogle(),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Image.asset(AppIcons.googleIcon, height: 40, width: 40),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        "Sign in with Google",
-                                        style: TextStyle(
-                                          fontFamily: 'Roboto',
-                                          color: Colors.black87,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        blurRadius: 8,
+                                        color: Colors.black45,
+                                        offset: Offset(2, 2),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
-                              SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                              CustomButton(text: "Login", onPressed: () => handleLoginButton(context)),
-                              SizedBox(height: AppUiConstants.verticalSpacingButtons),
-                              CustomButton(text: "No account? Join our community", onPressed: () => handleRegisterButton(context)),
-                              SizedBox(height: 50,),
+
+                              Image.asset(AppImages.runtrackAppIcon, width: 300),
+
+                              // Text under the logo
+                              Text(
+                                AppLocalizations.of(context)!.startPageWelcomeMessage,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white, // change if needed
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 8,
+                                      color: Colors.black45,
+                                      offset: Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        // Title
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 2,
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                ),
+                                onPressed: _signing ? null : () => handleSignInWithGoogle(),
+                                child: _signing
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.white,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.max,
+                                        children: [
+                                          Image.asset(AppIcons.googleIcon, height: 40, width: 40),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            "Sign in with Google",
+                                            style: TextStyle(
+                                              fontFamily: 'Roboto',
+                                              color: Colors.black87,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                            CustomButton(
+                              text: "Login",
+                              onPressed: () => handleLoginButton(context),
+                            ),
+                            SizedBox(height: AppUiConstants.verticalSpacingButtons),
+                            CustomButton(
+                              text: "No account? Join our community",
+                              onPressed: () => handleRegisterButton(context),
+                            ),
+                            SizedBox(height: 50),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-            ),
-      );
+        ),
+      ),
+    );
   }
 }

@@ -36,7 +36,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       if(!mounted)return;
-      AppUtils.showMessage(context,"Password reset link sent! Check your email.",messageType: MessageType.error);
+      AppUtils.showMessage(context,"Password reset link sent! Check your email.",messageType: MessageType.success);
     } on FirebaseAuthException catch (e) {
       String msg = e.message ?? "Error occurred. Please try again.";
       if (e.code == 'user-not-found') {

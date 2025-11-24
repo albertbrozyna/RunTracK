@@ -34,7 +34,6 @@ class ActivitySummary extends StatefulWidget {
   final String lastName;
   final bool readonly;
   final bool editMode;
-
   const ActivitySummary({
     super.key,
     required this.activityData,
@@ -62,6 +61,8 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   final List<String> visibilityOptions = ['ME', 'FRIENDS', 'EVERYONE'];
   final MapController _mapController = MapController();
   late List<LatLng> _localTrackedPath;
+  bool change = false;
+  bool saving = false;
 
   @override
   void initState() {
@@ -169,13 +170,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,
       elevationGain: widget.activityData.elevationGain,
+      elevationLoss: widget.activityData.elevationLoss,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
     );
 
     if (passedActivity.isEqual(userActivity)) {
       if (mounted) {
-        AppUtils.showMessage(context, 'No changes to save!');
+        AppUtils.showMessage(context, 'No changes to save!',messageType: MessageType.info);
       }
       return;
     }
@@ -185,16 +187,16 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     if (savedActivity != null) {
       passedActivity = savedActivity;
       if (mounted) {
-        AppUtils.showMessage(context, 'Changes saved successfully!');
+        change = true;
+        AppUtils.showMessage(context, 'Changes saved successfully!',messageType: MessageType.success);
       }
     } else {
       if (mounted) {
-        AppUtils.showMessage(context, 'Failed to save changes. Please try again.');
+        AppUtils.showMessage(context, 'Failed to save changes. Please try again.',messageType: MessageType.error);
       }
     }
   }
 
-  bool saving = false;
   /// Handle saving activity to database
   Future<void> handleSaveActivity() async {
     if (widget.readonly || saving) {
@@ -220,6 +222,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,
       elevationGain: widget.activityData.elevationGain,
+      elevationLoss: widget.activityData.elevationLoss,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
       competitionId: widget.currentUserCompetition?.competitionId ?? '',
@@ -254,7 +257,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       Map<String, dynamic> fieldsToUpdate = {
         'activitiesCount': FieldValue.increment(1),
         'kilometers': FieldValue.increment(widget.activityData.totalDistance! / 1000),
-        'burnedCalories': FieldValue.increment(widget.activityData.calories ?? 0),
+        'burnedCalories': FieldValue.increment((widget.activityData.calories ?? 0).toInt()),
         'secondsOfActivity': FieldValue.increment(widget.activityData.elapsedTime ?? 0),
       };
 
@@ -306,7 +309,12 @@ class _ActivitySummaryState extends State<ActivitySummary> {
     }
   }
 
-  void leavePageEdit(BuildContext context) {
+  bool leaving = false;
+  void leavePageEdit(BuildContext context) async{
+    if(leaving ){
+      return;
+    }
+    leaving = true;
     Activity userActivity = Activity(
       activityId: widget.activityData.activityId,
       uid: widget.activityData.uid,
@@ -323,12 +331,17 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,
       elevationGain: widget.activityData.elevationGain,
+      elevationLoss: widget.activityData.elevationLoss,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
     );
 
     // If there is no changes, just pop
     if (passedActivity.isEqual(userActivity)) {
+      if(change){
+        Navigator.of(context).pop(userActivity);
+        return;
+      }
       Navigator.of(context).pop();
       return;
     }
@@ -344,25 +357,42 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       colorBackgroundButtonRight: AppColors.danger,
       colorButtonForegroundRight: AppColors.white,
       onPressedLeft: () {
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(false);
       },
       onPressedRight: () {
-        Navigator.of(context).pop(); // Two times to close dialog and screen
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       },
     );
 
-    showDialog(
+    final bool? shouldLeave = await showDialog(
       context: context,
       barrierDismissible: true, // Allow closing by outside tap
       builder: (BuildContext context) {
         return alert;
       },
     );
+
+    if (shouldLeave == true) {
+      if (!mounted) return;
+
+      if (change) {
+        if(!context.mounted) return;
+        Navigator.of(context).pop(passedActivity);
+      } else {
+        if(!context.mounted) return;
+        Navigator.of(context).pop();
+      }
+    }
+
+    leaving = false;
   }
 
   /// Ask if we are sure if we want to leave a page without saving when saving activity for the first time
-  void leavePage(BuildContext context) {
+  void leavePage(BuildContext context)async {
+    if(leaving){
+      return;
+    }
+    leaving = true;
     AppAlertDialog alert = AppAlertDialog(
       titleText: "Warning",
       contentText:
@@ -381,17 +411,35 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           notify: true,
         ); // Clear all fields from track state
         Navigator.of(context).pop(); // Two times to close dialog and screen
-        Navigator.of(context).pop();
+        if (change) {
+          Navigator.of(context).pop(passedActivity);
+        } else {
+          Navigator.of(context).pop();
+        }
       },
     );
 
-    showDialog(
+    bool? shouldLeave = await showDialog(
       context: context,
       barrierDismissible: true, // Allow closing by outside tap
       builder: (BuildContext context) {
         return alert;
       },
     );
+
+    if (shouldLeave == true) {
+      if (!mounted) return;
+
+      if (change) {
+        if(!context.mounted) return;
+        Navigator.of(context).pop(passedActivity);
+      } else {
+        if(!context.mounted) return;
+        Navigator.of(context).pop();
+      }
+    }
+
+    leaving = false;
   }
 
   void onTapMap(BuildContext context) {
@@ -625,8 +673,14 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                           ),
                         if (widget.activityData.elevationGain != null)
                           StatCard(
-                            title: "Elevation",
+                            title: "Elevation gain",
                             value: '${widget.activityData.elevationGain?.toStringAsFixed(0)} m',
+                            icon: Icon(Icons.terrain),
+                          ),
+                        if (widget.activityData.elevationLoss != null)
+                          StatCard(
+                            title: "Elevation loss",
+                            value: '${widget.activityData.elevationLoss?.toStringAsFixed(0)} m',
                             icon: Icon(Icons.terrain),
                           ),
                       ],

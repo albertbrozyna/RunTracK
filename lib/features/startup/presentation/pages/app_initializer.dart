@@ -52,6 +52,19 @@ class _AppInitializerState extends State<AppInitializer> {
         return;
       }
 
+      // User need to verify email
+      if (!firebaseUser.emailVerified) {
+        if (mounted) {
+          // Push to start to allow user to come back from verify email
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.start, (Route<dynamic> route) => false);
+
+          Navigator.of(context).pushReplacementNamed(AppRoutes.verifyEmail);
+        }
+        return;
+      }
+
       if (AppData.instance.currentUser == null) {
         AppData.instance.currentUser = await UserService.fetchUser(firebaseUser.uid);
 
@@ -76,7 +89,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
             AppData.instance.currentUser?.currentCompetition = "";
 
-            await UserService.updateFieldsInTransaction(AppData.instance.currentUser!.uid,{
+            await UserService.updateFieldsInTransaction(AppData.instance.currentUser!.uid, {
               "currentCompetition": "",
             });
 
@@ -91,10 +104,9 @@ class _AppInitializerState extends State<AppInitializer> {
       SettingsService.loadSettings();
       _navigateToHome();
     } catch (e) {
-      print("Bootstrap error: $e");
+      print("Loading error: $e");
 
       if (mounted) {
-
         if (e.toString().contains("permission-denied")) {
           AuthService.instance.signOutUser();
           _navigateToStartPage();

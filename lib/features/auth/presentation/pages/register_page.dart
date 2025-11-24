@@ -178,17 +178,28 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } else {
-      // Success
-      if (mounted) {
-        AppUtils.showMessage(context, "Registered successfully!", messageType: MessageType.success);
-        FirebaseAuth.instance.signOut();
-      }
+      try{
+        if (result.userCredential?.user != null && !result.userCredential!.user!.emailVerified) {
+          await result.userCredential?.user?.sendEmailVerification();
+        }
 
-      Future.delayed(Duration(seconds: 1), () {
+        // Success
         if (mounted) {
+          AppUtils.showMessage(context, "Registered successfully! Please verify your email.", messageType: MessageType.success);
+        }
+
+        Future.delayed(Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.verifyEmail);
+          }
+        });
+      }catch(e){
+        if (mounted) {
+          AppUtils.showMessage(context, "Account created, but failed to send verification email: $e", messageType: MessageType.error);
           Navigator.pushReplacementNamed(context, AppRoutes.login);
         }
-      });
+      }
+
     }
   }
 

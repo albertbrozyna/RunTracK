@@ -29,7 +29,7 @@ enum ServiceEvent {
 void onStart(ServiceInstance serviceInstance) async {
   DartPluginRegistrant.ensureInitialized();
 
-  print("MYLOG new serwice v1");
+  print("MYLOG new serwice v6");
   TrackingState trackingState = TrackingState.stopped;
   final double averageStepLength = 0.78;
   final double weightKg = 70;
@@ -62,6 +62,10 @@ void onStart(ServiceInstance serviceInstance) async {
 
   Timer? timeTimer;
   StreamSubscription<Position>? positionSubscription;
+
+  // Counter to fetch error
+  int ignoredPointsCount = 0;
+  const int maxJumpsCount = 5;
 
   void clearStats() {
     totalDistance = 0.0;
@@ -135,8 +139,11 @@ void onStart(ServiceInstance serviceInstance) async {
         steps: steps,
         visibility: ComVisibility.me,
       );
-
-      await Storage.saveActivity(activityData);
+      try{
+        await Storage.saveActivity(activityData);
+      }catch(e){
+        print("MYLOG $e");
+      }
     }
 
     stopLocationTimerAndStream();
@@ -189,9 +196,55 @@ void onStart(ServiceInstance serviceInstance) async {
           currentPosition!,
         );
 
-        currentSpeedValue = position.speed * 3.6;
-        if (currentSpeedValue > settingMaxSpeedKmh || position.accuracy > settingMaxAccuracy) {
-          // Gps jump
+        final timeDifference = position.timestamp.difference(latestPosition!.timestamp).inSeconds;
+
+        double calculatedSpeedKmh = 0.0;
+        if (timeDifference > 0) {
+          calculatedSpeedKmh = (distance / timeDifference) * 3.6; // m/s on km/h
+        } else if (distance > 50) {
+          // 0 s and big distance so for sure it is error
+          calculatedSpeedKmh = 1000.0;
+        }
+
+        double positionSpeed = position.speed * 3.6;
+        double speedToCheck = (calculatedSpeedKmh > positionSpeed) ? calculatedSpeedKmh : positionSpeed;
+
+        bool isGpsJump = false;
+
+        if (speedToCheck > settingMaxSpeedKmh) {
+          isGpsJump = true;
+        }
+
+        if (position.accuracy > settingMaxAccuracy) {
+          isGpsJump = true;
+        }
+
+        if (isGpsJump) {
+          ignoredPointsCount++;
+          if (ignoredPointsCount > maxJumpsCount) {
+            // After max jumps count just add this position, it prevents deadlocks
+            latestPosition = position;
+            ignoredPointsCount = 0;
+            
+            trackedPath.add(currentPosition!);
+
+            final update = LocationUpdate(
+              type: 'u',
+              lat: currentPosition!.latitude,
+              lng: currentPosition!.longitude,
+              totalDistance: totalDistance, 
+              elapsedTime: elapsedTime,
+              elevationGain: elevationGain,
+              elevationLoss: elevationLoss,
+              avgSpeed: avgSpeed,
+              pace: pace,
+              steps: steps,
+              calories: calories,
+              positionAccuracy: position.accuracy,
+            );
+            serviceInstance.invoke(ServiceEvent.update.name, update.toJson());
+          }
+          return;
         } else {
           totalDistance += distance;
 
@@ -259,6 +312,7 @@ void onStart(ServiceInstance serviceInstance) async {
         // Finish competition
         if (currentCompetition.isNotEmpty) {
           if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
+            totalDistance = distanceToGo; // Set to have equal distance
             stopService();
             print("MYLOG stop distance reached");
           }
@@ -448,14 +502,13 @@ class ForegroundTrackService {
       'maxTimeToCompleteActivityMinutes':
           AppData.instance.currentUserCompetition?.maxTimeToCompleteActivityMinutes ?? 0,
       'distanceFilter': AppSettings.instance.gpsDistanceFilter ?? AppConstants.gpsDistanceFilter,
-      'mixAccuracy': AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy,
+      'maxAccuracy': AppSettings.instance.gpsMinAccuracy ?? AppConstants.gpsMinAccuracy,
       'maxSpeed':
           AppSettings.instance.gpsMaxSpeedToDetectJumps ?? AppConstants.gpsMaxSpeedToDetectJumps,
       'accuracyLevel': SettingsService.accuracyEnumToString(
         AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy,
       ),
     });
-    print("MYLOG after start in ui side");
   }
 
   Future<void> stopTracking() async {

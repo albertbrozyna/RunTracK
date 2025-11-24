@@ -62,10 +62,9 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      if (!user.emailVerified) {
+      if (!userCredential.user!.emailVerified) {
         if (mounted) {
-          // await user.sendEmailVerification();
-
+          if(!mounted) return;
           AppUtils.showMessage(context, "Please verify your email address.", messageType: MessageType.warning);
 
           Navigator.pushNamed(context, AppRoutes.verifyEmail);

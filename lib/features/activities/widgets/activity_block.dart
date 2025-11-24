@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/utils/utils.dart';
 
 import '../../../app/navigation/app_routes.dart';
@@ -22,8 +23,9 @@ class ActivityBlock extends StatefulWidget {
   final double blockWidth = 120;
   final double blockHeight = 100;
   final double iconSize = 26;
+  final Function(Activity) onActivityUpdated;
 
-  const ActivityBlock({super.key, required this.activity, String? firstName, String? lastName})
+  const ActivityBlock({super.key, required this.activity, String? firstName, String? lastName,required this.onActivityUpdated})
     : firstName = firstName ?? "",
       lastName = lastName ?? "";
 
@@ -61,7 +63,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
       // If there is no name and last name fetch it from firestore
       return UserService.fetchUserForBlock(widget.activity.uid)
           .then((user) {
-        if (!mounted) return;
+            if (!mounted) return;
             setState(() {
               if (user != null) {
                 firstname = user.firstName;
@@ -83,9 +85,15 @@ class _ActivityBlockState extends State<ActivityBlock> {
     }
   }
 
+
+  bool _isNavigating = false;
   /// On activity block tap
-  void onTapBlock(BuildContext context) {
-    Navigator.pushNamed(
+  void onTapBlock(BuildContext context) async{
+    if(_isNavigating){
+      return;
+    }
+    _isNavigating = true;
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.activitySummary,
       arguments: {
@@ -96,6 +104,27 @@ class _ActivityBlockState extends State<ActivityBlock> {
         "lastName": lastname,
       },
     );
+
+    if(result != null && result is Activity){
+      widget.onActivityUpdated(result);
+    }
+
+    _isNavigating = false;
+  }
+
+  @override
+  void didUpdateWidget(covariant ActivityBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.activity.trackedPath != oldWidget.activity.trackedPath) {
+      if (widget.activity.trackedPath?.isNotEmpty ?? false) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            AppUtils.fitMapToPath(widget.activity.trackedPath!, _mapController);
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -261,7 +290,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                   ),
                                 if (widget.activity.elevationGain != null)
                                   StatCard(
-                                    title: "Elevation",
+                                    title: "Elevation gain",
                                     value: '${widget.activity.elevationGain?.toStringAsFixed(0)} m',
                                     icon: Icon(Icons.terrain, size: widget.iconSize),
                                     titleFontSize: widget.titleFontSizeBlock,
@@ -269,6 +298,25 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                     innerPadding: widget.innerPaddingBlock,
                                     cardWidth: widget.blockWidth,
                                   ),
+                                if (widget.activity.elevationGain != null)
+                                  StatCard(
+                                    title: "Elevation loss",
+                                    value: '${widget.activity.elevationLoss?.toStringAsFixed(0)} m',
+                                    icon: Icon(Icons.terrain, size: widget.iconSize),
+                                    titleFontSize: widget.titleFontSizeBlock,
+                                    valueFontSize: widget.valueFontSizeBlock,
+                                    innerPadding: widget.innerPaddingBlock,
+                                    cardWidth: widget.blockWidth,
+                                  ),
+                                StatCard(
+                                  title: "Visibility",
+                                  value: widget.activity.visibility.name.toString(),
+                                  icon: Icon(Icons.remove_red_eye_rounded, size: widget.iconSize),
+                                  titleFontSize: widget.titleFontSizeBlock,
+                                  valueFontSize: widget.valueFontSizeBlock,
+                                  innerPadding: widget.innerPaddingBlock,
+                                  cardWidth: widget.blockWidth,
+                                ),
                               ],
                             ),
                           ),
@@ -295,7 +343,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                               widget.activity.trackedPath != null &&
                                   widget.activity.trackedPath!.isNotEmpty
                               ? widget.activity.trackedPath!.first
-                              : LatLng(37.7749, -122.4194),
+                              : LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
                           // default location
                           onMapReady: () async {
                             // Delay to load a tiles properly
@@ -349,31 +397,6 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           ),
                         ],
                       ),
-                    ),
-                  ),
-
-                // Photos from the run
-                if (widget.activity.photos.isNotEmpty)
-                  SizedBox(
-                    height: 120,
-                    child: ListView.builder(
-                      // From left to right
-                      scrollDirection: Axis.horizontal,
-                      itemCount: widget.activity.photos.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              widget.activity.photos[index],
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   ),
               ],
