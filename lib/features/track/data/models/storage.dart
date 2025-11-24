@@ -87,7 +87,7 @@ class Storage {
   static Future<void> saveActivity(Activity activity) async {
     final path = await _getPath(Storage.pathStats);
     final file = File(path);
-    await file.writeAsString(jsonEncode(activity.toMap()));
+    await file.writeAsString(jsonEncode(activity.toJson()));
   }
 
   static Future<Activity?> loadActivity() async {
@@ -96,7 +96,7 @@ class Storage {
       final file = File(path);
       if (!await file.exists()) return null;
       final content = await file.readAsString();
-      return Activity.fromMap(jsonDecode(content));
+      return Activity.fromJson(jsonDecode(content));
     } catch (_) {
       return null;
     }
