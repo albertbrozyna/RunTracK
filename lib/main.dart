@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
 
       supportedLocales: const [
         Locale('en'), // English
-        Locale('pl'), // Polish (example)
+        Locale('pl'),
       ],
       home: AppInitializer(),
       debugShowCheckedModeBanner: false,

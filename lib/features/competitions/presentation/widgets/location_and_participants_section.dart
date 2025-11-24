@@ -18,6 +18,7 @@ class LocationAndParticipantsSection extends StatefulWidget {
   final Competition competition;
   final TextEditingController meetingPlaceController;
   final bool saved;
+  final bool readOnly;
 
   const LocationAndParticipantsSection({
     super.key,
@@ -25,6 +26,7 @@ class LocationAndParticipantsSection extends StatefulWidget {
     required this.meetingPlaceController,
     required this.enterContext,
     required this.saved,
+    required this.readOnly
   });
 
   @override
@@ -32,6 +34,8 @@ class LocationAndParticipantsSection extends StatefulWidget {
 }
 
 class _LocationAndParticipantsSectionState extends State<LocationAndParticipantsSection> {
+
+
   /// Add place where runners can meet
   Future<void> onTapAddMeetingPlace() async {
     LatLng? latLngBefore = widget.competition.location;
@@ -45,7 +49,7 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
     }
 
     Mode mode = Mode.view;
-    if (AppData.instance.currentUser?.uid == widget.competition.organizerUid) {
+    if (AppData.instance.currentUser?.uid == widget.competition.organizerUid && widget.readOnly == false) {
       mode = Mode.edit;
     }
 
@@ -54,6 +58,10 @@ class _LocationAndParticipantsSectionState extends State<LocationAndParticipants
       AppRoutes.meetingPlaceMap,
       arguments: {'mode': mode, "latLng": latLngArg},
     );
+
+    if(mode == Mode.view){
+      return;
+    }
 
     if (result != null && result is LatLng) {
       String latStr = result.latitude.toStringAsFixed(4);

@@ -10,6 +10,7 @@ import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
+import 'package:run_track/features/track/data/models/storage.dart';
 import 'package:run_track/features/track/presentation/widgets/competition_finish_banner.dart';
 
 import '../../../../app/config/app_images.dart';
@@ -146,6 +147,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   /// Init async data
   Future<void> initAsync() async {
     setLastVisibility();
+    ActivityStorage.deleteActivity(); // Delete file from storage
   }
 
   /// Handle edit activity to database

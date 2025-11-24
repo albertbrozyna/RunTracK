@@ -84,7 +84,6 @@ void onStart(ServiceInstance serviceInstance) async {
     currentCompetition = "";
     distanceToGo = 0.0;
     maxTimeToComplete = Duration.zero;
-    Storage.clearStorage();
   }
 
   void stopLocationTimerAndStream() {
@@ -92,7 +91,6 @@ void onStart(ServiceInstance serviceInstance) async {
     timeTimer = null;
     positionSubscription?.cancel();
     positionSubscription = null;
-    print("Serwis: Zatrzymano timer i strumień lokalizacji.");
   }
 
   void sendSync(String type) {
@@ -140,9 +138,9 @@ void onStart(ServiceInstance serviceInstance) async {
         visibility: ComVisibility.me,
       );
       try{
-        await Storage.saveActivity(activityData);
+        await ActivityStorage.saveActivity(activityData);
       }catch(e){
-        print("MYLOG $e");
+        print("Error saving activity $e");
       }
     }
 
@@ -308,13 +306,12 @@ void onStart(ServiceInstance serviceInstance) async {
           }
           latestPosition = position;
         }
-        print("distance to go $distanceToGo");
         // Finish competition
         if (currentCompetition.isNotEmpty) {
           if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
+            trackingState = TrackingState.stopped;
             totalDistance = distanceToGo; // Set to have equal distance
             stopService();
-            print("MYLOG stop distance reached");
           }
         }
       } else {
@@ -382,19 +379,8 @@ void onStart(ServiceInstance serviceInstance) async {
         minutes: maxTimeToCompleteActivityMinutes,
       );
 
-      print("Current competition $currentCompetition");
-      print("Distance to go $distanceToGo");
-      print("Max time to complete $maxTimeToComplete");
-
-      print("Settings");
-      print('Distance filter: $settingDistanceFilter');
-      print('Max accuracy: $settingMaxAccuracy');
-      print('Max speed: $settingMaxSpeedKmh');
-      print('Accuracy level: $settingAccuracyLevel');
-
       trackingState = TrackingState.running;
       startLocationTimerAndStream();
-      print("MYLOG start");
       serviceInstance.setAsForegroundService();
     });
 
@@ -410,7 +396,6 @@ void onStart(ServiceInstance serviceInstance) async {
 
     // pause service
     serviceInstance.on(ServiceEvent.pause.name).listen((_) {
-      print("MYLOG pause");
       trackingState = TrackingState.paused;
       sendSync("S");
     });
@@ -418,7 +403,6 @@ void onStart(ServiceInstance serviceInstance) async {
     // resume service
     serviceInstance.on(ServiceEvent.resume.name).listen((_) {
       startTime = DateTime.now().subtract(elapsedTime);
-      print("MYLOG res");
       trackingState = TrackingState.running;
     });
 
@@ -427,8 +411,6 @@ void onStart(ServiceInstance serviceInstance) async {
       serviceInstance.invoke(ServiceEvent.ready.name);
     });
   }
-
-  print("MYLOG test nowy kodV4");
 }
 
 class ForegroundTrackService {

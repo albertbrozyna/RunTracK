@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/enums/user_mode.dart';
-import 'package:run_track/core/enums/visibility.dart';
 import 'package:run_track/core/models/activity.dart';
 import 'package:run_track/core/utils/permission_utils.dart';
 import 'package:run_track/core/utils/utils.dart';
@@ -68,10 +67,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> initializeAsync() async {
-    if (Storage.statsExists()) {
-      Activity? activity = await Storage.loadActivity();
+    if (await ActivityStorage.checkIfActivityExists()){
+      Activity? activity = await ActivityStorage.loadActivity();
       _navigateToSummary(activity);
-      Storage.deleteActivity();
     }
     _askLocation();
   }

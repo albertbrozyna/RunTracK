@@ -5,6 +5,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:run_track/app/config/app_data.dart';
 
 import '../../../../core/enums/tracking_state.dart';
 import '../../../../core/utils/utils.dart';
@@ -66,6 +67,7 @@ class TrackState extends ChangeNotifier {
         positionAccuracy = pos.accuracy;
         await ForegroundTrackService.instance.startTracking();
         trackingState = TrackingState.running;
+        currentUserCompetition = AppData.instance.currentUserCompetition?.competitionId ?? '';
         notifyListeners();
       }
     } catch (e) {
@@ -146,6 +148,7 @@ class TrackState extends ChangeNotifier {
           // Update new data
           totalDistance = update.totalDistance;
           elevationGain = update.elevationGain;
+          elevationLoss = update.elevationLoss;
           calories = update.calories;
           avgSpeed = update.avgSpeed;
           pace = update.pace;
@@ -189,6 +192,7 @@ class TrackState extends ChangeNotifier {
         trackingState = update.trackingState ?? TrackingState.stopped;
         totalDistance = update.totalDistance;
         elevationGain = update.elevationGain;
+        elevationLoss = update.elevationLoss;
         calories = update.calories;
         elapsedTime = update.elapsedTime ?? Duration.zero;
         avgSpeed = update.avgSpeed;
@@ -292,6 +296,7 @@ class TrackState extends ChangeNotifier {
     elapsedTime = Duration.zero;
     latestPosition = null;
     elevationGain = 0.0;
+    elevationLoss = 0.0;
     calories = 0.0;
     avgSpeed = 0.0;
     currentSpeedValue = 0.0;

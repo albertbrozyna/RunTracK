@@ -25,25 +25,6 @@ import '../../data/models/track_state.dart';
 import '../widgets/activity_stats.dart';
 import '../widgets/fab_location.dart';
 
-//import 'package:flutter_map_animations/flutter_map_animations.dart';
-
-// late final AnimatedMapController _animatedMapController;
-//
-// @override
-// void initState() {
-//   super.initState();
-//   _animatedMapController = AnimatedMapController(vsync: this);
-// }
-//
-// void moveSmooth(LatLng newPos) {
-//   _animatedMapController.animateTo(
-//     dest: newPos,
-//     zoom: 17,
-//     curve: Curves.easeInOut,
-//     duration: const Duration(seconds: 1),
-//   );
-// }
-
 class TrackScreen extends StatefulWidget {
   const TrackScreen({super.key});
 

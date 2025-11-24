@@ -23,7 +23,7 @@ import '../../features/activities/pages/user_activities.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/start_page.dart';
-import '../../features/competitions/presentation/pages/competition_det.dart';
+import '../../features/competitions/presentation/pages/competition_details_page.dart';
 import '../../features/competitions/presentation/pages/competition_page.dart';
 import '../../features/competitions/presentation/pages/meeting_place_map.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';

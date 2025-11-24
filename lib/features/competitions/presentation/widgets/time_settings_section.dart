@@ -172,7 +172,7 @@ class _TimeSettingsSectionState extends State<TimeSettingsSection> {
             prefixIcon: Icon(Icons.calendar_today, color: Colors.white),
           ),
           validator: validateStartDate,
-          onTap: () async {
+          onTap: widget.readOnly ? null : () async {
             if (widget.enterContext != CompetitionContext.ownerCreate &&
                 widget.enterContext != CompetitionContext.ownerModify) {
               return;
@@ -192,7 +192,7 @@ class _TimeSettingsSectionState extends State<TimeSettingsSection> {
             prefixIcon: Icon(Icons.calendar_month, color: Colors.white),
           ),
           validator: (value) => validateEndDate(value, widget.startTimeController.text.trim()),
-          onTap: () async {
+          onTap: widget.readOnly ? null :  () async {
             if (widget.enterContext != CompetitionContext.ownerCreate &&
                 widget.enterContext != CompetitionContext.ownerModify) {
               return;
@@ -215,7 +215,7 @@ class _TimeSettingsSectionState extends State<TimeSettingsSection> {
           ),
           validator: (value) =>
               validateRegistrationDeadline(widget.startTimeController.text.trim(), widget.endTimeController.text.trim(), value),
-          onTap: () async {
+          onTap: widget.readOnly ? null : () async {
             if (widget.enterContext != CompetitionContext.ownerCreate &&
                 widget.enterContext != CompetitionContext.ownerModify) {
               return;

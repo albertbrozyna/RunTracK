@@ -41,7 +41,6 @@ class CompetitionDetailsPage extends StatefulWidget {
   State<CompetitionDetailsPage> createState() => _CompetitionDetailsPageState();
 }
 
-enum CompetitionState { canStart, inProgress, finished,currentlyAssigned,notAssigned }
 
 
 class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
@@ -159,7 +158,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void _setMeetingPlaceText(LatLng? location, String? locationName) {
     if (location == null) {
-      _meetingPlaceController.text = "";
+      _meetingPlaceController.text = "Meeting place is not selected";
       return;
     }
 
@@ -534,6 +533,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     competition: AppData.instance.currentCompetition!,
                     meetingPlaceController: _meetingPlaceController,
                     saved: saved,
+                    readOnly: readOnly,
                   ),
 
                   BottomButtons(

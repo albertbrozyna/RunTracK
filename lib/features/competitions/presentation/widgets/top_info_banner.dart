@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/competition_state.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
 import '../../../../app/config/app_data.dart';
@@ -9,7 +10,6 @@ import '../../../../core/enums/tracking_state.dart';
 import '../../../../core/services/user_service.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../track/data/models/track_state.dart';
-import '../pages/competition_det.dart';
 
 class TopInfoBanner extends StatefulWidget {
   final Competition competition;
@@ -50,7 +50,7 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
     });
     UserService.updateFieldsInTransaction(AppData.instance.currentUser?.uid ?? '',{
       'currentCompetition': widget.competition.competitionId,
-    });;
+    });
   }
 
   @override
