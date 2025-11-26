@@ -15,7 +15,6 @@ class AppUiConstants {
   static const double borderRadiusApp = 8.0;
   static const double iconSizeApp = 24.0;
 
-
   // Text fields
   // -----------------------------------------------------------------
   // Borders
@@ -93,13 +92,7 @@ class AppUiConstants {
   static const double verticalSpacingButtons = 16.0;
   static const double borderRadiusButtons = 8.0;
 
-
-
-
-
-
-
-  // Forms by form i understand a Container with Column a text fields
+  // Forms form i understand a Container with Column a text fields
   static const EdgeInsets paddingOutsideForm = EdgeInsets.all(16.0);
   static const EdgeInsets paddingInsideForm = EdgeInsets.all(16.0);
 
@@ -109,9 +102,9 @@ class AppUiConstants {
 
   static const List<BoxShadow> boxShadowForm = [
     BoxShadow(
-      color: Colors.black26, // Shadow color
-      blurRadius: 10, // How blurry the shadow is
-      offset: Offset(0, 4), // Position of the shadow
+      color: Colors.black26,
+      blurRadius: 10,
+      offset: Offset(0, 4),
     ),
   ];
 
@@ -133,7 +126,6 @@ class AppUiConstants {
   );
 
   static const blockInsideContentPadding = 8.0;
-
 
   // Exit forms, i mean alert dialog by this
   // -----------------------------------------------------------------

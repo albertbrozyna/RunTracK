@@ -41,8 +41,6 @@ class CompetitionDetailsPage extends StatefulWidget {
   State<CompetitionDetailsPage> createState() => _CompetitionDetailsPageState();
 }
 
-
-
 class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -386,10 +384,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (saveInProgress == false) {
         saveInProgress = true;
     }
-    // if (!_formKey.currentState!.validate()) {
-    //   saveInProgress = false;
-    //   return;
-    // }
+    if (!_formKey.currentState!.validate()) {
+      saveInProgress = false;
+      return;
+    }
 
     final currentContext = context;
 

@@ -4,17 +4,12 @@ import '../../features/competitions/data/models/competition.dart';
 import '../../core/models/user.dart';
 
 class AppData{
-  AppData._privateConstructor();
-  static final AppData _instance = AppData._privateConstructor();
+  AppData._pvConstructor();
+  static final AppData _instance = AppData._pvConstructor();
   static AppData get instance => _instance;
 
   User? currentUser;
   Competition? currentCompetition;
   Competition? currentUserCompetition;
-
-
-  final ValueNotifier<bool> isLoading = ValueNotifier(false);
-  // Saved locally
   String? lastActivityString;
-
 }

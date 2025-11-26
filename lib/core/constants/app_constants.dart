@@ -12,5 +12,4 @@ class AppConstants{
   static int  gpsDistanceFilter = 15;
   static double gpsMaxSpeedToDetectJumps = 43;
   static double gpsMinAccuracy = 30;
-
 }

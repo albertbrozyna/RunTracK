@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
+import 'package:run_track/core/enums/user_action.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
 import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';

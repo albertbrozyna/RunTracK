@@ -103,18 +103,18 @@ class _TopInfoBannerState extends State<TopInfoBanner> {
 
     switch (calculatedState) {
       case CompetitionState.inProgress:
-        bannerColor = Colors.green.shade700;
+        bannerColor = Colors.orange;
         bannerIcon = Icons.directions_run;
         break;
       case CompetitionState.finished:
-        bannerColor = Colors.grey.shade600;
+        bannerColor = AppColors.scaffoldMessengerSuccessColor;
         bannerIcon = Icons.check_circle_outline;
         break;
       case CompetitionState.currentlyAssigned:
-        bannerColor = Colors.blue.shade700;
+        bannerColor = AppColors.secondary;
         bannerIcon = Icons.flag;
         break;
-      case CompetitionState.notAssigned: // lub canStart
+      case CompetitionState.notAssigned:
       case CompetitionState.canStart:
         bannerColor = AppColors.primary;
         bannerIcon = Icons.flag_outlined;

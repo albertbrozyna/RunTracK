@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-
   // Primary app UI colors
   static const Color primary = Color(0xFF678FE3);
   static const Color secondary = Color(0xFF5374C8);
@@ -46,17 +45,12 @@ class AppColors {
   // Blocks competition / activity
   static Color blockColor = Colors.white;
 
-
   // Alert dialogs
   static Color alertDialogColor = Colors.white;
-
 
   // Scaffold messenger colors
   static Color scaffoldMessengerInfoColor = AppColors.primary;
   static Color scaffoldMessengerErrorColor = AppColors.danger;
   static Color scaffoldMessengerSuccessColor = AppColors.green;
   static Color scaffoldMessengerWarningColor = AppColors.warning;
-
-
-
 }
