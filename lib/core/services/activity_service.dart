@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:run_track/core/models/activity_fetch_result.dart';
 import 'package:run_track/core/services/preferences_service.dart';
 
 import '../../app/config/app_data.dart';
@@ -10,12 +11,7 @@ import '../constants/preference_names.dart';
 import '../enums/visibility.dart';
 import '../models/activity.dart';
 
-class ActivitiesFetchResult {
-  final List<Activity> activities;
-  final DocumentSnapshot? lastDocument;
 
-  ActivitiesFetchResult({required this.activities, this.lastDocument});
-}
 
 class ActivityService {
   ActivityService._();
@@ -88,7 +84,6 @@ class ActivityService {
       });
       return lastActivities.take(limit).toList();
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching friends' activities: $e");
       return [];
     }
@@ -106,7 +101,6 @@ class ActivityService {
 
       return activities;
     } catch (e) {
-      // TODO TO DELETE
       print("Error fetching latest activities: $e");
       return [];
     }

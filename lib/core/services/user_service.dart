@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/enums/user_action.dart';
 import 'package:run_track/core/utils/extensions.dart';
 import 'package:run_track/features/auth/data/models/auth_response.dart';
 
@@ -10,32 +11,10 @@ import '../models/user.dart' as model;
 import '../utils/utils.dart';
 import '../../features/notifications/data/services/notification_service.dart';
 
-enum UserAction {
-  inviteToFriends,
-  removeInvitation,
-  acceptInvitationToFriends,
-  declineInvitationToFriends,
-  deleteFriend,
-}
+
 
 class UserService {
   UserService._();
-
-  /// Method used to calculate age of User
-  static int calculateAge(DateTime? birthDate) {
-    if (birthDate == null) {
-      return 0;
-    }
-    DateTime today = DateTime.now();
-    int age = today.year - birthDate.year;
-
-    if (today.month < birthDate.month ||
-        (today.month == birthDate.month && today.day < birthDate.day)) {
-      age--;
-    }
-
-    return age;
-  }
 
   /// Fetch one user data
   static Future<model.User?> fetchUser(String uid) async {

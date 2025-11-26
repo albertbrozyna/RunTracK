@@ -29,7 +29,7 @@ enum ServiceEvent {
 void onStart(ServiceInstance serviceInstance) async {
   DartPluginRegistrant.ensureInitialized();
 
-  print("MYLOG new serwice v6");
+  print("MYLOG new serwice v8");
   TrackingState trackingState = TrackingState.stopped;
   final double averageStepLength = 0.78;
   final double weightKg = 70;
@@ -167,6 +167,16 @@ void onStart(ServiceInstance serviceInstance) async {
         if (trackingState == TrackingState.running) {
           elapsedTime = DateTime.now().difference(startTime!);
         }
+        // Check competition max time to complete activity
+        if (currentCompetition.isNotEmpty && maxTimeToComplete.inSeconds > 0) {
+          if (elapsedTime >= maxTimeToComplete) {
+            print("Elapsed time has finished");
+            trackingState = TrackingState.stopped;
+            stopService();
+            return;
+          }
+        }
+
       });
     }
 
@@ -308,7 +318,7 @@ void onStart(ServiceInstance serviceInstance) async {
         }
         // Finish competition
         if (currentCompetition.isNotEmpty) {
-          if (totalDistance >= distanceToGo || elapsedTime >= maxTimeToComplete) {
+          if (totalDistance >= distanceToGo) {
             trackingState = TrackingState.stopped;
             totalDistance = distanceToGo; // Set to have equal distance
             stopService();

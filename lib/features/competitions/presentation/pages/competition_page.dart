@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:run_track/core/widgets/app_loading_indicator.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -23,7 +24,8 @@ class CompetitionsPage extends StatefulWidget {
   State<CompetitionsPage> createState() => _CompetitionsPageState();
 }
 
-class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerProviderStateMixin {
+class _CompetitionsPageState extends State<CompetitionsPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   User? currentUser = AppData.instance.currentUser;
 
@@ -48,6 +50,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   bool _isLoadingAll = false;
   bool _isLoadingInvites = false;
   bool _isLoadingParticipating = false;
+  int safetyCounter = 0;
+  int maxLoops = 5;
 
   // If there are more pages
   bool _hasMoreMy = true;
@@ -83,7 +87,9 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
   Future<void> initialize() async {
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        setState(() {}); // Do not load all tabs on start, load only when is active
+        setState(
+          () {},
+        ); // Do not load all tabs on start, load only when is active
         _loadCurrentTabData(_tabController.index);
       }
     });
@@ -127,39 +133,39 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     });
   }
 
-  void refreshCurrentTab(int tabIndex){
-      switch(tabIndex){
-        case 0:
-          _lastPageMyCompetitions = null;
-          _myCompetitions.clear();
-          _hasMoreMy = true;
-          _loadMyCompetitions();
-          break;
-          case 1:
-            _lastPageFriendsCompetitions = null;
-          _friendsCompetitions.clear();
-          _hasMoreFriends = true;
-          _loadFriendsCompetitions();
-          break;
-          case 2:
-            _lastPageAllCompetitions = null;
-            _allCompetitions.clear();
-          _hasMoreAll = true;
-          _loadAllCompetitions();
-          break;
-          case 3:
-            _lastPageInvites = null;
-          _invitedCompetitions.clear();
-          _hasMoreInvites = true;
-          _loadMyInvitedCompetitions();
-          break;
-          case 4:
-            lastCompetitionIdParticipated = "";
-          _participatedCompetitions.clear();
-          _hasMoreParticipating = true;
-          _loadMyParticipatedCompetitions();
-          break;
-      }
+  void refreshCurrentTab(int tabIndex) {
+    switch (tabIndex) {
+      case 0:
+        _lastPageMyCompetitions = null;
+        _myCompetitions.clear();
+        _hasMoreMy = true;
+        _loadMyCompetitions();
+        break;
+      case 1:
+        _lastPageFriendsCompetitions = null;
+        _friendsCompetitions.clear();
+        _hasMoreFriends = true;
+        _loadFriendsCompetitions();
+        break;
+      case 2:
+        _lastPageAllCompetitions = null;
+        _allCompetitions.clear();
+        _hasMoreAll = true;
+        _loadAllCompetitions();
+        break;
+      case 3:
+        _lastPageInvites = null;
+        _invitedCompetitions.clear();
+        _hasMoreInvites = true;
+        _loadMyInvitedCompetitions();
+        break;
+      case 4:
+        lastCompetitionIdParticipated = "";
+        _participatedCompetitions.clear();
+        _hasMoreParticipating = true;
+        _loadMyParticipatedCompetitions();
+        break;
+    }
   }
 
   // Load current tab
@@ -209,11 +215,12 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isLoadingMy = true;
     });
 
-    final competitionFetchResult = await CompetitionService.fetchMyLatestCompetitionsPage(
-      FirebaseAuth.instance.currentUser?.uid ?? "",
-      _limit,
-      _lastPageMyCompetitions,
-    );
+    final competitionFetchResult =
+        await CompetitionService.fetchMyLatestCompetitionsPage(
+          FirebaseAuth.instance.currentUser?.uid ?? "",
+          _limit,
+          _lastPageMyCompetitions,
+        );
 
     if (!mounted) return;
     setState(() {
@@ -235,11 +242,12 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isLoadingFriends = true;
     });
 
-    final competitionFetchResult = await CompetitionService.fetchLastFriendsCompetitionsPage(
-      _limit,
-      _lastPageFriendsCompetitions,
-      currentUser?.friends ?? {},
-    );
+    final competitionFetchResult =
+        await CompetitionService.fetchLastFriendsCompetitionsPage(
+          _limit,
+          _lastPageFriendsCompetitions,
+          currentUser?.friends ?? {},
+        );
     if (!mounted) return;
 
     setState(() {
@@ -263,10 +271,11 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isLoadingAll = true;
     });
 
-    final competitionFetchResult = await CompetitionService.fetchLatestCompetitionsPage(
-      _limit,
-      _lastPageAllCompetitions,
-    );
+    final competitionFetchResult =
+        await CompetitionService.fetchLatestCompetitionsPage(
+          _limit,
+          _lastPageAllCompetitions,
+        );
     if (!mounted) return;
 
     setState(() {
@@ -275,14 +284,11 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
 
       _isLoadingAll = false;
 
-      if (competitionFetchResult.lastDocument == null) {
+      if (competitionFetchResult.lastDocument == null || competitionFetchResult.competitions.length < _limit) {
         _hasMoreAll = false;
       }
     });
-
-    if (competitionFetchResult.competitions.isEmpty && _hasMoreAll == true && mounted) {
-      Future.microtask(() => _loadAllCompetitions());
-    }
+    _isLoadingAll = false;
   }
 
   /// Load competitions which user is invited
@@ -294,11 +300,12 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       _isLoadingInvites = true;
     });
 
-    final competitionFetchResult = await CompetitionService.fetchMyInvitedCompetitions(
-      AppData.instance.currentUser?.receivedInvitationsToCompetitions ?? {},
-      _limit,
-      _lastPageInvites,
-    );
+    final competitionFetchResult =
+        await CompetitionService.fetchMyInvitedCompetitions(
+          AppData.instance.currentUser?.receivedInvitationsToCompetitions ?? {},
+          _limit,
+          _lastPageInvites,
+        );
     if (!mounted) return;
 
     setState(() {
@@ -372,9 +379,10 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     }
 
     try {
-      final competitions = await CompetitionService.fetchMyParticipatedCompetitions(
-        myParticipatedCompetitions: sliceToFetch.toSet(),
-      );
+      final competitions =
+          await CompetitionService.fetchMyParticipatedCompetitions(
+            myParticipatedCompetitions: sliceToFetch.toSet(),
+          );
 
       if (!mounted) return;
 
@@ -481,7 +489,6 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
     refreshCurrentTab(tabIndex);
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -489,7 +496,9 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
       floatingActionButton: Visibility(
         visible: [0, 1, 2].contains(_tabController.index),
         child: FloatingActionButton(
-          onPressed: _isNavigating ? null : () => onPressedAddCompetition(context),
+          onPressed: _isNavigating
+              ? null
+              : () => onPressedAddCompetition(context),
           backgroundColor: AppColors.primary,
           shape: const CircleBorder(),
           child: Icon(Icons.add_card, color: Colors.white),
@@ -506,7 +515,10 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                 controller: _tabController,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white.withAlpha(100),
-                labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                labelStyle: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicatorColor: Colors.white,
                 unselectedLabelStyle: TextStyle(
@@ -535,22 +547,29 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                   controller: _tabController,
                   children: [
                     Container(
-                      child: _myCompetitions.isEmpty
+                      child: _isLoadingMy && _myCompetitions.isEmpty
+                          ? AppLoadingIndicator()
+                          : _myCompetitions.isEmpty
                           ? NoItemsMsg(textMessage: "No competitions found")
                           : ListView.builder(
                               controller: _scrollControllerMy,
-                              itemCount: _myCompetitions.length + (_hasMoreMy ? 1 : 0),
+                              itemCount:
+                                  _myCompetitions.length + (_hasMoreMy ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (index == _myCompetitions.length) {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
                                 }
                                 final competition = _myCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                    bottom: AppUiConstants.pageBlockSpacingBetweenElements,
+                                    bottom: AppUiConstants
+                                        .pageBlockSpacingBetweenElements,
                                   ),
                                   child: InkWell(
-                                    onTap: () => onTapBlock(context, competition),
+                                    onTap: () =>
+                                        onTapBlock(context, competition),
                                     child: CompetitionBlock(
                                       key: ValueKey(competition.competitionId),
                                       firstName: currentUser?.firstName ?? "",
@@ -566,22 +585,28 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                     // Friends
                     Container(
                       padding: EdgeInsets.only(top: 10),
-                      child: _friendsCompetitions.isEmpty
+                      child: _isLoadingFriends && _friendsCompetitions.isEmpty
+                          ? AppLoadingIndicator()
+                          : _friendsCompetitions.isEmpty
                           ? NoItemsMsg(textMessage: "No competitions found")
                           : ListView.builder(
                               controller: _scrollControllerFriends,
-                              itemCount: _friendsCompetitions.length + (_hasMoreFriends ? 1 : 0),
+                              itemCount:
+                                  _friendsCompetitions.length +
+                                  (_hasMoreFriends ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (index == _friendsCompetitions.length) {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(child: AppLoadingIndicator());
                                 }
                                 final competition = _friendsCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                    bottom: AppUiConstants.pageBlockSpacingBetweenElements,
+                                    bottom: AppUiConstants
+                                        .pageBlockSpacingBetweenElements,
                                   ),
                                   child: InkWell(
-                                    onTap: () => onTapBlock(context, competition),
+                                    onTap: () =>
+                                        onTapBlock(context, competition),
                                     child: CompetitionBlock(
                                       key: ValueKey(competition.competitionId),
                                       competition: competition,
@@ -595,22 +620,28 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                     // All last activities
                     Container(
                       padding: EdgeInsets.only(top: 10),
-                      child: _allCompetitions.isEmpty
+                      child: _isLoadingAll && _allCompetitions.isEmpty
+                          ? AppLoadingIndicator()
+                          : _allCompetitions.isEmpty
                           ? NoItemsMsg(textMessage: "No competitions found")
                           : ListView.builder(
                               controller: _scrollControllerAll,
-                              itemCount: _allCompetitions.length + (_hasMoreAll ? 1 : 0),
+                              itemCount:
+                                  _allCompetitions.length +
+                                  (_hasMoreAll ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (index == _allCompetitions.length) {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(child: AppLoadingIndicator());
                                 }
                                 final competition = _allCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                    bottom: AppUiConstants.pageBlockSpacingBetweenElements,
+                                    bottom: AppUiConstants
+                                        .pageBlockSpacingBetweenElements,
                                   ),
                                   child: InkWell(
-                                    onTap: () => onTapBlock(context, competition),
+                                    onTap: () =>
+                                        onTapBlock(context, competition),
                                     child: CompetitionBlock(
                                       key: ValueKey(competition.competitionId),
                                       firstName: "",
@@ -627,22 +658,28 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                     // Invites
                     Container(
                       padding: EdgeInsets.only(top: 10),
-                      child: _invitedCompetitions.isEmpty
+                      child: _isLoadingInvites  && _invitedCompetitions.isEmpty ? AppLoadingIndicator() : _invitedCompetitions.isEmpty
                           ? NoItemsMsg(textMessage: "No competitions found")
                           : ListView.builder(
                               controller: _scrollControllerInvites,
-                              itemCount: _invitedCompetitions.length + (_hasMoreInvites ? 1 : 0),
+                              itemCount:
+                                  _invitedCompetitions.length +
+                                  (_hasMoreInvites ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (index == _invitedCompetitions.length) {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
                                 }
                                 final competition = _invitedCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                    bottom: AppUiConstants.pageBlockSpacingBetweenElements,
+                                    bottom: AppUiConstants
+                                        .pageBlockSpacingBetweenElements,
                                   ),
                                   child: InkWell(
-                                    onTap: () => onTapBlock(context, competition),
+                                    onTap: () =>
+                                        onTapBlock(context, competition),
                                     child: CompetitionBlock(
                                       key: ValueKey(competition.competitionId),
                                       firstName: "",
@@ -659,7 +696,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                     // Participated competitions
                     Container(
                       padding: EdgeInsets.only(top: 10),
-                      child: _participatedCompetitions.isEmpty
+                      child: _isLoadingParticipating && _participatedCompetitions.isEmpty ?
+                          AppLoadingIndicator() : _participatedCompetitions.isEmpty
                           ? NoItemsMsg(textMessage: "No competitions found")
                           : ListView.builder(
                               controller: _scrollControllerParticipated,
@@ -668,15 +706,20 @@ class _CompetitionsPageState extends State<CompetitionsPage> with SingleTickerPr
                                   (_hasMoreParticipating ? 1 : 0),
                               itemBuilder: (context, index) {
                                 if (index == _participatedCompetitions.length) {
-                                  return Center(child: CircularProgressIndicator());
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
                                 }
-                                final competition = _participatedCompetitions[index];
+                                final competition =
+                                    _participatedCompetitions[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(
-                                    bottom: AppUiConstants.pageBlockSpacingBetweenElements,
+                                    bottom: AppUiConstants
+                                        .pageBlockSpacingBetweenElements,
                                   ),
                                   child: InkWell(
-                                    onTap: () => onTapBlock(context, competition),
+                                    onTap: () =>
+                                        onTapBlock(context, competition),
                                     child: CompetitionBlock(
                                       key: ValueKey(competition.competitionId),
                                       firstName: "",

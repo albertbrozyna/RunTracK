@@ -18,17 +18,17 @@ class CompetitionFinishBanner extends StatelessWidget {
     final double runDistance = activity.totalDistance ?? 0.0;
     final Duration runTime = Duration(seconds: activity.elapsedTime ?? 0);
 
-    final double targetDistance = competition.distanceToGo;
+    final double targetDistance = competition.distanceToGo * 1000; // To meters
 
     final Duration targetTime = (competition.maxTimeToCompleteActivityHours == 0 && competition.maxTimeToCompleteActivityMinutes == 0) ? const Duration(days: 365) : Duration(hours: competition.maxTimeToCompleteActivityHours!, minutes: competition.maxTimeToCompleteActivityMinutes!);
 
     bool distanceMet = runDistance >= targetDistance;
     bool timeMet = runTime <= targetTime;
 
-    if (!distanceMet) {
+    if (!timeMet) {
+      return _buildFailMaxTime(runTime, targetTime,runDistance,targetDistance);
+    } else if (!distanceMet) {
       return _buildFailDistance(runDistance, targetDistance);
-    } else if (!timeMet) {
-      return _buildFailMaxTime(runTime, targetTime);
     } else {
       return _buildSuccess();
     }
@@ -93,7 +93,7 @@ class CompetitionFinishBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Ran: ${(current / 1000).toStringAsFixed(2)} km / Goal: ${(target).toStringAsFixed(2)} km",
+                  "Ran: ${(current / 1000).toStringAsFixed(2)} km / Goal: ${(target / 1000).toStringAsFixed(2)} km",
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
@@ -104,7 +104,7 @@ class CompetitionFinishBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildFailMaxTime(Duration current, Duration limit) {
+  Widget _buildFailMaxTime(Duration current, Duration limit,double runDistance, double targetDistance) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -128,6 +128,10 @@ class CompetitionFinishBanner extends StatelessWidget {
                 Text(
                   "Time: ${_formatDuration(current)} / Limit: ${_formatDuration(limit)}",
                   style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                Text(
+                  "Distance: ${(runDistance / 1000).toStringAsFixed(2)} / ${(targetDistance / 1000).toStringAsFixed(2)} km",
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),

@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import '../enums/visibility.dart' as enums;
 import '../utils/utils.dart';
 
-
 class Activity {
   String activityId; // Activity id
   String uid; // User id
@@ -156,7 +155,6 @@ class Activity {
       competitionId: json['competitionId'] ?? '',
     );
   }
-
 
   bool isEqual(Activity a) {
     return uid == a.uid &&

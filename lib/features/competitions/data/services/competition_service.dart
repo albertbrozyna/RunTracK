@@ -77,7 +77,6 @@ class CompetitionService {
 
       final competitions = querySnapshot.docs
           .map((doc) => Competition.fromMap(doc.data() as Map<String, dynamic>))
-          .where((competition) => competition.organizerUid != FirebaseAuth.instance.currentUser?.uid) // Reject my competitions
           .toList();
       return CompetitionFetchResult(competitions: competitions, lastDocument: newLastDocument);
     } catch (e) {

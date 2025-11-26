@@ -69,6 +69,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
   void initState() {
     super.initState();
     initialize();
+    initAsync();
   }
 
   void initialize() {

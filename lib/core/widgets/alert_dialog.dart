@@ -4,7 +4,6 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/ui_constants.dart';
 
 
-
 /// Custom alert dialog
 class AppAlertDialog extends StatelessWidget {
   final void Function()? onPressedLeft;
