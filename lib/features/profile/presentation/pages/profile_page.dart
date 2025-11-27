@@ -81,26 +81,28 @@ class _ProfilePageState extends State<ProfilePage> {
     }
     _loaded = true;
 
+    String currentCompetitionId = AppData.instance.currentUserCompetition?.competitionId ?? '';
+
     // Check user relations and set status
     if (user != null && widget.userMode == UserMode.friends) {
-      if (AppData.instance.currentUser?.friends.contains(widget.uid) ?? false) {
+      if ((AppData.instance.currentUser?.friends.contains(widget.uid) ?? false) || (user?.friends.contains(myUid) ?? false)) {
         relationshipStatus = UserRelationshipStatus.friend;
-      } else if (AppData.instance.currentUser?.receivedInvitationsToFriends.contains(user!.uid) ??
-          false) {
+      } else if ((AppData.instance.currentUser?.receivedInvitationsToFriends.contains(user!.uid) ??
+          false) || (user?.pendingInvitationsToFriends.contains(myUid) ?? false)) {
         relationshipStatus = UserRelationshipStatus.pendingReceived;
-      } else if (AppData.instance.currentUser?.pendingInvitationsToFriends.contains(widget.uid) ??
-          false) {
+      } else if ((AppData.instance.currentUser?.pendingInvitationsToFriends.contains(widget.uid) ??
+          false) || (user?.receivedInvitationsToFriends.contains(myUid) ?? false)) {
         relationshipStatus = UserRelationshipStatus.pendingSent;
       } else if (AppData.instance.currentUser?.uid == widget.uid) {
         relationshipStatus = UserRelationshipStatus.myProfile;
       }
     } else if (AppData.instance.currentCompetition != null &&
         widget.userMode == UserMode.competitors) {
-      if (AppData.instance.currentCompetition?.invitedParticipantsUid.contains(widget.uid) ??
-          false) {
+      if ((AppData.instance.currentCompetition?.invitedParticipantsUid.contains(widget.uid) ??
+          false) || (user?.receivedInvitationsToCompetitions.contains(currentCompetitionId) ?? false) ){
         relationshipStatus = UserRelationshipStatus.competitionPendingSent;
-      } else if (AppData.instance.currentCompetition?.participantsUid.contains(widget.uid) ??
-          false) {
+      } else if ((AppData.instance.currentCompetition?.participantsUid.contains(widget.uid) ??
+          false) || (user?.participatedCompetitions.contains(currentCompetitionId) ?? false) ) {
         relationshipStatus = UserRelationshipStatus.competitionParticipant;
       } else {
         relationshipStatus = UserRelationshipStatus.competitionNotConnected;
@@ -433,7 +435,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                         StatCard(
                           title: "Total\ndistance",
-                          value: "${user!.kilometers.toString()} km",
+                          value: "${user!.kilometers.toStringAsFixed(2)} km",
                           icon: Icon(Icons.directions_run),
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,

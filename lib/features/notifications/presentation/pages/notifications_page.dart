@@ -94,8 +94,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   void onTapNotification(AppNotification notification) async {
     if (_isNavigating || notification.objectId.isEmpty) {
-      return; // No id we don't naviagete
+      return; // No id we don't navigate
     }
+
+    if(notification.objectId == FirebaseAuth.instance.currentUser?.uid){
+      return; // No id we don't navigate to our own profile
+    }
+
     setState(() {
       _isNavigating;
     });

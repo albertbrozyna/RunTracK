@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 
+import 'app/config/firebase_api.dart';
 import 'app/config/firebase_options.dart';
 import 'app/navigation/app_router.dart';
 import 'app/theme/app_theme.dart';
@@ -11,17 +12,20 @@ import 'app/theme/app_theme.dart';
 import 'features/track/data/services/track_foreground_service.dart';
 import 'l10n/app_localizations.dart';
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+  await FirebaseApi.instance.initNotifications();
   await SystemChrome.setPreferredOrientations([
     // Block rotation
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
 
   await ForegroundTrackService.instance.init();
 
@@ -48,6 +52,8 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('pl'),
       ],
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
+      navigatorKey: navigatorKey,
       home: AppInitializer(),
       debugShowCheckedModeBanner: false,
     );
