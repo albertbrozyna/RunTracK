@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_images.dart';
 import 'package:run_track/core/enums/message_type.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/auth/presentation/widgets/field_form.dart';
-import 'package:run_track/features/auth/utils/validators.dart';
 import '../../../../app/navigation/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -29,6 +29,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
   String? _selectedGender;
 
   bool _isPasswordHidden = true;
@@ -45,82 +47,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // Method to check password complexity
-  bool checkPasswordComplexity(String password) {
-    // Minimum 8 characters
-    // if (password.length < 7) return false;
-    // // At least one uppercase letter
-    // if (!password.contains(RegExp(r'[A-Z]'))) return false;
-    // // At least one lowercase letter
-    // if (!password.contains(RegExp(r'[a-z]'))) return false;
-    // // At least one digit
-    // if (!password.contains(RegExp(r'[0-9]'))) return false;
-    // // At least one special character
-    // if (!password.contains(RegExp(r'[!@#\$&*~%^]'))) return false;
-
-    return true;
-  }
-
-  /// Unified field validator using switch-case
-  String? validateFields(String fieldName, String? value) {
-    switch (fieldName) {
-      case 'firstName':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter your first name';
-        }
-        if (value.length < 2) {
-          return 'First name must be at least 2 characters long';
-        }
-        break;
-      case 'lastName':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter your last name';
-        }
-        break;
-      case 'email':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter your email address';
-        }
-        if (!isEmailValid(value.trim())) {
-          return 'Invalid email format';
-        }
-        break;
-      case 'password':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter a password';
-        }
-        if (!checkPasswordComplexity(value.trim())) {
-          return 'Password must have at least 8 chars, one uppercase, lowercase, digit, and special character';
-        }
-        break;
-      case 'repeatPassword':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please repeat your password';
-        }
-        if (value.trim() != _passwordController.text.trim()) {
-          return 'Passwords do not match';
-        }
-        break;
-      case 'gender':
-        if (_selectedGender == null || _selectedGender!.isEmpty) {
-          return 'Please select your gender';
-        }
-        break;
-      case 'dateOfBirth':
-        if (value == null || value.trim().isEmpty) {
-          return 'Please select your date of birth';
-        }
-
-        DateTime? date = DateTime.tryParse(value.trim());
-        if (date == null) {
-          return 'Invalid date format';
-        }
-        break;
-      default:
-        return null;
-    }
-    return null;
-  }
 
   /// Handle register button click
   void handleRegister() async {
@@ -146,6 +72,8 @@ class _RegisterPageState extends State<RegisterPage> {
         _emailController.text.trim(),
         _selectedGender!,
         DateTime.parse(_dateController.text.trim()),
+        double.parse(_weightController.text.trim()),
+        int.parse(_heightController.text.trim()),
       );
       if (resultMessage != "User created") {
         error = true;
@@ -224,7 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // First Name
                           TextFormField(
                             controller: _firstNameController,
-                            validator: (value) => validateFields('firstName', value),
+                            validator: (value) => AuthService.instance.validateFields('firstName', value),
                             keyboardType: TextInputType.text,
                             style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
@@ -236,7 +164,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // Last name
                           TextFormField(
                             controller: _lastNameController,
-                            validator: (value) => validateFields('lastName', value),
+                            validator: (value) => AuthService.instance.validateFields('lastName', value),
                             keyboardType: TextInputType.text,
                             style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
@@ -248,7 +176,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // Date of birth
                           TextFormField(
                             controller: _dateController,
-                            validator: (value) => validateFields('dateOfBirth', value),
+                            validator: (value) => AuthService.instance.validateFields('dateOfBirth', value),
                             readOnly: true,
                             style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
@@ -265,6 +193,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               );
                             },
                           ),
+
                           SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Gender
                           DropdownButtonFormField<String>(
@@ -283,12 +212,39 @@ class _RegisterPageState extends State<RegisterPage> {
                                 _selectedGender = newValue;
                               });
                             },
+                            validator: (value) => AuthService.instance.validateFields('gender', value),
                           ),
+                          // Weight
+                          TextFormField(
+                            controller: _weightController,
+                            validator: (value) => AuthService.instance.validateFields('weight', value),
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(color: AppColors.white),
+                            decoration: InputDecoration(
+                              labelText: "Weight",
+                              hintText: "Weight in kg",
+                              prefixIcon: Icon(Icons.monitor_weight_outlined, color: AppColors.white),
+                            ),
+                          ),
+
+                          // Height
+                          TextFormField(
+                            controller: _heightController,
+                            validator: (value) => AuthService.instance.validateFields('height', value),
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(color: AppColors.white),
+                            decoration: InputDecoration(
+                              labelText: "Height",
+                              hintText: "Height in cm",
+                              prefixIcon: Icon(Icons.height, color: AppColors.white),
+                            ),
+                          ),
+
                           SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           // Email field
                           TextFormField(
                             controller: _emailController,
-                            validator: (value) => validateFields('email', value),
+                            validator: (value) => AuthService.instance.validateFields('email', value),
                             keyboardType: TextInputType.emailAddress,
                             style: TextStyle(color: AppColors.white),
                             decoration: InputDecoration(
@@ -299,7 +255,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           SizedBox(height: AppUiConstants.verticalSpacingTextFields),
                           TextFormField(
                             controller: _passwordController,
-                            validator: (value) => validateFields('password', value),
+                            validator: (value) => AuthService.instance.validateFields('password', value),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordHidden,
                             style: TextStyle(color: AppColors.white),
@@ -323,7 +279,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           // Repeat password
                           TextFormField(
                             controller: _repeatPasswordController,
-                            validator: (value) => validateFields('repeatPassword', value),
+                            validator: (value) => AuthService.instance.validateFields('repeatPassword', value,passwordController: _passwordController),
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: _isPasswordRepeatHidden,
                             style: TextStyle(color: AppColors.white),

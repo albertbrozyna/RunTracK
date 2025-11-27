@@ -76,6 +76,9 @@ class StartPageState extends State<StartPage> {
 
         newUser.dateOfBirth = DateTime.parse(additionalData["dob"]!.trim());
         newUser.gender = additionalData["gender"]!;
+        newUser.weight = double.parse(additionalData["weight"]!.trim());
+        newUser.height = int.parse(additionalData["height"]!.trim());
+
         String message = await UserService.createUserInFirestore(
           newUser.uid,
           newUser.firstName,
@@ -83,6 +86,9 @@ class StartPageState extends State<StartPage> {
           newUser.email,
           newUser.gender!,
           newUser.dateOfBirth!,
+           newUser.weight!,
+          newUser.height!,
+
         );
         if (mounted) {
           if (message == "User created") {

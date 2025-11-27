@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/core/widgets/page_container.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/auth/presentation/widgets/field_form.dart';
-import 'package:run_track/features/auth/utils/validators.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/config/app_images.dart';
@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void handleLogin() {
-    if (!isEmailValid(_emailController.text.trim())) {
+    if (!AuthService.instance.isEmailValid(_emailController.text.trim())) {
       AppUtils.showMessage(context, "Given email is incorrect", messageType: MessageType.error);
       return;
     }

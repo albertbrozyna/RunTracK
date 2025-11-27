@@ -4,6 +4,7 @@ import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/core/utils/utils.dart';
 import 'package:run_track/core/widgets/page_container.dart';
+import 'package:run_track/features/auth/data/services/auth_service.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/ui_constants.dart';
@@ -136,7 +137,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         const SizedBox(height: 30),
         CustomButton(
           text: "Go Back",
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pop(),
         )
       ],
     );
@@ -195,15 +196,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     : Icons.visibility),
               ),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a new password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters long';
-              }
-              return null;
-            },
+            validator: (value) => AuthService.instance.validateFields('password', value),
           ),
           SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
@@ -224,15 +217,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 icon: Icon(_isConfirmPasswordHidden ? Icons.visibility_off : Icons.visibility),
               ),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please confirm the new password';
-              }
-              if (value != _newPasswordController.text) {
-                return 'Passwords do not match';
-              }
-              return null;
-            },
+            validator: (value) => AuthService.instance.validateFields('repeatPassword', value,passwordController: _newPasswordController),
           ),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           _isLoading

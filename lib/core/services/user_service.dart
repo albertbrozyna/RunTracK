@@ -412,6 +412,8 @@ class UserService {
     String email,
     String gender,
     DateTime dateOfBirth,
+      double weight,
+      int height
   ) async {
     await UserService.addUser(
       model.User(

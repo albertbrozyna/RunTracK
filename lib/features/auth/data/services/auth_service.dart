@@ -202,4 +202,105 @@ class AuthService {
     }
   }
 
+  //Method to check password complexity
+  bool checkPasswordComplexity(String password) {
+    //Minimum 8 characters
+    if (password.length < 7) return false;
+    // At least one uppercase letter
+    if (!password.contains(RegExp(r'[A-Z]'))) return false;
+    // At least one lowercase letter
+    if (!password.contains(RegExp(r'[a-z]'))) return false;
+    // At least one digit
+    if (!password.contains(RegExp(r'[0-9]'))) return false;
+    // At least one special character
+    if (!password.contains(RegExp(r'[!@#\$&*~%^]'))) return false;
+
+    return true;
+  }
+
+  String? validateFields(String fieldName, String? value, {TextEditingController? passwordController}) {
+    switch (fieldName) {
+      case 'firstName':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your first name';
+        }
+        if (value.length < 2) {
+          return 'First name must be at least 2 characters long';
+        }
+        break;
+      case 'lastName':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your last name';
+        }
+        break;
+      case 'email':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your email address';
+        }
+        if (!isEmailValid(value.trim())) {
+          return 'Invalid email format';
+        }
+        break;
+      case 'password':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter a password';
+        }
+        if (!checkPasswordComplexity(value.trim())) {
+          return 'Password must have at least 8 chars, one uppercase, lowercase, digit, and special character';
+        }
+        break;
+      case 'repeatPassword':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please repeat your password';
+        }
+        if (value.trim() != passwordController?.text.trim()) {
+          return 'Passwords do not match';
+        }
+        break;
+      case 'gender':
+        if (value == null || value.isEmpty) {
+          return 'Please select your gender';
+        }
+        break;
+      case 'dateOfBirth':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please select your date of birth';
+        }
+
+        DateTime? date = DateTime.tryParse(value.trim());
+        if (date == null) {
+          return 'Invalid date format';
+        }
+        break;
+      case 'weight':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your weight';
+        }
+        final number = double.tryParse(value.trim());
+        if (number == null || number <= 0) {
+          return 'Weight must be greater than 0';
+        }
+        return null;
+      case 'height':
+        if (value == null || value.trim().isEmpty) {
+          return 'Please enter your height';
+        }
+        final number = int.tryParse(value.trim());
+        if (number == null || number <= 0) {
+          return 'Height must be valid and greater than 0';
+        }
+        return null;
+      default:
+        return null;
+    }
+    return null;
+  }
+
+  bool isEmailValid(String email) {
+    final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    );
+    return emailRegex.hasMatch(email);
+  }
+
 }

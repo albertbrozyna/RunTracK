@@ -24,6 +24,8 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _birthDateController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
   String? _selectedGender;
   bool _isLoading = false;
 
@@ -62,7 +64,11 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
   void _saveChanges() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedGender == null) {
-        AppUtils.showMessage(context, "Please select a gender.", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Please select a gender.",
+          messageType: MessageType.error,
+        );
         return;
       }
 
@@ -70,12 +76,22 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
         _isLoading = true;
       });
       try {
-        final newBirthDate = DateTime.tryParse('${_birthDateController.text.trim()} 00:00:00');
+        final newBirthDate = DateTime.tryParse(
+          '${_birthDateController.text.trim()} 00:00:00',
+        );
         final Map<String, dynamic> fieldsToUpdate = {
-          'firstName': _firstNameController.text.trim().toLowerCase().capitalize(),
-          'lastName': _lastNameController.text.trim().toLowerCase().capitalize(),
+          'firstName': _firstNameController.text
+              .trim()
+              .toLowerCase()
+              .capitalize(),
+          'lastName': _lastNameController.text
+              .trim()
+              .toLowerCase()
+              .capitalize(),
           'dateOfBirth': newBirthDate,
           'gender': _selectedGender!.toLowerCase(),
+          'weight': double.tryParse(_weightController.text.trim()),
+          'height': int.tryParse(_heightController.text.trim()),
         };
 
         final success = await UserService.updateFieldsInTransaction(
@@ -89,8 +105,13 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
         if (success) {
           AppData.instance.currentUser?.firstName = fieldsToUpdate['firstName'];
           AppData.instance.currentUser?.lastName = fieldsToUpdate['lastName'];
-          AppData.instance.currentUser?.dateOfBirth = fieldsToUpdate['dateOfBirth'];
+          AppData.instance.currentUser?.dateOfBirth =
+              fieldsToUpdate['dateOfBirth'];
           AppData.instance.currentUser?.gender = fieldsToUpdate['gender'];
+          AppData.instance.currentUser?.weight = fieldsToUpdate['weight'];
+          AppData.instance.currentUser?.height = fieldsToUpdate['height'];
+
+
           if (!mounted) return;
           AppUtils.showMessage(
             context,
@@ -107,7 +128,11 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
           );
         }
       } catch (e) {
-        AppUtils.showMessage(context, "Failed to update profile. ", messageType: MessageType.error);
+        AppUtils.showMessage(
+          context,
+          "Failed to update profile. ",
+          messageType: MessageType.error,
+        );
       }
     }
   }
@@ -133,14 +158,11 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     labelStyle: TextStyle(color: AppColors.white),
                     prefixIcon: Icon(Icons.person),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your first name.';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AuthService.instance.validateFields('firstName', value),
                 ),
-                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                const SizedBox(
+                  height: AppUiConstants.verticalSpacingTextFields,
+                ),
                 TextFormField(
                   controller: _lastNameController,
                   style: TextStyle(color: AppColors.white),
@@ -148,14 +170,12 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     labelText: 'Last Name',
                     prefixIcon: Icon(Icons.person),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your last name.';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AuthService.instance.validateFields('lastName', value),
+
                 ),
-                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                const SizedBox(
+                  height: AppUiConstants.verticalSpacingTextFields,
+                ),
                 // Birth date
                 TextFormField(
                   controller: _birthDateController,
@@ -175,14 +195,12 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     labelStyle: TextStyle(color: AppColors.white),
                     prefixIcon: Icon(Icons.calendar_today),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select your date of birth.';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AuthService.instance.validateFields('dateOfBirth', value),
+
                 ),
-                const SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+                const SizedBox(
+                  height: AppUiConstants.verticalSpacingTextFields,
+                ),
 
                 DropdownButtonFormField<String>(
                   dropdownColor: AppColors.primary,
@@ -192,26 +210,60 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                     suffixIconColor: AppColors.white,
                     suffixIcon: Padding(
                       padding: EdgeInsets.only(right: 10),
-                      child: Icon(Icons.arrow_drop_down, color: AppColors.white),
+                      child: Icon(
+                        Icons.arrow_drop_down,
+                        color: AppColors.white,
+                      ),
                     ),
                   ),
                   style: TextStyle(color: AppColors.white),
                   initialValue: _selectedGender,
                   items: AppConstants.genders.map((String genderLabel) {
-                    return DropdownMenuItem<String>(value: genderLabel, child: Text(genderLabel));
+                    return DropdownMenuItem<String>(
+                      value: genderLabel,
+                      child: Text(genderLabel),
+                    );
                   }).toList(),
                   onChanged: (String? newValue) {
                     setState(() {
                       _selectedGender = newValue;
                     });
                   },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select your gender.';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AuthService.instance.validateFields('gender', value),
+
                 ),
+
+                // Weight
+                TextFormField(
+                  controller: _weightController,
+                  validator: (value) =>
+                      AuthService.instance.validateFields('weight', value),
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: "Weight",
+                    hintText: "Weight in kg",
+                    prefixIcon: Icon(
+                      Icons.monitor_weight_outlined,
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
+
+                // Height
+                TextFormField(
+                  controller: _heightController,
+                  validator: (value) =>
+                      AuthService.instance.validateFields('height', value),
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: "Height",
+                    hintText: "Height in cm",
+                    prefixIcon: Icon(Icons.height, color: AppColors.white),
+                  ),
+                ),
+
                 const SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
                 ElevatedButton(
@@ -223,9 +275,15 @@ class _YourPersonalInfoPageState extends State<YourPersonalInfoPage> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
                         )
-                      : const Text('Save Changes', style: TextStyle(fontSize: 18)),
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(fontSize: 18),
+                        ),
                 ),
               ],
             ),

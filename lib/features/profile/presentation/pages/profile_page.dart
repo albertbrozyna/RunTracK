@@ -373,6 +373,19 @@ class _ProfilePageState extends State<ProfilePage> {
                       prefixIcon: user!.gender! == 'male' ? Icons.male : Icons.female,
                       title: "${user?.gender}",
                     ),
+                    if(user!.weight != null)
+                      ListInfoTile(
+                        prefixIcon: Icons.monitor_weight_outlined,
+                        title:
+                        "Weight: ${user!.weight?.toStringAsFixed(2)}",
+                      ),
+                   if(user!.height != null)
+                    ListInfoTile(
+                      prefixIcon: Icons.height,
+                      title:
+                      "Height: ${user!.height?.toString()}",
+                    ),
+
                     ListInfoTile(
                       prefixIcon: Icons.cake,
                       title: AppUtils.formatDateTime(user?.dateOfBirth, onlyDate: true),
