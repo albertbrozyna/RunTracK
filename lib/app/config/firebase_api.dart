@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/app/theme/app_colors.dart';
 import 'package:run_track/core/constants/firestore_names.dart';
 import 'package:run_track/core/enums/user_mode.dart';
+import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
 import 'package:run_track/features/notifications/data/models/notification.dart';
@@ -14,7 +15,7 @@ import '../../main.dart';
 
 @pragma('vm:entry-point')
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
-  // Handle notifications in background
+
 }
 
 class FirebaseApi {
