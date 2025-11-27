@@ -9,6 +9,7 @@ class User {
   String email;
   DateTime? dateOfBirth;
   DateTime? createdAt;
+  String? profilePhotoUrl;
   String? gender;
   double? weight;
   int? height;
@@ -48,6 +49,7 @@ class User {
     this.currentCompetition = "",
     this.weight,
     this.height,
+    this.profilePhotoUrl
   })  : fullName = '${firstName.trim().toLowerCase()} ${lastName.trim().toLowerCase()}',
         pendingInvitationsToFriends = pendingInvitationsToFriends ?? {},
         receivedInvitationsToFriends = receivedInvitationsToFriends ?? {},
@@ -79,6 +81,7 @@ class User {
       'currentCompetition': currentCompetition,
       'weight': weight,
       'height': height,
+      'profilePhotoUrl': profilePhotoUrl,
     };
   }
 
@@ -114,6 +117,7 @@ class User {
       currentCompetition: map['currentCompetition'] ?? "",
       weight: (map['weight'] as num?)?.toDouble(),
       height: (map['height'] as num?)?.toInt(),
+      profilePhotoUrl: map['profilePhotoUrl'] ?? '',
     );
   }
 

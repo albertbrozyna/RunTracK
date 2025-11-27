@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
 import 'package:run_track/core/enums/user_action.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
 import 'package:run_track/core/widgets/app_loading_indicator.dart';
@@ -296,6 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (_loaded == false) {
       return Scaffold(
+        appBar: AppBar(title: const Text("Profile")),
         body: PageContainer(
           assetPath: AppImages.appBg4,
           child: Center(child: NoItemsMsg(textMessage: "User not found")),
@@ -341,20 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3, style: BorderStyle.solid),
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    AppImages.defaultProfilePhoto,
-                    width: MediaQuery.of(context).size.width / 2,
-                    height: MediaQuery.of(context).size.width / 2,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+              EditableProfileAvatar(currentPhotoUrl: user?.profilePhotoUrl,radius: 100),
               // Name and last name
               SizedBox(height: AppUiConstants.verticalSpacingButtons),
 
@@ -385,7 +374,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       title:
                       "Height: ${user!.height?.toString()}",
                     ),
-
                     ListInfoTile(
                       prefixIcon: Icons.cake,
                       title: AppUtils.formatDateTime(user?.dateOfBirth, onlyDate: true),
@@ -437,7 +425,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
                         ),
-
                         StatCard(
                           title: "Activities",
                           value: user!.activitiesCount.toString(),
@@ -445,7 +432,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
                         ),
-
                         StatCard(
                           title: "Total\ndistance",
                           value: "${user!.kilometers.toStringAsFixed(2)} km",
@@ -453,7 +439,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
                         ),
-
                         StatCard(
                           title: "Total hours\nof activity",
                           value: "${(user!.secondsOfActivity / 3600).toStringAsFixed(2)} h",
@@ -461,7 +446,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           cardWidth: cardWidth,
                           cardHeight: cardHeight,
                         ),
-
                         StatCard(
                           title: "Burned\ncalories",
                           value: "${user!.burnedCalories.toString()} kcal",

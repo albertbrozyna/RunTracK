@@ -6,6 +6,7 @@ import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/services/user_service.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
@@ -33,6 +34,7 @@ class ActivitySummary extends StatefulWidget {
   final Competition? currentUserCompetition;
   final String firstName;
   final String lastName;
+  final String profilePhotoUrl;
   final bool readonly;
   final bool editMode;
   const ActivitySummary({
@@ -40,11 +42,11 @@ class ActivitySummary extends StatefulWidget {
     required this.activityData,
     this.firstName = '',
     this.lastName = '',
-    bool? readonly,
-    bool? editMode,
+    this.profilePhotoUrl = '',
+    this.readonly = true,
+    this.editMode = false,
     this.currentUserCompetition,
-  }) : readonly = readonly ?? true,
-       editMode = editMode ?? false;
+  });
 
   @override
   State<ActivitySummary> createState() => _ActivitySummaryState();
@@ -254,7 +256,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           userResult,
         );
 
-        // Clear current user activity
       }
 
       Map<String, dynamic> fieldsToUpdate = {
@@ -510,10 +511,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                     labelStyle: AppUiConstants.labelStyleTextFields,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.only(left: 10),
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto),
-                      ),
+                      child: EditableProfileAvatar(radius: 20,currentPhotoUrl: widget.profilePhotoUrl,)
                     ),
                   ),
                 ),

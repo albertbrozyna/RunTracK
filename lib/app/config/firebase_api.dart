@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/app/theme/app_colors.dart';
-import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/constants/firestore_collections.dart';
 import 'package:run_track/core/enums/user_mode.dart';
 import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';

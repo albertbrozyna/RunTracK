@@ -490,12 +490,10 @@ class ForegroundTrackService {
 
   Future<void> startTracking() async {
     if (await service.isRunning()) {
-      print("MYLOG Poprzedni serwis działa. Zatrzymuję go...");
 
       final completer = Completer<void>();
       late StreamSubscription sub;
       sub = service.on(ServiceEvent.stopped.name).listen((_) {
-        print("MYLOG Otrzymano sygnał 'stopped' od starego serwisu.");
         completer.complete();
         sub.cancel();
       });
@@ -545,6 +543,11 @@ class ForegroundTrackService {
       'userHeight': userHeight,
       'userGender': AppData.instance.currentUser?.gender ?? "Male",
     });
+  }
+
+  // Check if service is running
+  Future<bool> isServiceRunning() async {
+    return await service.isRunning();
   }
 
   Future<void> stopTracking() async {

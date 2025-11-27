@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/core/enums/message_type.dart';
+import 'package:run_track/core/utils/utils.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
+import 'package:run_track/features/track/data/services/track_foreground_service.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/enums/user_relationship.dart' show UserRelationshipStatus;
@@ -36,7 +39,30 @@ class ProfileActionButton extends StatefulWidget {
 }
 
 class _ProfileActionButtonState extends State<ProfileActionButton> {
-  void logoutButtonPressed(BuildContext context) {
+
+  bool _isLoggingOut = false;
+
+  void logoutButtonPressed(BuildContext context) async {
+    if(_isLoggingOut){
+      return;
+    }
+    _isLoggingOut = true;
+    bool isServiceRunning = await ForegroundTrackService.instance.isServiceRunning();
+
+    if(!mounted){
+      _isLoggingOut = false;
+      return;
+    }
+    if(isServiceRunning){
+      if(!context.mounted){
+        _isLoggingOut = false;
+        return;
+      }
+      AppUtils.showMessage(context, "You cannot log out when tracking service is running!",messageType: MessageType.error);
+      _isLoggingOut = false;
+      return;
+    }
+
     AppAlertDialog alert = AppAlertDialog(
       titleText: "Logout",
       contentText: "Are you sure you want to log out?",
@@ -55,6 +81,10 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
       },
     );
 
+    if(!context.mounted){
+      _isLoggingOut = false;
+      return;
+    }
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -62,6 +92,7 @@ class _ProfileActionButtonState extends State<ProfileActionButton> {
         return alert;
       },
     );
+    _isLoggingOut = false;
   }
 
   @override

@@ -130,7 +130,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if(data.organizerUid == FirebaseAuth.instance.currentUser?.uid){
       _organizerController.text = AppData.instance.currentUser?.fullName ?? "User Unknown";
     }else{
-     UserService.fetchUserForBlock(AppData.instance.currentCompetition?.organizerUid ?? "")
+     UserService.fetchUser(AppData.instance.currentCompetition?.organizerUid ?? "")
           .then((user) {
         setState(() {
           String fullName = user?.firstName ?? "User";

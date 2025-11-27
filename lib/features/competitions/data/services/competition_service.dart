@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/constants/firestore_collections.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
 import 'package:run_track/features/notifications/data/services/notification_service.dart';
 

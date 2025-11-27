@@ -7,7 +7,7 @@ import 'package:run_track/core/utils/utils.dart';
 
 import '../../../../app/config/app_data.dart';
 import '../../../../app/navigation/app_routes.dart';
-import '../../../../core/constants/firestore_names.dart';
+import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/sign_in_status.dart';
 import '../models/sign_in_result.dart';
 import '../../../../core/models/user.dart' as model;

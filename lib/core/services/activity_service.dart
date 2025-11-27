@@ -6,7 +6,7 @@ import 'package:run_track/core/models/activity_fetch_result.dart';
 import 'package:run_track/core/services/preferences_service.dart';
 
 import '../../app/config/app_data.dart';
-import '../constants/firestore_names.dart';
+import '../constants/firestore_collections.dart';
 import '../constants/preference_names.dart';
 import '../enums/visibility.dart';
 import '../models/activity.dart';

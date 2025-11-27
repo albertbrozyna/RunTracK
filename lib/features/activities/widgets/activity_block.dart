@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/app/config/app_images.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/utils/utils.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/models/activity.dart';
@@ -16,6 +16,7 @@ import '../../../core/widgets/stat_card.dart';
 class ActivityBlock extends StatefulWidget {
   final String firstName;
   final String lastName;
+  final String profilePhotoUrl;
   final Activity activity;
   final double titleFontSizeBlock = 14;
   final double valueFontSizeBlock = 14;
@@ -25,9 +26,7 @@ class ActivityBlock extends StatefulWidget {
   final double iconSize = 26;
   final Function(Activity) onActivityUpdated;
 
-  const ActivityBlock({super.key, required this.activity, String? firstName, String? lastName,required this.onActivityUpdated})
-    : firstName = firstName ?? "",
-      lastName = lastName ?? "";
+  const ActivityBlock({super.key, required this.activity, this.firstName = '', this.lastName = '',this.profilePhotoUrl = '',required this.onActivityUpdated});
 
   @override
   State<ActivityBlock> createState() => _ActivityBlockState();
@@ -56,21 +55,24 @@ class _ActivityBlockState extends State<ActivityBlock> {
     }
     firstname = widget.firstName;
     lastname = widget.lastName;
+    profilePhotoUrl = widget.profilePhotoUrl;
   }
 
   Future<void> initializeAsync() async {
     if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
       // If there is no name and last name fetch it from firestore
-      return UserService.fetchUserForBlock(widget.activity.uid)
+      return UserService.fetchUser(widget.activity.uid)
           .then((user) {
             if (!mounted) return;
             setState(() {
               if (user != null) {
                 firstname = user.firstName;
                 lastname = user.lastName;
+                profilePhotoUrl = user.profilePhotoUrl;
               } else {
                 firstname = "Deleted";
                 lastname = "User";
+                profilePhotoUrl = '';
               }
             });
           })
@@ -153,10 +155,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2.0),
                       ),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
-                      ),
+                      child: EditableProfileAvatar(radius: 20,currentPhotoUrl: profilePhotoUrl,)
                     ),
                     SizedBox(width: 10),
 
