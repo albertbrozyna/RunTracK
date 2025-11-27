@@ -32,7 +32,7 @@ dependencies:
   path_provider: ^2.1.2
   geocoding: ^4.0.0
   google_fonts: ^6.3.2
-
+  firebase_messaging: ^16.0.4 # For push notifications
   flutter_background_service: ^5.1.0
   flutter_background_service_android: ^6.3.1
   flutter_map_animations: ^0.9.0 #To animate move map

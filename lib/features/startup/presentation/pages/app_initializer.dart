@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/config/app_images.dart';
+import 'package:run_track/app/config/firebase_api.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/services/user_service.dart';
 import 'package:run_track/core/widgets/app_loading_indicator.dart';
@@ -76,6 +77,8 @@ class _AppInitializerState extends State<AppInitializer> {
           _navigateToStartPage();
           return;
         }
+
+        FirebaseApi.instance.saveUserToken();
 
         if (AppData.instance.currentUser!.currentCompetition.isNotEmpty) {
           AppData.instance.currentCompetition = await CompetitionService.fetchCompetition(
