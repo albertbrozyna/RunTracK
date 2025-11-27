@@ -91,11 +91,24 @@ class FirebaseApi {
 
       rootScaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
-          content: Text(notification.title ?? 'Notification',style: TextStyle(color: AppColors.white),),
+          content: Row(
+            children: [
+
+              Icon(Icons.notifications,color: AppColors.white,),
+              SizedBox(width: 10,),
+              Expanded(child: Text(notification.body ?? 'Notification',style: TextStyle(color: AppColors.white),)),
+            ],
+          ),
           duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primary,
-
+          action: SnackBarAction(
+            label: 'View',
+            textColor: AppColors.white,
+            onPressed: () {
+              _handleNavigation(message);
+            },
+          ),
         ),
       );
     });
