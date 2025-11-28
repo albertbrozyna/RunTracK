@@ -70,6 +70,7 @@ class AppRouter {
         final String lastName = args?['lastName'] ?? '';
         final bool readOnly = args?['readOnly'] ?? true;
         final bool editMode = args?['editMode'] ?? false;
+        final String profilePhotoUrl = args?['profilePhotoUrl'] ?? '';
 
         if (activity == null) {
           return MaterialPageRoute(
@@ -85,6 +86,7 @@ class AppRouter {
             readonly: readOnly,
             editMode: editMode,
             activityData: activity,
+            profilePhotoUrl: profilePhotoUrl,
           ),
         );
 

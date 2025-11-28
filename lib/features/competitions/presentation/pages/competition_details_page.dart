@@ -64,6 +64,8 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   bool saved = false;
   bool leavingPage = false;
   bool _isLoading = false;
+  String profilePhotoUrl = '';
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -129,6 +131,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     _nameController.text = data.name;
     if(data.organizerUid == FirebaseAuth.instance.currentUser?.uid){
       _organizerController.text = AppData.instance.currentUser?.fullName ?? "User Unknown";
+      profilePhotoUrl = AppData.instance.currentUser?.profilePhotoUrl ?? '';
     }else{
      UserService.fetchUser(AppData.instance.currentCompetition?.organizerUid ?? "")
           .then((user) {
@@ -136,6 +139,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
           String fullName = user?.firstName ?? "User";
           fullName += user?.lastName ?? "Unknown";
           _organizerController.text = fullName;
+          profilePhotoUrl = user?.profilePhotoUrl ?? "";
         });
       })
           .catchError((error) {
@@ -206,6 +210,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         setState(() {
           _organizerController.text = user.firstName;
           _organizerController.text += ' ${user.lastName}';
+          profilePhotoUrl = user.profilePhotoUrl ?? "";
         });
       }
     }
@@ -510,6 +515,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                     nameController: _nameController,
                     descriptionController: _descriptionController,
                     setVisibility: setVisibility,
+                    profilePhotoUrl: profilePhotoUrl,
                   ),
 
                   CompetitionGoalSection(readOnly: readOnly, activityController: _activityController, goalController: _goalController),

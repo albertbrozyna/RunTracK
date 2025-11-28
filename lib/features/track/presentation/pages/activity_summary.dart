@@ -338,6 +338,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       elevationLoss: widget.activityData.elevationLoss,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
+      competitionId: widget.activityData.competitionId
     );
 
     // If there is no changes, just pop
@@ -503,16 +504,28 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   textAlign: TextAlign.left,
                   readOnly: true,
                   enabled: true,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white,fontSize: 18.0),
                   decoration: InputDecoration(
-                    contentPadding: EdgeInsets.all(20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                     border: AppUiConstants.borderTextFields,
-                    label: Text("Full name"),
+                    labelText: "Full name",
                     labelStyle: AppUiConstants.labelStyleTextFields,
+
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: EditableProfileAvatar(radius: 20,currentPhotoUrl: widget.profilePhotoUrl,)
+                      padding: const EdgeInsets.only(left: 8),
+                      child: SizedBox(
+                        width: 60,
+                        height: 50,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: EditableProfileAvatar(
+                            radius: 18,
+                            currentPhotoUrl: widget.profilePhotoUrl,
+                          ),
+                        ),
+                      ),
                     ),
+
                   ),
                 ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),

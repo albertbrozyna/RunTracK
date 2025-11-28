@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:run_track/core/models/user.dart';
 import 'package:run_track/core/utils/extensions.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 
 import '../../app/config/app_data.dart';
 import '../../app/config/app_images.dart';
@@ -56,10 +57,9 @@ class UserProfileTile extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2.0),
                   ),
-                  child: CircleAvatar(
-                    radius: radiusOfAvatar,
-                    backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
-                  ),
+                  child:EditableProfileAvatar(
+                    radius: radiusOfAvatar,currentPhotoUrl: user.profilePhotoUrl ?? '',
+                  )
                 ),
                 SizedBox(width: 10),
                 // First name and date

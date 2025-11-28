@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 
 import '../../../../app/config/app_images.dart';
 import '../../../../app/theme/app_colors.dart';
@@ -15,6 +16,7 @@ class BasicInfoSection extends StatefulWidget {
   final TextEditingController organizerController;
   final TextEditingController nameController;
   final TextEditingController descriptionController;
+  final String profilePhotoUrl;
   final void Function(enums.ComVisibility) setVisibility;
 
   const BasicInfoSection({
@@ -26,6 +28,7 @@ class BasicInfoSection extends StatefulWidget {
     required this.nameController,
     required this.descriptionController,
     required this.setVisibility,
+    required this.profilePhotoUrl
   });
 
   @override
@@ -74,19 +77,28 @@ class _BasicInfoSectionState extends State<BasicInfoSection> {
           textAlign: TextAlign.left,
           readOnly: true,
           enabled: true,
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white,fontSize: 18.0),
           decoration: InputDecoration(
-            contentPadding: EdgeInsets.all(20),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             border: AppUiConstants.borderTextFields,
-            label: Text("Organizer"),
+            labelText: "Organizer",
             labelStyle: AppUiConstants.labelStyleTextFields,
+
             prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 10),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage(AppImages.defaultProfilePhoto),
+              padding: const EdgeInsets.only(left: 8),
+              child: SizedBox(
+                width: 60,
+                height: 50,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: EditableProfileAvatar(
+                    radius: 18,
+                    currentPhotoUrl: widget.profilePhotoUrl,
+                  ),
+                ),
               ),
             ),
+
           ),
         ),
 
