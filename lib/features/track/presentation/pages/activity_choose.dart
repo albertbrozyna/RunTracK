@@ -26,6 +26,15 @@ class ActivityChooseState extends State<ActivityChoose> {
   final TextEditingController _newActivityController = TextEditingController();
   late ValueNotifier<int> _selectedActivityNotifier;
   bool addingEnabled = false;
+  final defaultActivities = [
+  "Running",
+  "Jogging",
+  "Walking",
+  "Hiking",
+  "Sprint",
+  "Trail Running",
+  "Treadmill",
+  ];
 
   @override
   void initState() {
@@ -68,6 +77,10 @@ class ActivityChooseState extends State<ActivityChoose> {
     if (AppData.instance.currentUser?.activityNames.contains(_newActivityController.text.trim()) ?? false) {
       AppUtils.showMessage(context, "Activity is already on the list", messageType: MessageType.info);
       return;
+    }
+    if(AppData.instance.currentUser!.activityNames.length >= 30){
+      if(!mounted) return;
+      AppUtils.showMessage(context, "You can't add more than 30 activities", messageType: MessageType.info);
     }
 
     setState(() {
@@ -147,6 +160,7 @@ class ActivityChooseState extends State<ActivityChoose> {
                         itemCount: AppData.instance.currentUser?.activityNames.length,
                         itemBuilder: (context, index) {
                           bool isSelected = index == selectedActivity;
+                          bool showDelete = !isSelected && !defaultActivities.contains(AppData.instance.currentUser!.activityNames[index]);
                           return ListTile(
                             title: Text(
                               AppData.instance.currentUser!.activityNames[index].toString(),
@@ -158,10 +172,11 @@ class ActivityChooseState extends State<ActivityChoose> {
                             ),
                             onTap: isSelected ? () => () : () => onActivityTap(index),
                             selected: index == selectedActivity,
-                            trailing: IconButton(
+
+                            trailing: showDelete || isSelected? IconButton(
                               onPressed: isSelected ? () => () : () => deleteActivity(index),
                               icon: isSelected ? Icon(Icons.check, color: Colors.green) : Icon(Icons.delete, color: Colors.white),
-                            ),
+                            ) : null,
                           );
                         },
                       );

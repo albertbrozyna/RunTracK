@@ -6,6 +6,7 @@ import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/core/services/user_service.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
@@ -33,6 +34,7 @@ class ActivitySummary extends StatefulWidget {
   final Competition? currentUserCompetition;
   final String firstName;
   final String lastName;
+  final String profilePhotoUrl;
   final bool readonly;
   final bool editMode;
   const ActivitySummary({
@@ -40,11 +42,11 @@ class ActivitySummary extends StatefulWidget {
     required this.activityData,
     this.firstName = '',
     this.lastName = '',
-    bool? readonly,
-    bool? editMode,
+    this.profilePhotoUrl = '',
+    this.readonly = true,
+    this.editMode = false,
     this.currentUserCompetition,
-  }) : readonly = readonly ?? true,
-       editMode = editMode ?? false;
+  });
 
   @override
   State<ActivitySummary> createState() => _ActivitySummaryState();
@@ -254,7 +256,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           userResult,
         );
 
-        // Clear current user activity
       }
 
       Map<String, dynamic> fieldsToUpdate = {
@@ -337,6 +338,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       elevationLoss: widget.activityData.elevationLoss,
       createdAt: widget.activityData.createdAt,
       steps: widget.activityData.steps,
+      competitionId: widget.activityData.competitionId
     );
 
     // If there is no changes, just pop
@@ -502,19 +504,28 @@ class _ActivitySummaryState extends State<ActivitySummary> {
                   textAlign: TextAlign.left,
                   readOnly: true,
                   enabled: true,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white,fontSize: 18.0),
                   decoration: InputDecoration(
-                    contentPadding: EdgeInsets.all(20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                     border: AppUiConstants.borderTextFields,
-                    label: Text("Full name"),
+                    labelText: "Full name",
                     labelStyle: AppUiConstants.labelStyleTextFields,
+
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto),
+                      padding: const EdgeInsets.only(left: 8),
+                      child: SizedBox(
+                        width: 60,
+                        height: 50,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: EditableProfileAvatar(
+                            radius: 18,
+                            currentPhotoUrl: widget.profilePhotoUrl,
+                          ),
+                        ),
                       ),
                     ),
+
                   ),
                 ),
                 SizedBox(height: AppUiConstants.verticalSpacingTextFields),

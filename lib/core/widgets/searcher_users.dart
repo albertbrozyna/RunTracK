@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:run_track/app/config/app_data.dart';
 import 'package:run_track/core/enums/participant_management_action.dart';
 import 'package:run_track/core/enums/user_action.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 import 'package:run_track/features/competitions/data/services/competition_service.dart';
-import '../../app/config/app_images.dart';
 import '../../app/navigation/app_routes.dart';
 import '../../app/theme/app_colors.dart';
 import '../enums/user_mode.dart';
@@ -58,6 +58,8 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
       );
       if (added) {
         rebuildNotifier.value++;
+        if(!context.mounted) return;
+
         showResults(context);
       }
     } else if (userMode == UserMode.competitors) {
@@ -71,6 +73,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
 
         if (added) {
           rebuildNotifier.value++;
+          if(!context.mounted) return;
           showResults(context);
         }
       }
@@ -86,6 +89,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
     );
 
     rebuildNotifier.value++;
+    if(!context.mounted) return;
     showResults(context);
   }
 
@@ -130,15 +134,24 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
             if (!snapshot.hasData) {
               return Center(child: Text("No users found"));
             }
-            final users = snapshot.data!;
+            final users = snapshot.data;
+
+            if(users == null){
+              return Center(child: Text("No users found"));
+            }
+
             return ListView.builder(
               itemCount: users.length,
               itemBuilder: (context, index) {
                 final user = users[index];
                 return ListTile(
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
+                  leading: SizedBox(
+                    height: 40,
+                    width: 40,
+                    child: EditableProfileAvatar(
+                      radius: 18,
+                      currentPhotoUrl: user.profilePhotoUrl ?? '',
+                    ),
                   ),
                   onTap: () => onTapUser(context, user.uid),
                   title: Text("${user.firstName} ${user.lastName}"),
@@ -168,7 +181,6 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
   }
 
   @override
-  // TODO add a
   Widget buildSuggestions(BuildContext context) {
     final suggestions = suggestedUsers
         .where(

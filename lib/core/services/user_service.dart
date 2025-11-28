@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:run_track/core/constants/firestore_names.dart';
+import 'package:run_track/core/constants/firestore_collections.dart';
 import 'package:run_track/core/enums/user_action.dart';
 import 'package:run_track/core/utils/extensions.dart';
 import 'package:run_track/features/auth/data/models/auth_response.dart';
@@ -30,34 +30,6 @@ class UserService {
       }
     } catch (e) {
       print("Error fetching user data: $e");
-    }
-    return null;
-  }
-
-  static Future<model.User?> fetchUserForBlock(String uid) async {
-    final userDoc = await FirebaseFirestore.instance
-        .collection(FirestoreCollections.users)
-        .doc(uid)
-        .get();
-
-    if (userDoc.exists) {
-      final data = userDoc.data();
-      if (data != null) {
-        final firstName = data['firstName'] as String?;
-        final lastName = data['lastName'] as String?;
-
-        if (firstName == null || lastName == null) {
-          return null;
-        }
-
-        return model.User(
-          uid: uid,
-          firstName: firstName,
-          lastName: lastName,
-          email: "",
-          gender: "",
-        );
-      }
     }
     return null;
   }
@@ -412,6 +384,8 @@ class UserService {
     String email,
     String gender,
     DateTime dateOfBirth,
+      double weight,
+      int height
   ) async {
     await UserService.addUser(
       model.User(

@@ -230,6 +230,7 @@ class _ActivitiesPageState extends State<ActivitiesPage> with SingleTickerProvid
                         key: ValueKey(activity.activityId),
                         firstName: currentUser!.firstName,
                         lastName: currentUser!.lastName,
+                        profilePhotoUrl: currentUser?.profilePhotoUrl ?? '',
                         activity: activity,
                         onActivityUpdated: updateActivityInList,
                       );

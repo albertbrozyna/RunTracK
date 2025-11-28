@@ -9,8 +9,10 @@ class User {
   String email;
   DateTime? dateOfBirth;
   DateTime? createdAt;
+  String? profilePhotoUrl;
   String? gender;
-
+  double? weight;
+  int? height;
   double kilometers;
   int burnedCalories;
   int secondsOfActivity;
@@ -45,6 +47,9 @@ class User {
     Set<String>? receivedInvitationsToCompetitions,
     Set<String>? participatedCompetitions,
     this.currentCompetition = "",
+    this.weight,
+    this.height,
+    this.profilePhotoUrl
   })  : fullName = '${firstName.trim().toLowerCase()} ${lastName.trim().toLowerCase()}',
         pendingInvitationsToFriends = pendingInvitationsToFriends ?? {},
         receivedInvitationsToFriends = receivedInvitationsToFriends ?? {},
@@ -74,6 +79,9 @@ class User {
       'activitiesCount': activitiesCount,
       'competitionsCount': competitionsCount,
       'currentCompetition': currentCompetition,
+      'weight': weight,
+      'height': height,
+      'profilePhotoUrl': profilePhotoUrl,
     };
   }
 
@@ -107,6 +115,9 @@ class User {
       activitiesCount: map['activitiesCount'] ?? 0,
       competitionsCount: map['competitionsCount'] ?? 0,
       currentCompetition: map['currentCompetition'] ?? "",
+      weight: (map['weight'] as num?)?.toDouble(),
+      height: (map['height'] as num?)?.toInt(),
+      profilePhotoUrl: map['profilePhotoUrl'] ?? '',
     );
   }
 

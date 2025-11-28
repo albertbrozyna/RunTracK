@@ -29,10 +29,12 @@ enum ServiceEvent {
 void onStart(ServiceInstance serviceInstance) async {
   DartPluginRegistrant.ensureInitialized();
 
-  print("MYLOG new serwice v8");
   TrackingState trackingState = TrackingState.stopped;
-  final double averageStepLength = 0.78;
-  final double weightKg = 70;
+
+  double userWeight = 0;
+  int userHeight = 0;
+  double currentStrideLength = 0.78;
+  String userGender = "Male";
 
   List<LatLng> trackedPath = [];
   double totalDistance = 0.0;
@@ -41,10 +43,9 @@ void onStart(ServiceInstance serviceInstance) async {
   Duration elapsedTime = Duration.zero;
   double elevationGain = 0.0;
   double elevationLoss = 0.0;
-  double calories = 0.0;
   double avgSpeed = 0.0;
-  double currentSpeedValue = 0.0;
   int steps = 0;
+  double calories = 0.0;
   double pace = 0.0;
   LatLng? currentPosition;
   // Competition
@@ -67,15 +68,28 @@ void onStart(ServiceInstance serviceInstance) async {
   int ignoredPointsCount = 0;
   const int maxJumpsCount = 5;
 
+
+  void recalculateStrideLength() {
+    if (userHeight <= 0) {
+      currentStrideLength = 0.78;
+      return;
+    }
+
+    double genderFactor = (userGender == "Female") ? 0.413 : 0.415;
+    double runFactor = 1.25;
+    currentStrideLength = (userHeight * genderFactor * runFactor) / 100;
+  }
+
   void clearStats() {
     totalDistance = 0.0;
     elevationGain = 0.0;
     elevationLoss = 0.0;
-    calories = 0.0;
+    userHeight = 0;
+    userWeight = 0;
+    calories = 0;
     avgSpeed = 0.0;
     pace = 0.0;
     steps = 0;
-    currentSpeedValue = 0.0;
     elapsedTime = Duration.zero;
     trackedPath = [];
     currentPosition = null;
@@ -147,13 +161,21 @@ void onStart(ServiceInstance serviceInstance) async {
     stopLocationTimerAndStream();
     clearStats();
 
-    print("MYLOG stop here - Wysyłam 'stopped' i niszczę serwis.");
-
     serviceInstance.invoke(ServiceEvent.stopped.name);
-
     await Future.delayed(const Duration(milliseconds: 100));
-
     serviceInstance.stopSelf();
+  }
+
+  double getRunningMET(double speedKmh) {
+    if (speedKmh < 7.0) return 6.0;
+    if (speedKmh < 8.0) return 8.3;
+    if (speedKmh < 9.5) return 9.8;
+    if (speedKmh < 10.8) return 10.5;
+    if (speedKmh < 11.5) return 11.0;
+    if (speedKmh < 12.8) return 11.8;
+    if (speedKmh < 14.5) return 12.8;
+    if (speedKmh < 16.0) return 14.5;
+    return 16.0;
   }
 
   void startLocationTimerAndStream() {
@@ -170,7 +192,6 @@ void onStart(ServiceInstance serviceInstance) async {
         // Check competition max time to complete activity
         if (currentCompetition.isNotEmpty && maxTimeToComplete.inSeconds > 0) {
           if (elapsedTime >= maxTimeToComplete) {
-            print("Elapsed time has finished");
             trackingState = TrackingState.stopped;
             stopService();
             return;
@@ -260,13 +281,26 @@ void onStart(ServiceInstance serviceInstance) async {
           if (deltaElevation > 0) elevationGain += deltaElevation;
           if (deltaElevation < 0) elevationLoss += deltaElevation.abs();
 
-          steps = (totalDistance / averageStepLength).round();
-
-          calories = 0.75 * weightKg * (totalDistance / 1000);
           if (elapsedTime.inSeconds > 0) {
             avgSpeed = (totalDistance / 1000) / (elapsedTime.inSeconds / 3600);
           } else {
             avgSpeed = 0.0;
+          }
+
+          // Calories
+          if (userWeight > 0 && elapsedTime.inSeconds > 0) {
+            double currentMet = getRunningMET(avgSpeed);
+
+            double hours = elapsedTime.inSeconds / 3600.0;
+            //  Kcal = MET * weight * hours
+            calories = currentMet * userWeight * hours;
+          }
+
+          // Steps
+          if (currentStrideLength > 0) {
+            steps = (totalDistance / currentStrideLength).round();
+          } else {
+            steps = (totalDistance / 0.78).round();
           }
 
           if (elapsedTime.inSeconds > 0 && totalDistance > 0) {
@@ -305,10 +339,8 @@ void onStart(ServiceInstance serviceInstance) async {
 
               if (diff < straightLineThreshold) {
                 trackedPath.last = pointC;
-                print("MYLOG optimized: replaced last point (diff: ${diff.toStringAsFixed(2)}°)");
               } else {
                 trackedPath.add(pointC);
-                print("MYLOG added new point (turn detected)");
               }
             } else {
               trackedPath.add(currentPosition!);
@@ -364,6 +396,9 @@ void onStart(ServiceInstance serviceInstance) async {
     });
   }
 
+
+
+
   // Handle events from UI
   if (serviceInstance is AndroidServiceInstance) {
     // Start service
@@ -378,6 +413,11 @@ void onStart(ServiceInstance serviceInstance) async {
       if (data.containsKey('accuracyLevel')) {
         settingAccuracyLevel = SettingsService.getAccuracyEnum(data['accuracyLevel']);
       }
+      if (data.containsKey('userWeight')) userWeight = (data['userWeight'] as num).toDouble();
+      if (data.containsKey('userHeight')) userHeight = (data['userHeight'] as num).toInt();
+      if (data.containsKey('userGender')) userGender = data['userGender'] as String;
+      recalculateStrideLength();
+
       currentCompetition = data['currentUserCompetition'] ?? "";
       distanceToGo = (data['distanceToGo'] as num?)?.toDouble() ?? 0.0;
       distanceToGo = distanceToGo * 1000; // Convert to meters
@@ -450,12 +490,10 @@ class ForegroundTrackService {
 
   Future<void> startTracking() async {
     if (await service.isRunning()) {
-      print("MYLOG Poprzedni serwis działa. Zatrzymuję go...");
 
       final completer = Completer<void>();
       late StreamSubscription sub;
       sub = service.on(ServiceEvent.stopped.name).listen((_) {
-        print("MYLOG Otrzymano sygnał 'stopped' od starego serwisu.");
         completer.complete();
         sub.cancel();
       });
@@ -470,12 +508,10 @@ class ForegroundTrackService {
     }
 
     await service.startService();
-    print("MYLOG Nowy serwis uruchomiony.");
 
     final readyCompleter = Completer<void>();
     late StreamSubscription readySub;
     readySub = service.on(ServiceEvent.ready.name).listen((_) {
-      print("MYLOG Nowy serwis jest gotowy.");
       readyCompleter.complete();
       readySub.cancel();
     });
@@ -483,8 +519,11 @@ class ForegroundTrackService {
     try {
       await readyCompleter.future.timeout(const Duration(seconds: 3));
     } catch (e) {
-      print("MYLOG Nowy serwis nie zgłosił gotowości na czas.");
+      print("Service start error $e");
     }
+
+    int userHeight = AppData.instance.currentUser?.height ?? 0;
+    double userWeight = AppData.instance.currentUser?.weight ?? 0.0;
 
     service.invoke(ServiceEvent.startService.name, {
       'currentUserCompetition': AppData.instance.currentUser?.currentCompetition,
@@ -500,7 +539,15 @@ class ForegroundTrackService {
       'accuracyLevel': SettingsService.accuracyEnumToString(
         AppSettings.instance.gpsAccuracyLevel ?? AppConstants.locationAccuracy,
       ),
+      'userWeight': userWeight,
+      'userHeight': userHeight,
+      'userGender': AppData.instance.currentUser?.gender ?? "Male",
     });
+  }
+
+  // Check if service is running
+  Future<bool> isServiceRunning() async {
+    return await service.isRunning();
   }
 
   Future<void> stopTracking() async {

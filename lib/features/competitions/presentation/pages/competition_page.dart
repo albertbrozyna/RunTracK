@@ -574,6 +574,7 @@ class _CompetitionsPageState extends State<CompetitionsPage>
                                       key: ValueKey(competition.competitionId),
                                       firstName: currentUser?.firstName ?? "",
                                       lastName: currentUser?.lastName ?? "",
+                                      profilePhotoUrl: currentUser?.profilePhotoUrl ?? "",
                                       competition: competition,
                                       initIndex: 0,
                                     ),

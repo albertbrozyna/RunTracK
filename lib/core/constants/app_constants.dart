@@ -12,4 +12,7 @@ class AppConstants{
   static int  gpsDistanceFilter = 15;
   static double gpsMaxSpeedToDetectJumps = 43;
   static double gpsMinAccuracy = 30;
+
+  static const double weightKg = 70;
+  static const int height = 170;
 }

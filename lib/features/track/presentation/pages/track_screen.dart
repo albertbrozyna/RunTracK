@@ -72,7 +72,6 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
   }
 
   void _navigateToSummary() {
-
     final state = TrackState.trackStateInstance;
 
     final bool isCompetition = state.currentUserCompetition.isNotEmpty;
@@ -89,7 +88,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
       trackedPath: List.from(state.trackedPath),
       pace: state.pace ?? 0.0,
       avgSpeed: state.avgSpeed ?? 0.0,
-      calories: state.calories ?? 0.0,
+      calories: state.calories,
       elevationGain: state.elevationGain ?? 0.0,
       elevationLoss: state.elevationLoss ?? 0.0,
       createdAt: DateTime.now(),

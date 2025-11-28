@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:run_track/app/config/app_images.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/utils/utils.dart';
+import 'package:run_track/core/widgets/editable_profile_avatar.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/models/activity.dart';
@@ -16,6 +16,7 @@ import '../../../core/widgets/stat_card.dart';
 class ActivityBlock extends StatefulWidget {
   final String firstName;
   final String lastName;
+  final String profilePhotoUrl;
   final Activity activity;
   final double titleFontSizeBlock = 14;
   final double valueFontSizeBlock = 14;
@@ -25,9 +26,7 @@ class ActivityBlock extends StatefulWidget {
   final double iconSize = 26;
   final Function(Activity) onActivityUpdated;
 
-  const ActivityBlock({super.key, required this.activity, String? firstName, String? lastName,required this.onActivityUpdated})
-    : firstName = firstName ?? "",
-      lastName = lastName ?? "";
+  const ActivityBlock({super.key, required this.activity, this.firstName = '', this.lastName = '',this.profilePhotoUrl = '',required this.onActivityUpdated});
 
   @override
   State<ActivityBlock> createState() => _ActivityBlockState();
@@ -56,21 +55,24 @@ class _ActivityBlockState extends State<ActivityBlock> {
     }
     firstname = widget.firstName;
     lastname = widget.lastName;
+    profilePhotoUrl = widget.profilePhotoUrl;
   }
 
   Future<void> initializeAsync() async {
     if (widget.firstName.isEmpty || widget.lastName.isEmpty) {
       // If there is no name and last name fetch it from firestore
-      return UserService.fetchUserForBlock(widget.activity.uid)
+      return UserService.fetchUser(widget.activity.uid)
           .then((user) {
             if (!mounted) return;
             setState(() {
               if (user != null) {
                 firstname = user.firstName;
                 lastname = user.lastName;
+                profilePhotoUrl = user.profilePhotoUrl;
               } else {
                 firstname = "Deleted";
                 lastname = "User";
+                profilePhotoUrl = '';
               }
             });
           })
@@ -102,6 +104,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
         "editMode": edit,
         "firstName": firstname,
         "lastName": lastname,
+        "profilePhotoUrl": profilePhotoUrl,
       },
     );
 
@@ -153,10 +156,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2.0),
                       ),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage: AssetImage(AppImages.defaultProfilePhoto) as ImageProvider,
-                      ),
+                      child: EditableProfileAvatar(radius: 20,currentPhotoUrl: profilePhotoUrl,)
                     ),
                     SizedBox(width: 10),
 
@@ -215,7 +215,6 @@ class _ActivityBlockState extends State<ActivityBlock> {
                           ),
                         ),
                       SizedBox(height: 4),
-                      // Stats on the left and map on the right
                       Container(
                         width: double.infinity,
                         alignment: Alignment.center,
@@ -252,6 +251,101 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                     innerPadding: widget.innerPaddingBlock,
                                     cardWidth: widget.blockWidth,
                                   ),
+                                if (widget.activity.trackedPath?.isNotEmpty ??
+                                    false)
+                                  Container(
+                                    width: widget.blockWidth,
+                                    height: widget.blockHeight,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                      border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: IgnorePointer(
+                                        child: FlutterMap(
+                                          mapController: _mapController,
+                                          options: MapOptions(
+                                            initialCenter:
+                                            widget.activity.trackedPath!.first,
+                                            onMapReady: () async {
+                                              Future.delayed(
+                                                const Duration(milliseconds: 100),
+                                                    () {
+                                                  AppUtils.fitMapToPath(
+                                                    widget.activity.trackedPath ??
+                                                        [],
+                                                    _mapController,
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            initialZoom: 13.0,
+                                            interactionOptions: InteractionOptions(
+                                              flags: InteractiveFlag.none,
+                                            ),
+                                          ),
+                                          children: [
+                                            TileLayer(
+                                              urlTemplate:
+                                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                              userAgentPackageName:
+                                              'com.example.runtrack',
+                                            ),
+                                            PolylineLayer(
+                                              polylines: [
+                                                Polyline(
+                                                  points:
+                                                  widget.activity.trackedPath ??
+                                                      [],
+                                                  strokeWidth: 3.0,
+                                                  color: Colors.blue,
+                                                ),
+                                              ],
+                                            ),
+                                            MarkerLayer(
+                                              markers: [
+                                                // Start Marker
+                                                if (widget.activity.trackedPath != null &&
+                                                    widget.activity.trackedPath!.isNotEmpty)
+                                                  Marker(
+                                                    point: widget.activity.trackedPath!.first,
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: Icon(
+                                                      Icons.location_pin,
+                                                      color: Colors.green,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                if (widget.activity.trackedPath != null &&
+                                                    widget.activity.trackedPath!.length > 1)
+                                                  Marker(
+                                                    point: widget.activity.trackedPath!.last,
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: Icon(
+                                                      Icons.flag,
+                                                      color: Colors.red,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
                                 if (widget.activity.pace != null)
                                   StatCard(
                                     title: "Pace",
@@ -317,6 +411,7 @@ class _ActivityBlockState extends State<ActivityBlock> {
                                   innerPadding: widget.innerPaddingBlock,
                                   cardWidth: widget.blockWidth,
                                 ),
+
                               ],
                             ),
                           ),
@@ -328,77 +423,6 @@ class _ActivityBlockState extends State<ActivityBlock> {
                   ),
                 ),
 
-                if (widget.activity.trackedPath?.isNotEmpty ?? false)
-                  ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-                    child: SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.2,
-                      child: FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter:
-                              widget.activity.trackedPath != null &&
-                                  widget.activity.trackedPath!.isNotEmpty
-                              ? widget.activity.trackedPath!.first
-                              : LatLng(AppConstants.defaultLat, AppConstants.defaultLon),
-                          // default location
-                          onMapReady: () async {
-                            // Delay to load a tiles properly
-                            Future.delayed(const Duration(milliseconds: 100), () {
-                              AppUtils.fitMapToPath(
-                                widget.activity.trackedPath ?? [],
-                                _mapController,
-                              );
-                            });
-                          },
-                          onTap: (tapPosition, point) {
-                            onTapBlock(context);
-                          },
-                          initialZoom: 15.0,
-                          interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.example.runtrack',
-                          ),
-                          PolylineLayer(
-                            polylines: [
-                              Polyline(
-                                points: widget.activity.trackedPath ?? [],
-                                // draw the path
-                                strokeWidth: 4.0,
-                                color: Colors.blue,
-                              ),
-                            ],
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              if (widget.activity.trackedPath != null &&
-                                  widget.activity.trackedPath!.isNotEmpty)
-                                Marker(
-                                  point: widget.activity.trackedPath!.first,
-                                  width: 40,
-                                  height: 40,
-                                  child: Icon(Icons.location_pin, color: Colors.green, size: 40),
-                                ),
-                              if (widget.activity.trackedPath != null &&
-                                  widget.activity.trackedPath!.length > 1)
-                                Marker(
-                                  point: widget.activity.trackedPath!.last,
-                                  width: 40,
-                                  height: 40,
-                                  child: Icon(Icons.flag, color: Colors.red, size: 40),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
