@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
-
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 import '../../../../core/enums/visibility.dart' as enums;
 
 class Competition {
@@ -73,7 +73,7 @@ class Competition {
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final map =  {
       'competitionId': competitionId,
       'organizerUid': organizerUid,
       'name': name,
@@ -94,6 +94,14 @@ class Competition {
       'longitude': location?.longitude,
       'closedBeforeEndTime': closedBeforeEndTime,
     };
+
+    if (location != null) {
+      final GeoFirePoint geoFirePoint = GeoFirePoint(
+          GeoPoint(location!.latitude, location!.longitude)
+      );
+      map['geo'] = geoFirePoint.data;
+    }
+    return map;
   }
 
   Competition copyWith({

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:run_track/core/constants/firestore_collections.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
 import 'package:run_track/features/notifications/data/services/notification_service.dart';
@@ -11,8 +12,6 @@ import '../models/competition.dart';
 import '../../../notifications/data/models/notification.dart';
 import '../models/competition_fetch_result.dart';
 import '../models/competition_result.dart';
-
-
 
 class CompetitionService {
   CompetitionService._();
@@ -32,6 +31,34 @@ class CompetitionService {
       return null;
     }
   }
+
+  static Stream<List<Competition>> fetchCompetitionsNearby({
+    required LatLng center,
+    required double radiusInKm,
+  }) {
+    final collectionRef = FirebaseFirestore.instance.collection(FirestoreCollections.competitions);
+
+    final GeoFirePoint centerPoint = GeoFirePoint(
+        GeoPoint(center.latitude, center.longitude)
+    );
+
+    return GeoCollectionReference(collectionRef).subscribeWithin(
+      center: centerPoint,
+      radiusInKm: radiusInKm,
+      field: 'geo',
+      geopointFrom: (data) {
+        return (data['geo'] as Map<String, dynamic>)['geopoint'] as GeoPoint;
+      },
+      strictMode: false, // false = not perfect circle but close enough
+    ).map((snapshots) {
+      return snapshots.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return Competition.fromMap(data);
+      }).toList();
+    });
+  }
+
 
   static Future<Competition?> saveCompetition(Competition competition) async {
     try {
