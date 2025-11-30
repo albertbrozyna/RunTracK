@@ -10,7 +10,7 @@ import 'package:run_track/app/navigation/app_routes.dart';
 import 'package:run_track/app/theme/app_colors.dart';
 import 'package:run_track/core/constants/app_constants.dart';
 import 'package:run_track/core/constants/firestore_collections.dart';
-import 'package:run_track/core/enums/competition_role.dart';
+import 'package:run_track/core/enums/visibility.dart';
 import 'package:run_track/core/utils/utils.dart';
 import 'package:run_track/features/competitions/data/models/competition.dart';
 
@@ -53,6 +53,8 @@ class _CompetitionMapPageState extends State<CompetitionMapPage> {
             field: 'geo',
             geopointFrom: (data) => (data['geo'] as Map<String, dynamic>)['geopoint'] as GeoPoint,
             strictMode: true,
+
+            queryBuilder: (query) => query.where('visibility', isEqualTo: ComVisibility.everyone.name),
           )
           .map((snapshots) {
             return snapshots.map((doc) {
@@ -72,7 +74,6 @@ class _CompetitionMapPageState extends State<CompetitionMapPage> {
       context,
       AppRoutes.competitionDetails,
       arguments: {
-        'enterContext': CompetitionContext.viewerAbleToJoin,
         'competitionData': competition,
         'initTab': 0,
       },
@@ -308,7 +309,7 @@ class _CompetitionMapPageState extends State<CompetitionMapPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                  colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
                 ),
               ),
               child: Row(

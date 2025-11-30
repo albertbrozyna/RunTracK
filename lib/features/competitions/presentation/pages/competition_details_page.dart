@@ -31,11 +31,10 @@ import '../widgets/location_and_participants_section.dart';
 
 
 class CompetitionDetailsPage extends StatefulWidget {
-  final CompetitionContext enterContext;
   final Competition? competitionData;
   final int initTab; // Tab index to set a start visibility
 
-  const CompetitionDetailsPage({super.key, required this.enterContext, this.competitionData, required this.initTab});
+  const CompetitionDetailsPage({super.key, this.competitionData, required this.initTab});
 
   @override
   State<CompetitionDetailsPage> createState() => _CompetitionDetailsPageState();
@@ -65,6 +64,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   bool leavingPage = false;
   bool _isLoading = false;
   String profilePhotoUrl = '';
+  CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
 
   @override
   void dispose() {
@@ -91,10 +91,42 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     _setReadOnlyState();
     _setupCompetitionData();
     _setAppBarTitle();
+    _determineContext();
+  }
+
+  void _determineContext() {
+    if (widget.competitionData == null) {
+      enterContext = CompetitionContext.ownerCreate;
+      return;
+    }
+
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final comp = widget.competitionData!;
+
+    if (comp.organizerUid == currentUid) {
+      enterContext = CompetitionContext.ownerModify;
+      return;
+    }
+
+    if (comp.participantsUid.contains(currentUid)) {
+      enterContext = CompetitionContext.participant;
+      return;
+    }
+
+    if (comp.invitedParticipantsUid.contains(currentUid)) {
+      enterContext = CompetitionContext.invited;
+      return;
+    }
+
+    if (comp.visibility == enums.ComVisibility.everyone) {
+      enterContext = CompetitionContext.viewerAbleToJoin;
+    } else {
+      enterContext = CompetitionContext.viewerNotAbleToJoin;
+    }
   }
 
   Future<void> _getResults()async {
-    if(widget.enterContext != CompetitionContext.ownerCreate){
+    if(enterContext != CompetitionContext.ownerCreate){
       final result = await CompetitionService.fetchResult(widget.competitionData?.competitionId ?? '');
       if(!mounted)return;
       if(result != null){
@@ -106,13 +138,13 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
   void _setAppBarTitle() {
-    if (widget.enterContext == CompetitionContext.ownerCreate) {
+    if (enterContext == CompetitionContext.ownerCreate) {
       appBarTitle = "Add competition";
     }
   }
 
   void _setReadOnlyState() {
-    if ((widget.enterContext != CompetitionContext.ownerModify && widget.enterContext != CompetitionContext.ownerCreate) || (widget.competitionData?.startDate?.isBefore(DateTime.now()) ?? false)) {
+    if ((enterContext != CompetitionContext.ownerModify && enterContext != CompetitionContext.ownerCreate) || (widget.competitionData?.startDate?.isBefore(DateTime.now()) ?? false)) {
       readOnly = true;
     }
   }
@@ -175,7 +207,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
   }
 
   Competition _createNewCompetition() {
-    if (widget.enterContext == CompetitionContext.ownerCreate) {
+    if (enterContext == CompetitionContext.ownerCreate) {
       if (widget.initTab == 1) {
         _visibility = enums.ComVisibility.friends;
       } else if (widget.initTab == 2) {
@@ -197,14 +229,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   Future<void> initializeAsync() async {
     // Set name of user
-    if (widget.enterContext == CompetitionContext.ownerCreate || widget.enterContext == CompetitionContext.ownerModify) {
+    if (enterContext == CompetitionContext.ownerCreate || enterContext == CompetitionContext.ownerModify) {
       _organizerController.text = AppData.instance.currentUser?.firstName ?? "";
       _organizerController.text += ' ${AppData.instance.currentUser?.lastName ?? ""}';
-    } else if (widget.enterContext == CompetitionContext.participant ||
-        widget.enterContext == CompetitionContext.invited ||
-        widget.enterContext == CompetitionContext.participant ||
-        widget.enterContext == CompetitionContext.viewerAbleToJoin ||
-        widget.enterContext == CompetitionContext.viewerNotAbleToJoin) {
+    } else if (enterContext == CompetitionContext.participant ||
+        enterContext == CompetitionContext.invited ||
+        enterContext == CompetitionContext.participant ||
+        enterContext == CompetitionContext.viewerAbleToJoin ||
+        enterContext == CompetitionContext.viewerNotAbleToJoin) {
       final user = await UserService.fetchUser(AppData.instance.currentCompetition!.organizerUid);
       if (user != null) {
         setState(() {
@@ -215,7 +247,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       }
     }
 
-    if(widget.enterContext == CompetitionContext.ownerCreate){
+    if(enterContext == CompetitionContext.ownerCreate){
       await setLastActivityType();  // Set last used activity
     }
     await _getResults();
@@ -404,7 +436,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (newCompetition != null) {
       competitionBeforeSave = AppData.instance.currentCompetition!; // Save competition before save state
 
-      if (widget.enterContext == CompetitionContext.ownerCreate && saved == false) {
+      if (enterContext == CompetitionContext.ownerCreate && saved == false) {
 
         AppData.instance.currentCompetition = newCompetition;
 
@@ -417,7 +449,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         setState(() {
           saved = true;
         });
-      } else if (widget.enterContext == CompetitionContext.ownerModify || saved) {
+      } else if (enterContext == CompetitionContext.ownerModify || saved) {
 
         if(!currentContext.mounted) return;
         AppUtils.showMessage(currentContext, "Changes saved successfully");
@@ -490,7 +522,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
         appBar: AppBar(
           title: Text(appBarTitle),
           actions: [
-            if (widget.enterContext == CompetitionContext.ownerModify)
+            if (enterContext == CompetitionContext.ownerModify)
               IconButton(
                 onPressed: deleteCompetition,
                 icon: Icon(Icons.delete, color: Colors.white),
@@ -505,7 +537,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TopInfoBanner(competition: AppData.instance.currentCompetition!,competitionResult: competitionResult ?? CompetitionResult(competitionId: "", ranking: []), enterContext: widget.enterContext),
+                  TopInfoBanner(competition: AppData.instance.currentCompetition!,competitionResult: competitionResult ?? CompetitionResult(competitionId: "", ranking: []), enterContext: enterContext),
 
                   BasicInfoSection(
                     readOnly: readOnly,
@@ -521,7 +553,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                   CompetitionGoalSection(readOnly: readOnly, activityController: _activityController, goalController: _goalController),
 
                   TimeSettingsSection(
-                    enterContext: widget.enterContext,
+                    enterContext: enterContext,
                     readOnly: readOnly,
                     startTimeController: _startTimeController,
                     endTimeController: _endTimeController,
@@ -533,7 +565,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                   SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                   LocationAndParticipantsSection(
-                    enterContext: widget.enterContext,
+                    enterContext: enterContext,
                     competition: AppData.instance.currentCompetition!,
                     meetingPlaceController: _meetingPlaceController,
                     saved: saved,
@@ -541,7 +573,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
                   ),
 
                   BottomButtons(
-                    enterContext: widget.enterContext,
+                    enterContext: enterContext,
                     competition: AppData.instance.currentCompetition!,
                     handleSaveCompetition: handleSaveCompetition,
                     acceptInvitation: acceptInvitation,

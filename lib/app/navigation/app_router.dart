@@ -12,7 +12,6 @@ import 'package:run_track/features/startup/presentation/pages/app_initializer.da
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
 import 'package:run_track/features/track/presentation/pages/tracked_path_map.dart';
 
-import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
 import '../../core/enums/mode.dart';
 import '../../core/enums/user_mode.dart';
@@ -106,14 +105,12 @@ class AppRouter {
       case AppRoutes.competitionDetails:
         final args = settings.arguments as Map<String, dynamic>?;
 
-        final enterContext = args?['enterContext'] as CompetitionContext;
         final competitionData = args?['competitionData'] as Competition?;
         final initTab = args?['initTab'] as int;
 
         return MaterialPageRoute(
           builder: (_) => CompetitionDetailsPage(
-            enterContext: enterContext,
-            competitionData: competitionData,
+          competitionData: competitionData,
             initTab: initTab,
           ),
         );
