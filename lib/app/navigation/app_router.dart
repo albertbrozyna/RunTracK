@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/auth/presentation/pages/forget_password_page.dart';
 import 'package:run_track/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
+import 'package:run_track/features/competitions/presentation/pages/competition_map_page.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
 import 'package:run_track/features/settings/presentation/pages/change_password.dart';
 import 'package:run_track/features/settings/presentation/pages/location_tracking_settings_page.dart';
@@ -95,6 +96,8 @@ class AppRouter {
         final currentActivity = args?[' currentActivity'] ?? '';
 
         return MaterialPageRoute(builder: (_) => ActivityChoose(currentActivity: currentActivity));
+      case AppRoutes.competitionMap:
+        return MaterialPageRoute(builder: (_) => CompetitionMapPage());
       case AppRoutes.activities:
         return MaterialPageRoute(builder: (_) => const ActivitiesPage());
 
