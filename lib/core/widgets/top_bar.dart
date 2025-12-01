@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/navigation/app_routes.dart';
@@ -9,14 +10,10 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
 
   const TopBar({super.key, this.title = "", this.shouldHideButtons = false,required this.selectedIndex});
 
-
-  void handleFilterIcon(BuildContext context){
-    if(selectedIndex == 1){ // Filters for activities
-
-    }else if(selectedIndex == 2){ // For competitions
-
-    }
-
+  void handleUserStats(BuildContext context){
+    Navigator.of(context).pushNamed(AppRoutes.userStats,arguments: {
+      'uid': FirebaseAuth.instance.currentUser?.uid ?? ""
+    });
   }
 
   void handleCompetitionMapIcon(BuildContext context){
@@ -32,11 +29,12 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       leading: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if(selectedIndex == 1 || selectedIndex == 2)
+          if(selectedIndex == 1)
             IconButton(
-              onPressed: () => handleFilterIcon(context),
-              icon: Icon(Icons.filter_alt),
+              onPressed: () => handleUserStats(context),
+              icon: Icon(Icons.stacked_line_chart_sharp),
             ),
+
           if(selectedIndex == 2)
             IconButton(
               onPressed: () => handleCompetitionMapIcon(context),

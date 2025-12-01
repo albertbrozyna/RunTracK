@@ -16,7 +16,6 @@ class Activity {
   String? title;
   String? description;
   enums.ComVisibility visibility;
-  List<String> photos;
   double? calories;
   double? avgSpeed; // km/h
   double? elevationGain; // m
@@ -36,7 +35,6 @@ class Activity {
     this.title,
     this.description,
     this.visibility = enums.ComVisibility.me,
-    this.photos = const [],
     this.createdAt,
     this.calories,
     this.avgSpeed,
@@ -66,7 +64,6 @@ class Activity {
       title: map['title'],
       description: map['description'],
       visibility: visibility,
-      photos: List<String>.from(map['photos'] ?? []),
       avgSpeed: map['avgSpeed']?.toDouble(),
       calories: map['calories']?.toDouble(),
       elevationGain: map['elevationGain']?.toDouble(),
@@ -90,7 +87,6 @@ class Activity {
       'title': title,
       'description': description,
       'visibility': visibility.name,
-      'photos': photos,
       'calories': calories,
       'avgSpeed': avgSpeed,
       'elevationGain': elevationGain,
@@ -115,7 +111,6 @@ class Activity {
       'title': title,
       'description': description,
       'visibility': visibility.name,
-      'photos': photos,
       'calories': calories,
       'avgSpeed': avgSpeed,
       'elevationGain': elevationGain,
@@ -127,12 +122,6 @@ class Activity {
   }
 
   factory Activity.fromJson(Map<String, dynamic> json) {
-    final visibilityString = json['visibility'] as String?;
-    final visibility = enums.ComVisibility.values.firstWhere(
-          (e) => e.name == visibilityString,
-      orElse: () => enums.ComVisibility.me,
-    );
-
     return Activity(
       activityId: json['activityId'] ?? '',
       uid: json['uid'] ?? '',
@@ -144,8 +133,7 @@ class Activity {
       startTime: json['startTime'] != null ? DateTime.tryParse(json['startTime']) : null,
       title: json['title'],
       description: json['description'],
-      visibility: visibility,
-      photos: List<String>.from(json['photos'] ?? []),
+      visibility: enums.ComVisibility.fromDbString(json['visibility']),
       avgSpeed: json['avgSpeed']?.toDouble(),
       calories: json['calories']?.toDouble(),
       elevationGain: json['elevationGain']?.toDouble(),
@@ -172,7 +160,6 @@ class Activity {
         competitionId == a.competitionId &&
         steps == a.steps &&
         pace == a.pace &&
-        AppUtils.pathEquals(trackedPath, a.trackedPath) &&
-        AppUtils.listsEqual(photos, a.photos);
+        AppUtils.pathEquals(trackedPath, a.trackedPath);
   }
 }

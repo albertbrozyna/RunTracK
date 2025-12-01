@@ -81,7 +81,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
       uid: AppData.instance.currentUser?.uid ?? "",
       activityType: activityController.text.toString().trim(),
       title: isCompetition ? "Competition Run" : activityController.text.toString().trim(),
-      description: isCompetition ? "Completed competition: ${state.currentUserCompetition}" : "",
+      description: isCompetition ? "Competition activity" : "",
       totalDistance: state.totalDistance,
       elapsedTime: state.elapsedTime.inSeconds,
       startTime: state.startTime ?? DateTime.now(),
@@ -101,6 +101,7 @@ class TrackScreenState extends State<TrackScreen> with TickerProviderStateMixin 
         builder: (context) => ActivitySummary(
           firstName: AppData.instance.currentUser?.firstName ?? '',
           lastName: AppData.instance.currentUser?.lastName ?? '',
+          profilePhotoUrl: AppData.instance.currentUser?.profilePhotoUrl ?? '',
           activityData: activityData,
           editMode: false,
           readonly: false,
@@ -166,6 +167,10 @@ Widget build(BuildContext context) {
     body: AnimatedBuilder(
       animation: TrackState.trackStateInstance,
       builder: (BuildContext context, _) {
+
+        final bool isTracking = TrackState.trackStateInstance.trackingState == TrackingState.running ||
+            TrackState.trackStateInstance.trackingState == TrackingState.paused;
+        final double actionButtonsHeight = isTracking ? 76.0 : 60.0;
         return Stack(
           children: [
             Column(
@@ -265,6 +270,10 @@ Widget build(BuildContext context) {
             if (TrackState.trackStateInstance.trackingState == TrackingState.running ||
                 TrackState.trackStateInstance.trackingState == TrackingState.paused)
               Positioned.fill(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: actionButtonsHeight,
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: RunStats(
@@ -289,11 +298,7 @@ Widget build(BuildContext context) {
               right: 0,
               child: Container(
                 width: double.infinity,
-                height:
-                TrackState.trackStateInstance.trackingState == TrackingState.running ||
-                    TrackState.trackStateInstance.trackingState == TrackingState.paused
-                    ? 76.0
-                    : 60.0,
+                height: actionButtonsHeight,
                 decoration: BoxDecoration(color: Colors.white),
                 child: Padding(
                   padding: EdgeInsets.only(

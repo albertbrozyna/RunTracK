@@ -453,7 +453,6 @@ class _CompetitionsPageState extends State<CompetitionsPage>
       context,
       AppRoutes.competitionDetails,
       arguments: {
-        'enterContext': CompetitionContext.ownerCreate,
         'competitionData': null,
         'initTab': tabIndex,
       },

@@ -106,7 +106,8 @@ class _MeetingPlaceMapState extends State<MeetingPlaceMap> {
             FloatingActionButton(
               heroTag: "hero1",
               onPressed: _moveToCurrentLocation,
-              child: const Icon(Icons.my_location),
+              backgroundColor: AppColors.secondary,
+              child: const Icon(Icons.my_location,size: 26,color: AppColors.white,),
             ),
             const SizedBox(height: 16),
             if (widget.mode == Mode.edit)

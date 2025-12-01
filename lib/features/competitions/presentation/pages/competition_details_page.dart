@@ -88,10 +88,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
 
   void initialize() {
     AuthService.instance.checkAppUseState(context);
+    _determineContext();
     _setReadOnlyState();
     _setupCompetitionData();
     _setAppBarTitle();
-    _determineContext();
   }
 
   void _determineContext() {
@@ -104,24 +104,34 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     final comp = widget.competitionData!;
 
     if (comp.organizerUid == currentUid) {
-      enterContext = CompetitionContext.ownerModify;
+      setState(() {
+        enterContext = CompetitionContext.ownerModify;
+      });
       return;
     }
 
     if (comp.participantsUid.contains(currentUid)) {
-      enterContext = CompetitionContext.participant;
+      setState(() {
+        enterContext = CompetitionContext.participant;
+      });
       return;
     }
 
     if (comp.invitedParticipantsUid.contains(currentUid)) {
-      enterContext = CompetitionContext.invited;
+      setState(() {
+        enterContext = CompetitionContext.invited;
+      });
       return;
     }
 
     if (comp.visibility == enums.ComVisibility.everyone) {
-      enterContext = CompetitionContext.viewerAbleToJoin;
+      setState(() {
+        enterContext = CompetitionContext.viewerAbleToJoin;
+      });
     } else {
-      enterContext = CompetitionContext.viewerNotAbleToJoin;
+      setState(() {
+        enterContext = CompetitionContext.viewerNotAbleToJoin;
+      });
     }
   }
 
@@ -232,6 +242,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (enterContext == CompetitionContext.ownerCreate || enterContext == CompetitionContext.ownerModify) {
       _organizerController.text = AppData.instance.currentUser?.firstName ?? "";
       _organizerController.text += ' ${AppData.instance.currentUser?.lastName ?? ""}';
+      profilePhotoUrl = AppData.instance.currentUser?.profilePhotoUrl ?? "";
     } else if (enterContext == CompetitionContext.participant ||
         enterContext == CompetitionContext.invited ||
         enterContext == CompetitionContext.participant ||
@@ -421,10 +432,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (saveInProgress == false) {
         saveInProgress = true;
     }
-    if (!_formKey.currentState!.validate()) {
-      saveInProgress = false;
-      return;
-    }
+    // if (!_formKey.currentState!.validate()) {
+    //   saveInProgress = false;
+    //   return;
+    // }
 
     final currentContext = context;
 

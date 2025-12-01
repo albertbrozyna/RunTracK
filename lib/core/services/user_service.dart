@@ -124,40 +124,6 @@ class UserService {
     return users;
   }
 
-  /// Fetch list of users
-  static Future<List<model.User>> fetchParticipants({
-    required List<String> uids,
-    DocumentSnapshot? lastDocument,
-    int limit = 10,
-  }) async {
-    if (uids.isEmpty) {
-      return [];
-    }
-
-    try {
-      Query queryUsers = FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .where("uid", whereIn: uids)
-          .limit(limit);
-
-      if (lastDocument != null) {
-        queryUsers = queryUsers.startAfterDocument(lastDocument);
-      }
-      final querySnapshot = await queryUsers.get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        //lastFetchedDocumentParticipants = querySnapshot.docs.last;
-      }
-
-      final users = querySnapshot.docs
-          .map((doc) => model.User.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();
-      return users;
-    } catch (e) {
-      print("Error: $e");
-      return [];
-    }
-  }
 
   /// Create a new user in firestore
   static Future<model.User?> addUser(model.User user) async {

@@ -10,6 +10,7 @@ import 'package:run_track/features/settings/presentation/pages/location_tracking
 import 'package:run_track/features/settings/presentation/pages/your_personal_info.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
+import 'package:run_track/features/stats/presentation/pages/user_stats_screen.dart';
 import 'package:run_track/features/track/presentation/pages/tracked_path_map.dart';
 
 import '../../core/enums/enter_context.dart';
@@ -148,7 +149,10 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => MeetingPlaceMap(mode: mode, latLng: latLng),
         );
-
+      case AppRoutes.userStats:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final String uid = args?['uid'] ?? '';
+        return MaterialPageRoute(builder: (_)=> UserStatsScreen(uid: uid));
       default:
         return MaterialPageRoute(
           builder: (_) =>

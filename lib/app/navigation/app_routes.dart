@@ -24,8 +24,5 @@ class AppRoutes {
   static const String forgetPassword = '/forgetPassword';
   static const String verifyEmail = '/verifyEmail';
   static const String competitionMap = '/competitionMap';
-  static const String activityFilters = '/activityFilters';
-  static const String competitionFilters = '/competitionFilters';
-
-
+  static const String userStats = '/userStats';
 }
