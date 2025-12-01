@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:run_track/app/config/app_images.dart';
 import 'package:run_track/core/enums/message_type.dart';
 import 'package:run_track/features/auth/data/services/auth_service.dart';
@@ -215,6 +216,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             validator: (value) => AuthService.instance.validateFields('gender', value),
                           ),
                           // Weight
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
                           TextFormField(
                             controller: _weightController,
                             validator: (value) => AuthService.instance.validateFields('weight', value),
@@ -224,8 +227,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               labelText: "Weight",
                               hintText: "Weight in kg",
                               prefixIcon: Icon(Icons.monitor_weight_outlined, color: AppColors.white),
+
                             ),
+
                           ),
+                          SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                           // Height
                           TextFormField(
@@ -237,7 +243,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               labelText: "Height",
                               hintText: "Height in cm",
                               prefixIcon: Icon(Icons.height, color: AppColors.white),
+
                             ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
                           ),
 
                           SizedBox(height: AppUiConstants.verticalSpacingTextFields),

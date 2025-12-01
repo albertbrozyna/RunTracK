@@ -277,7 +277,12 @@ class AuthService {
           return 'Please enter your weight';
         }
         final number = double.tryParse(value.trim());
-        if (number == null || number <= 0) {
+
+        if(number == null){
+          return "Enter correct number";
+        }
+
+        if ( number <= 0) {
           return 'Weight must be greater than 0';
         }
         return null;
@@ -286,7 +291,11 @@ class AuthService {
           return 'Please enter your height';
         }
         final number = int.tryParse(value.trim());
-        if (number == null || number <= 0) {
+        if(number == null){
+          return "Height must be valid integer number";
+        }
+
+        if ( number <= 0) {
           return 'Height must be valid and greater than 0';
         }
         return null;
