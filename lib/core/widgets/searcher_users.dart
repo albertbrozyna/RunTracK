@@ -123,7 +123,7 @@ class UserSearcher extends SearchDelegate<Map<String, Set<String>?>> {
       builder: (context, value, child) {
         return FutureBuilder<List<User>>(
           future: UserService.searchUsers(
-            query,
+            query.toLowerCase(),
             exceptMe: true,
             myUid: FirebaseAuth.instance.currentUser?.uid ?? "",
           ),

@@ -99,7 +99,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                       ),
                       DropdownMenuItem(value: 'high', child: Text("High (Standard GPS)")),
                       DropdownMenuItem(value: 'medium', child: Text("Medium (Balanced Power)")),
-                      DropdownMenuItem(value: 'low', child: Text("Low (City/Coarse)")),
+                      DropdownMenuItem(value: 'low', child: Text("Low")),
                     ],
                     onChanged: (value) {
                       if (value != null) {
@@ -122,7 +122,7 @@ class _LocationTrackingSettingsPageState extends State<LocationTrackingSettingsP
                 title: "Distance Filter",
                 description: "Minimum distance (meters) to update location.",
                 value: _distanceFilter.toDouble(),
-                min: 0,
+                min: 1,
                 max: 50,
                 divisions: 50,
                 unit: "m",
