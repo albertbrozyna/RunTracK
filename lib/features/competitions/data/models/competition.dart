@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:latlong2/latlong.dart';
-
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 import '../../../../core/enums/visibility.dart' as enums;
 
 class Competition {
@@ -36,16 +36,14 @@ class Competition {
     this.registrationDeadline,
     this.maxTimeToCompleteActivityHours,
     this.maxTimeToCompleteActivityMinutes,
-    Set<String>? participantsUid,
-    Set<String>? invitedParticipantsUid,
+    this.invitedParticipantsUid = const {},
+    this.participantsUid = const {},
     this.description,
     this.activityType,
     this.locationName,
     this.location,
-    bool? closedBeforeEndTime,
-  }) : closedBeforeEndTime = closedBeforeEndTime ?? false,
-       participantsUid = participantsUid ?? {},
-       invitedParticipantsUid = invitedParticipantsUid ?? {};
+    this.closedBeforeEndTime = false,
+  });
 
   factory Competition.fromMap(Map<String, dynamic> map) {
     return Competition(
@@ -53,7 +51,7 @@ class Competition {
       organizerUid: map['organizerUid'] ?? '',
       name: map['name'] ?? '',
       distanceToGo: (map['distanceToGo'] is num) ? (map['distanceToGo'] as num).toDouble() : 0.0,
-      visibility: parseVisibility(map['visibility']) ?? enums.ComVisibility.me,
+      visibility: enums.ComVisibility.fromDbString(map['visibility']),
       description: map['description'],
       startDate: map['startDate'] != null ? (map['startDate'] as Timestamp).toDate() : null,
       endDate: map['endDate'] != null ? (map['endDate'] as Timestamp).toDate() : null,
@@ -73,13 +71,13 @@ class Competition {
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final map =  {
       'competitionId': competitionId,
       'organizerUid': organizerUid,
       'name': name,
       'distanceToGo': distanceToGo,
       'description': description,
-      'visibility': visibility.toString(),
+      'visibility': visibility.toDbString(),
       'startDate': startDate != null ? Timestamp.fromDate(startDate!) : null,
       'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
       'registrationDeadline': registrationDeadline != null ? Timestamp.fromDate(registrationDeadline!) : null,
@@ -94,6 +92,14 @@ class Competition {
       'longitude': location?.longitude,
       'closedBeforeEndTime': closedBeforeEndTime,
     };
+
+    if (location != null) {
+      final GeoFirePoint geoFirePoint = GeoFirePoint(
+          GeoPoint(location!.latitude, location!.longitude)
+      );
+      map['geo'] = geoFirePoint.data;
+    }
+    return map;
   }
 
   Competition copyWith({
@@ -166,8 +172,3 @@ class Competition {
 
 
 
-enums.ComVisibility? parseVisibility(String? value) {
-  if (value == null) return null;
-
-  return enums.ComVisibility.values.firstWhere((e) => e.toString() == value, orElse: () => enums.ComVisibility.me);
-}

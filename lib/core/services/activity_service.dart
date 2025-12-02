@@ -16,7 +16,6 @@ import '../models/activity.dart';
 class ActivityService {
   ActivityService._();
 
-
   /// Format elapsed time from duration to hh:mm:ss
   static String formatElapsedTime(Duration duration) {
     return formatElapsedTimeFromSeconds(duration.inSeconds);
@@ -32,79 +31,6 @@ class ActivityService {
   }
 
 
-  /// Fetch last {limit} activities from all users
-  static Future<List<Activity>> fetchLatestActivities(int limit) async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection(FirestoreCollections.activities)
-          .where("visibility", isEqualTo: ComVisibility.everyone.name)
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-      final activities = querySnapshot.docs
-          .map((doc) => Activity.fromMap(doc.data()))
-          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid) // Reject my activities
-          .toList();
-
-      return activities;
-    } catch (e) {
-      print("Error fetching latest activities: $e");
-      return [];
-    }
-  }
-
-  /// Fetch last friend activities
-  static Future<List<Activity>> fetchLastFriendsActivities(List<String> friendsUids, int limit) async {
-    List<Activity> lastActivities = [];
-    if (friendsUids.isEmpty) {
-      return lastActivities;
-    }
-
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection(FirestoreCollections.activities)
-          .where("uid", whereIn: friendsUids)
-          .where("visibility", whereIn: ["Visibility.everyone", "Visibility.friends"])
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-
-      final activities = querySnapshot.docs
-          .map((doc) => Activity.fromMap(doc.data()))
-          .where((activity) => activity.uid != FirebaseAuth.instance.currentUser?.uid)
-          .toList();
-
-      lastActivities.addAll(activities);
-
-      // Sort activities by date and take limit
-      lastActivities.sort((a, b) {
-        final aTime = a.createdAt ?? DateTime(1970);
-        final bTime = b.createdAt ?? DateTime(1970);
-        return bTime.compareTo(aTime);
-      });
-      return lastActivities.take(limit).toList();
-    } catch (e) {
-      print("Error fetching friends' activities: $e");
-      return [];
-    }
-  }
-
-  static Future<List<Activity>> fetchLatestUserActivities(String uid, int limit) async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection(FirestoreCollections.activities)
-          .where("uid", isEqualTo: uid.trim())
-          .orderBy('createdAt', descending: true)
-          .limit(limit)
-          .get();
-      final activities = querySnapshot.docs.map((doc) => Activity.fromMap(doc.data())).toList();
-
-      return activities;
-    } catch (e) {
-      print("Error fetching latest activities: $e");
-      return [];
-    }
-  }
 
   /// Fetch last page of user activities
   static Future<ActivitiesFetchResult> fetchLatestActivitiesPage(int limit, DocumentSnapshot? lastDocument) async {

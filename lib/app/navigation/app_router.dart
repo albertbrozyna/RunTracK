@@ -3,15 +3,16 @@ import 'package:latlong2/latlong.dart';
 import 'package:run_track/features/auth/presentation/pages/forget_password_page.dart';
 import 'package:run_track/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:run_track/features/competitions/data/models/competition_result.dart';
+import 'package:run_track/features/competitions/presentation/pages/competition_map_page.dart';
 import 'package:run_track/features/competitions/presentation/pages/competition_results_page.dart';
 import 'package:run_track/features/settings/presentation/pages/change_password.dart';
 import 'package:run_track/features/settings/presentation/pages/location_tracking_settings_page.dart';
 import 'package:run_track/features/settings/presentation/pages/your_personal_info.dart';
 import 'package:run_track/features/startup/presentation/pages/app_initializer.dart';
 import 'package:run_track/features/startup/presentation/pages/home_page.dart';
+import 'package:run_track/features/stats/presentation/pages/user_stats_screen.dart';
 import 'package:run_track/features/track/presentation/pages/tracked_path_map.dart';
 
-import '../../core/enums/competition_role.dart';
 import '../../core/enums/enter_context.dart';
 import '../../core/enums/mode.dart';
 import '../../core/enums/user_mode.dart';
@@ -95,6 +96,8 @@ class AppRouter {
         final currentActivity = args?[' currentActivity'] ?? '';
 
         return MaterialPageRoute(builder: (_) => ActivityChoose(currentActivity: currentActivity));
+      case AppRoutes.competitionMap:
+        return MaterialPageRoute(builder: (_) => CompetitionMapPage());
       case AppRoutes.activities:
         return MaterialPageRoute(builder: (_) => const ActivitiesPage());
 
@@ -103,14 +106,12 @@ class AppRouter {
       case AppRoutes.competitionDetails:
         final args = settings.arguments as Map<String, dynamic>?;
 
-        final enterContext = args?['enterContext'] as CompetitionContext;
         final competitionData = args?['competitionData'] as Competition?;
         final initTab = args?['initTab'] as int;
 
         return MaterialPageRoute(
           builder: (_) => CompetitionDetailsPage(
-            enterContext: enterContext,
-            competitionData: competitionData,
+          competitionData: competitionData,
             initTab: initTab,
           ),
         );
@@ -148,7 +149,10 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => MeetingPlaceMap(mode: mode, latLng: latLng),
         );
-
+      case AppRoutes.userStats:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final String uid = args?['uid'] ?? '';
+        return MaterialPageRoute(builder: (_)=> UserStatsScreen(uid: uid));
       default:
         return MaterialPageRoute(
           builder: (_) =>

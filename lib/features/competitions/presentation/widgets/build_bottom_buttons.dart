@@ -51,33 +51,28 @@ class _BottomButtonsState extends State<BottomButtons> {
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     if (widget.enterContext == CompetitionContext.ownerModify &&
         (widget.competition.startDate?.isBefore(now) ?? false) &&
         (widget.competition.endDate?.isAfter(now) ?? false)) {
-      canClose = true; // We can close competition
+      canClose = true;
     }
 
-    weAreOwner =
-        widget.competition.organizerUid == (FirebaseAuth.instance.currentUser?.uid ?? false);
-    weParticipate = widget.competition.participantsUid.contains(
-      FirebaseAuth.instance.currentUser!.uid,
-    );
+    weAreOwner = widget.competition.organizerUid == currentUserUid;
 
-    bool open = false;
+    weParticipate = widget.competition.participantsUid.contains(currentUserUid);
+
+    bool isOpen = false;
     if (widget.competition.visibility == ComVisibility.everyone) {
-      open = true;
-    } else if ((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ??
-            false) &&
+      isOpen = true;
+    } else if ((AppData.instance.currentUser?.friends.contains(widget.competition.organizerUid) ?? false) &&
         widget.competition.visibility == ComVisibility.friends) {
-      // If we are friends and
-      open = true;
+      isOpen = true;
     }
 
-    if (widget.competition.invitedParticipantsUid.contains(
-      FirebaseAuth.instance.currentUser!.uid,
-    )) {
-      invited = true;
-    }
+    bool isInvited = widget.competition.invitedParticipantsUid.contains(currentUserUid);
+
 
     String buttonText = "";
     if (widget.enterContext == CompetitionContext.ownerCreate && !widget.saved) {
@@ -89,19 +84,20 @@ class _BottomButtonsState extends State<BottomButtons> {
     return Column(
       children: [
         SizedBox(height: AppUiConstants.verticalSpacingButtons),
+
         if (widget.enterContext == CompetitionContext.ownerCreate ||
-            widget.enterContext == CompetitionContext.ownerModify &&
-                (widget.competition.startDate?.isAfter(DateTime.now()) ??
-                    false)) // We can't edit when the competition is started
+            (widget.enterContext == CompetitionContext.ownerModify &&
+                (widget.competition.startDate?.isAfter(DateTime.now()) ?? false)))
           CustomButton(text: buttonText, onPressed: widget.handleSaveCompetition),
-        if (invited && !weAreOwner && !weParticipate) ...[
+
+        if (isInvited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Accept invitation", onPressed: widget.acceptInvitation),
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Decline invitation", onPressed: widget.declineInvitation),
         ],
 
-        if (open && !invited && !weAreOwner && !weParticipate) ...[
+        if (isOpen && !isInvited && !weAreOwner && !weParticipate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Join competition", onPressed: widget.joinCompetition),
         ],
@@ -110,13 +106,15 @@ class _BottomButtonsState extends State<BottomButtons> {
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(text: "Resign from competition", onPressed: widget.resignFromCompetition),
         ],
-        if ((widget.competition.startDate?.isBefore(DateTime.now()) ?? false) && widget.enterContext != CompetitionContext.ownerCreate) ...[
+
+        if ((widget.competition.startDate?.isBefore(DateTime.now()) ?? false) &&
+            widget.enterContext != CompetitionContext.ownerCreate) ...[
           SizedBox(height: AppUiConstants.verticalSpacingButtons),
           CustomButton(
             text: "Show results",
             onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.competitionResults,arguments: {
-                "competitionId":widget.competition.competitionId
+              Navigator.pushNamed(context, AppRoutes.competitionResults, arguments: {
+                "competitionId": widget.competition.competitionId
               });
             },
           ),

@@ -23,4 +23,6 @@ class AppRoutes {
   static const String locationTrackingSettings = '/locationTrackingSettings';
   static const String forgetPassword = '/forgetPassword';
   static const String verifyEmail = '/verifyEmail';
+  static const String competitionMap = '/competitionMap';
+  static const String userStats = '/userStats';
 }

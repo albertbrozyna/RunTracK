@@ -111,6 +111,7 @@ class UserService {
       final lastName = data['lastName'].toString();
       final email = data['email'].toString();
       final gender = data['gender'].toString();
+      final String? profilePhotoUrl = data['profilePhotoUrl'];
 
       return model.User(
         uid: doc.id,
@@ -118,46 +119,13 @@ class UserService {
         lastName: lastName,
         email: email,
         gender: gender,
+        profilePhotoUrl: profilePhotoUrl ?? ''
       );
     }).toList();
 
     return users;
   }
 
-  /// Fetch list of users
-  static Future<List<model.User>> fetchParticipants({
-    required List<String> uids,
-    DocumentSnapshot? lastDocument,
-    int limit = 10,
-  }) async {
-    if (uids.isEmpty) {
-      return [];
-    }
-
-    try {
-      Query queryUsers = FirebaseFirestore.instance
-          .collection(FirestoreCollections.users)
-          .where("uid", whereIn: uids)
-          .limit(limit);
-
-      if (lastDocument != null) {
-        queryUsers = queryUsers.startAfterDocument(lastDocument);
-      }
-      final querySnapshot = await queryUsers.get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        //lastFetchedDocumentParticipants = querySnapshot.docs.last;
-      }
-
-      final users = querySnapshot.docs
-          .map((doc) => model.User.fromMap(doc.data() as Map<String, dynamic>))
-          .toList();
-      return users;
-    } catch (e) {
-      print("Error: $e");
-      return [];
-    }
-  }
 
   /// Create a new user in firestore
   static Future<model.User?> addUser(model.User user) async {
@@ -397,6 +365,8 @@ class UserService {
         dateOfBirth: dateOfBirth,
         createdAt: DateTime.now(),
         activityNames: AppUtils.getDefaultActivities(),
+        weight: weight,
+        height: height,
         friends: {},
       ),
     );
@@ -415,6 +385,9 @@ class UserService {
         u1.kilometers == u2.kilometers &&
         u1.burnedCalories == u2.burnedCalories &&
         u1.secondsOfActivity == u2.secondsOfActivity &&
+        u1.weight == u2.weight &&
+        u1.height == u2.height &&
+        u1.createdAt == u2.createdAt &&
         AppUtils.listsEqual(u1.activityNames, u2.activityNames) &&
         AppUtils.setsEqual(u1.friends, u2.friends) &&
         AppUtils.setsEqual(u1.pendingInvitationsToFriends, u2.pendingInvitationsToFriends) &&

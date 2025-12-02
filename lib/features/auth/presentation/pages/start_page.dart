@@ -88,7 +88,6 @@ class StartPageState extends State<StartPage> {
           newUser.dateOfBirth!,
            newUser.weight!,
           newUser.height!,
-
         );
         if (mounted) {
           if (message == "User created") {

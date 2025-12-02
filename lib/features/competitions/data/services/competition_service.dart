@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:run_track/core/constants/firestore_collections.dart';
 import 'package:run_track/features/competitions/data/models/result_record.dart';
 import 'package:run_track/features/notifications/data/services/notification_service.dart';
@@ -11,8 +10,6 @@ import '../models/competition.dart';
 import '../../../notifications/data/models/notification.dart';
 import '../models/competition_fetch_result.dart';
 import '../models/competition_result.dart';
-
-
 
 class CompetitionService {
   CompetitionService._();
@@ -61,7 +58,7 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("visibility", isEqualTo: ComVisibility.everyone.toString())
+          .where("visibility", isEqualTo: ComVisibility.everyone.name)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -99,7 +96,7 @@ class CompetitionService {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
           .where("organizerUid", whereIn: friends)
-          .where("visibility", whereIn: [ComVisibility.everyone.toString(), ComVisibility.friends.toString()])
+          .where("visibility", whereIn: [ComVisibility.everyone.name, ComVisibility.friends.name])
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -328,10 +325,16 @@ class CompetitionService {
           'receivedInvitationsToCompetitions': userReceivedInvitesList.toList(),
         });
 
+
         // Change current competition
         if(AppData.instance.currentCompetition != null && AppData.instance.currentCompetition!.competitionId == competitionId){
           AppData.instance.currentCompetition!.participantsUid = participantsList;
           AppData.instance.currentCompetition!.invitedParticipantsUid = invitedList;
+        }
+        // Update current user
+        if(targetUserId == AppData.instance.currentUser?.uid){
+          AppData.instance.currentUser?.participatedCompetitions = userParticipatedList;
+          AppData.instance.currentUser?.receivedInvitationsToCompetitions = userReceivedInvitesList;
         }
       });
 

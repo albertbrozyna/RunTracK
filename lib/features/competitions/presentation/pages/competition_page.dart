@@ -421,34 +421,11 @@ class _CompetitionsPageState extends State<CompetitionsPage>
 
     CompetitionContext enterContext = CompetitionContext.viewerNotAbleToJoin;
 
-    if (_tabController.index == 0) {
-      // Set enter context
-      enterContext = CompetitionContext.ownerModify;
-    } else if (_tabController.index == 1 &&
-        (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerNotAbleToJoin;
-    } else if (_tabController.index == 1 &&
-        (competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerAbleToJoin;
-    } else if (_tabController.index == 2 &&
-        (competition.registrationDeadline?.isAfter(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerAbleToJoin;
-    } else if (_tabController.index == 2 &&
-        (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.viewerNotAbleToJoin;
-    } else if (_tabController.index == 3 &&
-        (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.invited;
-    } else if (_tabController.index == 4 &&
-        (competition.registrationDeadline?.isBefore(DateTime.now()) ?? false)) {
-      enterContext = CompetitionContext.participant;
-    }
     int tabIndex = _tabController.index;
     await Navigator.pushNamed(
       context,
       AppRoutes.competitionDetails,
       arguments: {
-        'enterContext': enterContext,
         'competitionData': competition,
         'initTab': tabIndex,
       },
@@ -476,7 +453,6 @@ class _CompetitionsPageState extends State<CompetitionsPage>
       context,
       AppRoutes.competitionDetails,
       arguments: {
-        'enterContext': CompetitionContext.ownerCreate,
         'competitionData': null,
         'initTab': tabIndex,
       },

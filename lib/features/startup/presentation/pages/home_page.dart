@@ -117,7 +117,7 @@ class _HomePageState extends State<HomePage> {
         final bool shouldHideBars = isTrackingActive && hasCompetition;
 
         return Scaffold(
-          appBar: TopBar(title: currentPageName(_selectedIndex), shouldHideButtons: shouldHideBars),
+          appBar: TopBar(title: currentPageName(_selectedIndex), shouldHideButtons: shouldHideBars,selectedIndex: _selectedIndex,),
           body: Stack(
             children: [
               Offstage(offstage: _selectedIndex != 0, child: const TrackScreen()),

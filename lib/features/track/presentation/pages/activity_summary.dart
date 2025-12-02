@@ -170,7 +170,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       visibility: _visibility,
       startTime: widget.activityData.startTime,
       trackedPath: widget.activityData.trackedPath,
-      photos: widget.activityData.photos,
       pace: widget.activityData.pace,
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,
@@ -245,8 +244,7 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           firstName: AppData.instance.currentUser!.firstName,
           lastName: AppData.instance.currentUser!.lastName,
           distance: widget.activityData.totalDistance ?? 0.0,
-          finished:
-              widget.activityData.totalDistance! >= widget.currentUserCompetition!.distanceToGo,
+          finished: (widget.activityData.totalDistance! / 1000) >= widget.currentUserCompetition!.distanceToGo,
           time: Duration(seconds: widget.activityData.elapsedTime!),
           activityId: savedActivity.activityId,
         );
@@ -255,7 +253,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
           widget.currentUserCompetition!.competitionId,
           userResult,
         );
-
       }
 
       Map<String, dynamic> fieldsToUpdate = {
@@ -330,7 +327,6 @@ class _ActivitySummaryState extends State<ActivitySummary> {
       visibility: _visibility,
       startTime: widget.activityData.startTime,
       trackedPath: widget.activityData.trackedPath,
-      photos: widget.activityData.photos,
       pace: widget.activityData.pace,
       avgSpeed: widget.activityData.avgSpeed,
       calories: widget.activityData.calories,
