@@ -51,6 +51,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => ActivitySummary(
           firstName: AppData.instance.currentUser?.firstName ?? '',
           lastName: AppData.instance.currentUser?.lastName ?? '',
+          profilePhotoUrl: AppData.instance.currentUser?.profilePhotoUrl ?? '',
           activityData: activity,
           editMode: false,
           readonly: false,
