@@ -73,6 +73,8 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       });
                     },
                   ),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
+
                   // Weight
                   TextFormField(
                     controller: _weightController,
@@ -85,6 +87,7 @@ class _AdditionalInfoState extends State<AdditionalInfo> {
                       prefixIcon: Icon(Icons.monitor_weight_outlined, color: AppColors.white),
                     ),
                   ),
+                  SizedBox(height: AppUiConstants.verticalSpacingTextFields),
 
                   // Height
                   TextFormField(

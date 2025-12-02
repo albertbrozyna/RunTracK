@@ -124,7 +124,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       return;
     }
 
-    if (comp.visibility == enums.ComVisibility.everyone) {
+    if (comp.visibility == enums.ComVisibility.everyone || (AppData.instance.currentUser?.friends.contains(widget.competitionData?.organizerUid ) ?? false)) {
       setState(() {
         enterContext = CompetitionContext.viewerAbleToJoin;
       });
@@ -177,6 +177,7 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     }else{
      UserService.fetchUser(AppData.instance.currentCompetition?.organizerUid ?? "")
           .then((user) {
+       if (!mounted) return;
         setState(() {
           String fullName = user?.firstName ?? "User";
           fullName += user?.lastName ?? "Unknown";
@@ -384,6 +385,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       if (!mounted) return;
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
+    }else{
+      setState(() {
+        enterContext = CompetitionContext.participant;
+      });
     }
   }
 
@@ -397,6 +402,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       if (!mounted) return;
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
+    }else{
+      setState(() {
+        if(widget.competitionData?.visibility == enums.ComVisibility.everyone || (AppData.instance.currentUser?.friends.contains(widget.competitionData?.organizerUid ?? '') ?? false)) {
+          enterContext = CompetitionContext.viewerAbleToJoin;
+        }else{
+          enterContext = CompetitionContext.viewerNotAbleToJoin;
+        }
+      });
     }
   }
 
@@ -410,6 +423,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       if (!mounted) return;
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
+    }else{
+      setState(() {
+        enterContext = CompetitionContext.participant;
+      });
     }
 
   }
@@ -424,6 +441,14 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
       if (!mounted) return;
       AppUtils.showMessage(context, "Error accepting invitation");
       return;
+    }else{
+      setState(() {
+        if(widget.competitionData?.visibility == enums.ComVisibility.everyone || (AppData.instance.currentUser?.friends.contains(widget.competitionData?.organizerUid ?? '') ?? false)) {
+          enterContext = CompetitionContext.viewerAbleToJoin;
+        }else{
+          enterContext = CompetitionContext.viewerNotAbleToJoin;
+        }
+      });
     }
   }
 
@@ -432,10 +457,10 @@ class _CompetitionDetailsPageState extends State<CompetitionDetailsPage> {
     if (saveInProgress == false) {
         saveInProgress = true;
     }
-    // if (!_formKey.currentState!.validate()) {
-    //   saveInProgress = false;
-    //   return;
-    // }
+    if (!_formKey.currentState!.validate()) {
+      saveInProgress = false;
+      return;
+    }
 
     final currentContext = context;
 

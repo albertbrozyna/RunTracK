@@ -58,7 +58,7 @@ class CompetitionService {
     try {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
-          .where("visibility", isEqualTo: ComVisibility.everyone.toString())
+          .where("visibility", isEqualTo: ComVisibility.everyone.name)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -96,7 +96,7 @@ class CompetitionService {
       Query queryCompetitions = FirebaseFirestore.instance
           .collection(FirestoreCollections.competitions)
           .where("organizerUid", whereIn: friends)
-          .where("visibility", whereIn: [ComVisibility.everyone.toString(), ComVisibility.friends.toString()])
+          .where("visibility", whereIn: [ComVisibility.everyone.name, ComVisibility.friends.name])
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
